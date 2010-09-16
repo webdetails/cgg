@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.pentaho.platform.api.engine.IParameterProvider;
 import org.pentaho.platform.engine.services.solution.BaseContentGenerator;
-import pt.webdetails.cgg.CggScript;
+import pt.webdetails.cgg.Script;
 
 /**
  *
@@ -24,6 +24,7 @@ public class CggContentGenerator extends BaseContentGenerator {
     }
     private static final String MIME_HTML = "text/html";
     private static final String MIME_SVG = "image/svg+xml";
+    private static final String MIME_PNG = "image/png";
 
     @Override
     public Log getLogger() {
@@ -35,7 +36,7 @@ public class CggContentGenerator extends BaseContentGenerator {
         try {
             final IParameterProvider requestParams = parameterProviders.get(IParameterProvider.SCOPE_REQUEST);
             final IParameterProvider pathParams = parameterProviders.get("path");
-            OutputStream out = outputHandler.getOutputContentItem("response", "content", "", instanceId, MIME_SVG).getOutputStream(null);
+            OutputStream out = outputHandler.getOutputContentItem("response", "content", "", instanceId, MIME_PNG).getOutputStream(null);
             final String method = pathParams.getStringParameter("path", null);
             try {
                 switch (methods.valueOf(method.replaceAll("/", "").toUpperCase())) {
@@ -53,8 +54,10 @@ public class CggContentGenerator extends BaseContentGenerator {
 
     private void draw(final IParameterProvider requestParams, final OutputStream out) {
         try {
-            CggScript script = new CggScript();
-            out.write(script.execute().getBytes("UTF8"));
+            Script script = new Script();
+            String svg = script.execute();
+            Chart chart = new Chart(svg);
+            chart.toPNG(out);
         } catch (Exception ex) {
             Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
