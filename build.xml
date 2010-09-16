@@ -7,11 +7,11 @@
 
   See common_build.xml for more details
 ============================================================================-->
-<project name="Community Data Access" basedir="." default="jar"
+<project name="Community Graphics Generator" basedir="." default="jar"
          xmlns:ivy="antlib:org.apache.ivy.ant">
 
   <description>
-    This build file is used to create the CDA project
+    This build file is used to create the CGG project
     and works with the common_build.xml file.
   </description>
 
@@ -47,7 +47,7 @@
   </target>
 
   <property name="plugin.name"
-            value="cda"
+            value="cgg"
             description="Name of the plugin"/>
 
   <property name="resource.dir"
@@ -178,28 +178,6 @@
          dest="${stage.dir}/blah.html"/>
 
   </target>
-
-  <!--=======================================================================
-    install-plugin
-
-    Installs the plugin locally
-    ====================================================================-->
-  <target name="run-test" depends="jar" description="Runs a test">
-
-    <java classname="pt.webdetails.cda.CdaExecutor">
-      <classpath>
-        <pathelement  path="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar"/>
-        <pathelement  path="${resource.dir}"/>
-        <fileset dir="lib">
-          <include name="**/*.jar"/>
-        </fileset>
-
-      </classpath>
-    </java>
-
-
-  </target>
-
 
   <!--=======================================================================
           publish-pentaho-nojar (override)
