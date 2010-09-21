@@ -9,15 +9,11 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.w3c.dom.Document;
-import org.w3c.dom.svg.SVGDocument;
-import org.xml.sax.InputSource;
 
 /**
  *
