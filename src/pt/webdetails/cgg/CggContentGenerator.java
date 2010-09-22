@@ -7,11 +7,13 @@ package pt.webdetails.cgg;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IContentGenerator;
 import org.pentaho.platform.api.engine.IParameterProvider;
 import org.pentaho.platform.api.engine.IPluginManager;
@@ -26,9 +28,11 @@ import pt.webdetails.cgg.script.Script;
  */
 public class CggContentGenerator extends BaseContentGenerator {
 
+    private static final Log logger = LogFactory.getLog(CggContentGenerator.class);
+
     private enum methods {
 
-        DRAW
+        DRAW, REFRESH
     }
     private static final String MIME_HTML = "text/html";
     private static final String MIME_SVG = "image/svg+xml";
@@ -51,6 +55,10 @@ public class CggContentGenerator extends BaseContentGenerator {
                 switch (methods.valueOf(method.replaceAll("/", "").toUpperCase())) {
                     case DRAW:
                         draw(requestParams, out);
+                        break;
+                    case REFRESH:
+                        refresh(requestParams, out);
+                        break;
                 }
             } catch (IllegalArgumentException ex) {
                 Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -74,13 +82,21 @@ public class CggContentGenerator extends BaseContentGenerator {
             }
             String scriptName = requestParams.getStringParameter("script", "");
             String scriptType = requestParams.getStringParameter("type", "base");
-            Script script = ScriptFactory.getInstance().createScript(scriptName,scriptType);
+            logger.warn("Starting:" + new Date().getTime());
+            Script script = ScriptFactory.getInstance().createScript(scriptName, scriptType);
+            logger.warn("Script created:" + new Date().getTime());
             String svg = script.execute(params);
+            logger.warn("Script executed:" + new Date().getTime());
             Chart chart = new Chart(svg);
             chart.toPNG(out);
+            logger.warn("Image exported:" + new Date().getTime());
         } catch (Exception ex) {
             Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    private void refresh(IParameterProvider requestParams, OutputStream out) {
+        ScriptFactory.getInstance().clearCachedScopes();
     }
 
     private String getCdaResultSet() throws Exception {

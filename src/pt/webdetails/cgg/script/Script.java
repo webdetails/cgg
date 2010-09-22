@@ -6,6 +6,7 @@
 package pt.webdetails.cgg.script;
 
 import java.util.Map;
+import org.mozilla.javascript.Scriptable;
 
 /**
  *
@@ -14,7 +15,7 @@ import java.util.Map;
 public interface Script {
 
 
-    public void setDependencies(String[] files);
+    public void setScope(Scriptable scope);
     
     public String execute();
     public String execute(Map<String,String> params);
