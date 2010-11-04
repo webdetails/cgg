@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pt.webdetails.cgg.script;
+package pt.webdetails.cgg.scripts;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,14 +16,14 @@ import org.mozilla.javascript.ScriptableObject;
  *
  * @author pdpi
  */
-class BaseScope extends ImporterTopLevel {
+class Java2DScope extends ImporterTopLevel {
 
-    private static final Log logger = LogFactory.getLog(BaseScope.class);
+    private static final Log logger = LogFactory.getLog(Java2DScope.class);
     
     private boolean sealedStdLib = false;
     boolean initialized;
 
-    public BaseScope(){
+    public Java2DScope(){
     super();
     }
     public void init(Context cx) {
@@ -32,7 +32,7 @@ class BaseScope extends ImporterTopLevel {
         initStandardObjects(cx, sealedStdLib);
         String[] names = {
             "print"};
-        defineFunctionProperties(names, BaseScope.class,
+        defineFunctionProperties(names, Java2DScope.class,
                 ScriptableObject.DONTENUM);
 
         initialized = true;

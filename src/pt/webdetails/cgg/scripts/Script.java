@@ -3,10 +3,11 @@
  * and open the template in the editor.
  */
 
-package pt.webdetails.cgg.script;
+package pt.webdetails.cgg.scripts;
 
 import java.util.Map;
 import org.mozilla.javascript.Scriptable;
+import pt.webdetails.cgg.charts.Chart;
 
 /**
  *
@@ -17,6 +18,6 @@ public interface Script {
 
     public void setScope(Scriptable scope);
     
-    public String execute();
-    public String execute(Map<String,String> params);
+    public Chart execute();
+    public Chart execute(Map<String,String> params);
 }

@@ -2,8 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pt.webdetails.cgg.script;
+package pt.webdetails.cgg.scripts;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -16,39 +17,42 @@ import org.apache.commons.logging.LogFactory;
 
 import org.mozilla.javascript.*;
 import org.mozilla.javascript.tools.shell.Main;
+import pt.webdetails.cgg.charts.Chart;
+import pt.webdetails.cgg.charts.Java2DChart;
 
 /**
  *
  * @author pdpi
  */
-class ProtovisScript implements Script {
+class Java2DScript extends BaseScript {
 
-    private static final Log logger = LogFactory.getLog(ProtovisScript.class);
+    private static final Log logger = LogFactory.getLog(Java2DScript.class);
     private Map<String, String> params;
     private String source;
-    private Scriptable scope;
+    private BufferedImage imageBuffer;
     private String[] dependencies;
+    private long width, height;
 
-    ProtovisScript() {
+    Java2DScript() {
     }
 
-    ProtovisScript(String source) {
-        this.source = source;
+    Java2DScript(String source, long width, long height) {
+        this();
+        this.width = width;
+        this.height = height;
+        // sanitize slashes
+        this.source = source.replaceAll("\\\\", "/").replaceAll("/+", "/");
     }
 
     @Override
-    public void setScope(Scriptable scope) {
-        this.scope = scope;
-    }
-
-    @Override
-    public String execute() {
+    public Chart execute() {
         return execute((Map<String, String>) null);
     }
 
     @Override
-    public String execute(Map<String, String> params) {
-        Context cx = ContextFactory.getGlobal().enterContext();
+    public Chart execute(Map<String, String> params) {
+        Context cx = Context.getCurrentContext();
+        cx = cx != null ? cx : ContextFactory.getGlobal().enterContext();
         try {
             // env.js has methods that pass the 64k Java limit, so we can't compile
             // to bytecode. Interpreter mode to the rescue!
@@ -57,6 +61,7 @@ class ProtovisScript implements Script {
             OutputStream bytes = new ByteArrayOutputStream();
             Main.setErr(new PrintStream(bytes));
 
+            getGraphics();
             Object wrappedParams;
             if (params != null) {
                 wrappedParams = Context.javaToJS(params, scope);
@@ -70,16 +75,20 @@ class ProtovisScript implements Script {
             } catch (IOException ex) {
                 logger.error("Failed to read " + source + ": " + ex.toString());
             }
-            Object result = cx.evaluateString(scope, "output", "<cmd>", 1, null);
-            String output = Context.toString(result);//.replaceAll("</?div.*?>", "");
             bytes.flush();
             logger.error(bytes.toString());
-            return output;
+            return new Java2DChart(imageBuffer);
         } catch (Exception e) {
             logger.error(e);
         } finally {
             Context.exit();
         }
-        return "";
+        return null;
+    }
+
+    private void getGraphics() {
+        imageBuffer = new BufferedImage((int) width, (int) height, BufferedImage.TYPE_4BYTE_ABGR);
+        Object wrappedGraphics = Context.javaToJS(imageBuffer.createGraphics(), scope);
+        ScriptableObject.putProperty(scope, "graphics", wrappedGraphics);
     }
 }

@@ -4,9 +4,8 @@
  */
 package pt.webdetails.cgg;
 
-import java.io.ByteArrayOutputStream;
+import pt.webdetails.cgg.charts.Chart;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,13 +13,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.pentaho.platform.api.engine.IContentGenerator;
 import org.pentaho.platform.api.engine.IParameterProvider;
-import org.pentaho.platform.api.engine.IPluginManager;
-import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.services.solution.BaseContentGenerator;
-import pt.webdetails.cgg.script.ScriptFactory;
-import pt.webdetails.cgg.script.Script;
+import pt.webdetails.cgg.datasources.CdaDatasource;
+import pt.webdetails.cgg.scripts.ScriptFactory;
+import pt.webdetails.cgg.scripts.Script;
 
 /**
  *
@@ -32,7 +29,7 @@ public class CggContentGenerator extends BaseContentGenerator {
 
     private enum methods {
 
-        DRAW, REFRESH
+        DRAW, REFRESH, GETCDARESULTSET
     }
     private static final String MIME_HTML = "text/html";
     private static final String MIME_SVG = "image/svg+xml";
@@ -59,6 +56,8 @@ public class CggContentGenerator extends BaseContentGenerator {
                     case REFRESH:
                         refresh(requestParams, out);
                         break;
+                    case GETCDARESULTSET:
+                        getCdaResultSet(requestParams, out);
                 }
             } catch (IllegalArgumentException ex) {
                 Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -81,13 +80,14 @@ public class CggContentGenerator extends BaseContentGenerator {
                 }
             }
             String scriptName = requestParams.getStringParameter("script", "");
-            String scriptType = requestParams.getStringParameter("type", "base");
+            String scriptType = requestParams.getStringParameter("type", "protovis");
+            Long width = requestParams.getLongParameter("width", 0L);
+            Long height = requestParams.getLongParameter("height", 0L);
             logger.warn("Starting:" + new Date().getTime());
-            Script script = ScriptFactory.getInstance().createScript(scriptName, scriptType);
+            Script script = ScriptFactory.getInstance().createScript(scriptName, scriptType, width, height);
             logger.warn("Script created:" + new Date().getTime());
-            String svg = script.execute(params);
+            Chart chart = script.execute(params);
             logger.warn("Script executed:" + new Date().getTime());
-            Chart chart = new Chart(svg);
             chart.toPNG(out);
             logger.warn("Image exported:" + new Date().getTime());
         } catch (Exception ex) {
@@ -99,30 +99,11 @@ public class CggContentGenerator extends BaseContentGenerator {
         ScriptFactory.getInstance().clearCachedScopes();
     }
 
-    private String getCdaResultSet() throws Exception {
-        IPluginManager pluginManager = PentahoSystem.get(IPluginManager.class, userSession);
-        IContentGenerator cda = pluginManager.getContentGenerator("cda", userSession);
-        // If CDA is present, we're going to pull a resultset
-        if (cda != null) {
-            // Basic setup
-            cda.setParameterProviders(parameterProviders);
-            cda.setOutputHandler(outputHandler);
-            // We need to arrange for a callback object that will serve as a communications channel
-            ArrayList<Object> output = new ArrayList<Object>();
-            HashMap<String, Object> channel = new HashMap<String, Object>();
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            // The outputstream provides CDA with a sink we can later retrieve data from
-            channel.put("output", outputStream);
-            // Setup the desired function to call on CDA's side of things.
-            channel.put("method", "doQuery");
-            // Call CDA
-            output.add(channel);
-            cda.setCallbacks(output);
-            cda.createContent();
-            // pass the output to the ComponentManager
-            return outputStream.toString();
-        } else {
-            return null;
-        }
+    private void getCdaResultSet(IParameterProvider requestParams, OutputStream out) throws Exception {
+        CdaDatasource cda = new CdaDatasource();
+
+        cda.setDataAccessId("sampleData");
+        cda.setDefinitionFile("/Eco/chartTest.cda");
+        out.write(cda.execute().getBytes("UTF-8"));
     }
 }
