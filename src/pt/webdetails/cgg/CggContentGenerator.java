@@ -83,13 +83,13 @@ public class CggContentGenerator extends BaseContentGenerator {
             String scriptType = requestParams.getStringParameter("type", "protovis");
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
-            logger.warn("Starting:" + new Date().getTime());
+            logger.debug("Starting:" + new Date().getTime());
             Script script = ScriptFactory.getInstance().createScript(scriptName, scriptType, width, height);
-            logger.warn("Script created:" + new Date().getTime());
+            logger.debug("Script created:" + new Date().getTime());
             Chart chart = script.execute(params);
-            logger.warn("Script executed:" + new Date().getTime());
+            logger.debug("Script executed:" + new Date().getTime());
             chart.toPNG(out);
-            logger.warn("Image exported:" + new Date().getTime());
+            logger.debug("Image exported:" + new Date().getTime());
         } catch (Exception ex) {
             Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
