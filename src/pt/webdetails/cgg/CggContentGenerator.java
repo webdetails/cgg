@@ -29,7 +29,7 @@ public class CggContentGenerator extends BaseContentGenerator {
 
     private enum methods {
 
-        DRAW, REFRESH, GETCDARESULTSET
+        DRAW, REFRESH
     }
     private static final String MIME_HTML = "text/html";
     private static final String MIME_SVG = "image/svg+xml";
@@ -56,8 +56,6 @@ public class CggContentGenerator extends BaseContentGenerator {
                     case REFRESH:
                         refresh(requestParams, out);
                         break;
-                    case GETCDARESULTSET:
-                        getCdaResultSet(requestParams, out);
                 }
             } catch (IllegalArgumentException ex) {
                 Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -80,7 +78,7 @@ public class CggContentGenerator extends BaseContentGenerator {
                 }
             }
             String scriptName = requestParams.getStringParameter("script", "");
-            String scriptType = requestParams.getStringParameter("type", "protovis");
+            String scriptType = requestParams.getStringParameter("type", "svg");
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
             logger.debug("Starting:" + new Date().getTime());
@@ -99,11 +97,4 @@ public class CggContentGenerator extends BaseContentGenerator {
         ScriptFactory.getInstance().clearCachedScopes();
     }
 
-    private void getCdaResultSet(IParameterProvider requestParams, OutputStream out) throws Exception {
-        CdaDatasource cda = new CdaDatasource();
-
-        cda.setDataAccessId("sampleData");
-        cda.setDefinitionFile("/Eco/chartTest.cda");
-        out.write(cda.execute().getBytes("UTF-8"));
-    }
 }

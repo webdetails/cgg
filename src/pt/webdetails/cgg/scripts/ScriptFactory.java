@@ -32,7 +32,7 @@ public class ScriptFactory {
 
     public enum ScriptType {
 
-        PROTOVIS, J2D
+        SVG, J2D
     }
 
     public static synchronized ScriptFactory getInstance() {
@@ -66,8 +66,8 @@ public class ScriptFactory {
 
         Script script;
         switch (scriptType) {
-            case PROTOVIS:
-                script = new ProtovisScript(solutionRoot + "/" + solutionFile.getSolutionPath() + "/" + solutionFile.getFileName());
+            case SVG:
+                script = new SvgScript(solutionRoot + "/" + solutionFile.getSolutionPath() + "/" + solutionFile.getFileName());
                 break;
             case J2D:
                 script = new Java2DScript(solutionRoot + "/" + solutionFile.getSolutionPath() + "/" + solutionFile.getFileName(), width, height);
@@ -100,7 +100,7 @@ public class ScriptFactory {
 
         Context cx = ContextFactory.getGlobal().enterContext();
         switch (type) {
-            case PROTOVIS:
+            case SVG:
                 cx.setOptimizationLevel(-1);
                 cx.setLanguageVersion(Context.VERSION_1_5);
                 dependencies = new String[2];

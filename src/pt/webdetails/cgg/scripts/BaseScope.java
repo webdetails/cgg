@@ -4,6 +4,7 @@
  */
 package pt.webdetails.cgg.scripts;
 
+import java.io.FileReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
@@ -18,9 +19,10 @@ import org.mozilla.javascript.ScriptableObject;
  */
 class BaseScope extends ImporterTopLevel {
 
-    private static final Log logger = LogFactory.getLog(BaseScope.class);
-    private boolean sealedStdLib = false;
+    protected static final Log logger = LogFactory.getLog(BaseScope.class);
+    protected boolean sealedStdLib = false;
     boolean initialized;
+    protected String basePath;
 
     public BaseScope() {
         super();
@@ -31,7 +33,7 @@ class BaseScope extends ImporterTopLevel {
         // that these functions are not part of ECMA.
         initStandardObjects(cx, sealedStdLib);
         String[] names = {
-            "print"};
+            "print", "load"};
         defineFunctionProperties(names, BaseScope.class,
                 ScriptableObject.DONTENUM);
 
@@ -46,5 +48,27 @@ class BaseScope extends ImporterTopLevel {
             logger.info(s);
         }
         return Context.getUndefinedValue();
+    }
+
+    public static Object load(Context cx, Scriptable thisObj,
+            Object[] args, Function funObj) {
+
+        String file = args[0].toString();
+        try {
+            BaseScope scope = (BaseScope) thisObj;
+            cx.evaluateReader(scope, new FileReader(scope.basePath + "/" + file), "<file>", 1, null);
+        } catch (Exception e) {
+            logger.error(e);
+            return Context.toBoolean(false);
+        }
+        return Context.toBoolean(true);
+    }
+
+    public String getBasePath() {
+        return basePath;
+    }
+
+    public void setBasePath(String basePath) {
+        this.basePath = basePath;
     }
 }

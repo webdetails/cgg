@@ -1,4 +1,4 @@
-// 6ff1e4c4c406de723d6e5abb3b2d2c91c294d7b9
+// 3ec4c9b296db63c46643ed7db009f9cd188d4511
 /**
  * @class The built-in Array class.
  * @name Array
@@ -8,6 +8,8 @@
  * Creates a new array with the results of calling a provided function on every
  * element in this array. Implemented in Javascript 1.6.
  *
+ * @function
+ * @name Array.prototype.map
  * @see <a
  * href="https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference/Objects/Array/Map">map</a>
  * documentation.
@@ -30,6 +32,8 @@ if (!Array.prototype.map) Array.prototype.map = function(f, o) {
  * Creates a new array with all elements that pass the test implemented by the
  * provided function. Implemented in Javascript 1.6.
  *
+ * @function
+ * @name Array.prototype.filter
  * @see <a
  * href="https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference/Objects/Array/filter">filter</a>
  * documentation.
@@ -52,6 +56,8 @@ if (!Array.prototype.filter) Array.prototype.filter = function(f, o) {
  * Executes a provided function once per array element. Implemented in
  * Javascript 1.6.
  *
+ * @function
+ * @name Array.prototype.forEach
  * @see <a
  * href="https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference/Objects/Array/ForEach">forEach</a>
  * documentation.
@@ -70,6 +76,8 @@ if (!Array.prototype.forEach) Array.prototype.forEach = function(f, o) {
  * left-to-right) as to reduce it to a single value. Implemented in Javascript
  * 1.8.
  *
+ * @function
+ * @name Array.prototype.reduce
  * @see <a
  * href="https://developer.mozilla.org/En/Core_JavaScript_1.5_Reference/Objects/Array/Reduce">reduce</a>
  * documentation.
@@ -134,7 +142,7 @@ pv.version = {
    * @type number
    * @constant
    */
-  minor: 2
+  minor: 3
 };
 
 /**
@@ -239,7 +247,7 @@ try {
  * @returns {string} a conformant JavaScript 1.6 source code.
  */
   pv.parse = function(js) { // hacky regex support
-    var re = new RegExp("function(\\s+\\w+)?\\([^)]*\\)\\s*", "mg"), m, d, i = 0, s = "";
+    var re = new RegExp("function\\s*(\\b\\w+)?\\s*\\([^)]*\\)\\s*", "mg"), m, d, i = 0, s = "";
     while (m = re.exec(js)) {
       var j = m.index + m[0].length;
       if (js.charAt(j) != '{') {
@@ -312,31 +320,124 @@ pv.listen = function(target, type, listener) {
 
 /**
  * @private Returns a wrapper for the specified listener function such that the
- * {@link pv.event} is set for the duration of the listener's invocation.
+ * {@link pv.event} is set for the duration of the listener's invocation. The
+ * wrapper is cached on the returned function, such that duplicate registrations
+ * of the wrapped event handler are ignored.
  *
- * @param {function} an event handler.
+ * @param {function} f an event handler.
  * @returns {function} the wrapped event handler.
  */
-pv.listener = function(listener) {
-  return function(e) {
+pv.listener = function(f) {
+  return f.$listener || (f.$listener = function(e) {
       try {
         pv.event = e;
-        return listener(e);
+        return f.call(this, e);
       } finally {
         delete pv.event;
       }
-    };
+    });
+};
+
+/**
+ * @private Returns true iff <i>a</i> is an ancestor of <i>e</i>. This is useful
+ * for ignoring mouseout and mouseover events that are contained within the
+ * target element.
+ */
+pv.ancestor = function(a, e) {
+  while (e) {
+    if (e == a) return true;
+    e = e.parentNode;
+  }
+  return false;
 };
 
 /** @private Returns a locally-unique positive id. */
 pv.id = function() {
   var id = 1; return function() { return id++; };
 }();
+
+/** @private Returns a function wrapping the specified constant. */
+pv.functor = function(v) {
+  return typeof v == "function" ? v : function() { return v; };
+};
+/*
+ * Parses the Protovis specifications on load, allowing the use of JavaScript
+ * 1.8 function expressions on browsers that only support JavaScript 1.6.
+ *
+ * @see pv.parse
+ */
+pv.listen(window, "load", function() {
+   /*
+    * Note: in Firefox any variables declared here are visible to the eval'd
+    * script below. Even worse, any global variables declared by the script
+    * could overwrite local variables here (such as the index, `i`)!  To protect
+    * against this, all variables are explicitly scoped on a pv.$ object.
+    */
+    pv.$ = {i:0, x:document.getElementsByTagName("script")};
+    for (; pv.$.i < pv.$.x.length; pv.$.i++) {
+      pv.$.s = pv.$.x[pv.$.i];
+      if (pv.$.s.type == "text/javascript+protovis") {
+        try {
+          window.eval(pv.parse(pv.$.s.text));
+        } catch (e) {
+          pv.error(e);
+        }
+      }
+    }
+    delete pv.$;
+  });
 /**
- * @ignore
- * @class
+ * Abstract; see an implementing class.
+ *
+ * @class Represents an abstract text formatter and parser. A <i>format</i> is a
+ * function that converts an object of a given type, such as a <tt>Date</tt>, to
+ * a human-readable string representation. The format may also have a
+ * {@link #parse} method for converting a string representation back to the
+ * given object type.
+ *
+ * <p>Because formats are themselves functions, they can be used directly as
+ * mark properties. For example, if the data associated with a label are dates,
+ * a date format can be used as label text:
+ *
+ * <pre>    .text(pv.Format.date("%m/%d/%y"))</pre>
+ *
+ * And as with scales, if the format is used in multiple places, it can be
+ * convenient to declare it as a global variable and then reference it from the
+ * appropriate property functions. For example, if the data has a <tt>date</tt>
+ * attribute, and <tt>format</tt> references a given date format:
+ *
+ * <pre>    .text(function(d) format(d.date))</pre>
+ *
+ * Similarly, to parse a string into a date:
+ *
+ * <pre>var date = format.parse("4/30/2010");</pre>
+ *
+ * Not all format implementations support parsing. See the implementing class
+ * for details.
+ *
+ * @see pv.Format.date
+ * @see pv.Format.number
+ * @see pv.Format.time
  */
 pv.Format = {};
+
+/**
+ * Formats the specified object, returning the string representation.
+ *
+ * @function
+ * @name pv.Format.prototype.format
+ * @param {object} x the object to format.
+ * @returns {string} the formatted string.
+ */
+
+/**
+ * Parses the specified string, returning the object representation.
+ *
+ * @function
+ * @name pv.Format.prototype.parse
+ * @param {string} x the string to parse.
+ * @returns {object} the parsed object.
+ */
 
 /**
  * @private Given a string that may be used as part of a regular expression,
@@ -364,8 +465,11 @@ pv.Format.pad = function(c, n, s) {
   return (m < 1) ? s : new Array(m + 1).join(c) + s;
 };
 /**
- * The format string is in the same format expected by the <tt>strftime</tt>
- * function in C. The following conversion specifications are supported:<ul>
+ * Constructs a new date format with the specified string pattern.
+ *
+ * @class The format string is in the same format expected by the
+ * <tt>strftime</tt> function in C. The following conversion specifications are
+ * supported:<ul>
  *
  * <li>%a - abbreviated weekday name.</li>
  * <li>%A - full weekday name.</li>
@@ -431,16 +535,13 @@ pv.Format.pad = function(c, n, s) {
  * @see <a
  * href="http://www.opengroup.org/onlinepubs/007908799/xsh/strptime.html">strptime</a>
  * documentation.
+ * @extends pv.Format
+ * @param {string} pattern the format pattern.
  */
 pv.Format.date = function(pattern) {
   var pad = pv.Format.pad;
 
-  /**
-   * Converts a date to a string using the associated formatting pattern.
-   *
-   * @param {Date} date a date to format.
-   * @returns {string} the formatted date as a string.
-   */
+  /** @private */
   function format(d) {
     return pattern.replace(/%[a-zA-Z0-9]/g, function(s) {
         switch (s) {
@@ -509,10 +610,21 @@ pv.Format.date = function(pattern) {
   }
 
   /**
+   * Converts a date to a string using the associated formatting pattern.
+   *
+   * @function
+   * @name pv.Format.date.prototype.format
+   * @param {Date} date a date to format.
+   * @returns {string} the formatted date as a string.
+   */
+  format.format = format;
+
+  /**
    * Parses a date from a string using the associated formatting pattern.
    *
+   * @function
+   * @name pv.Format.date.prototype.parse
    * @param {string} s the string to parse as a date.
-   * @param {string} [format] an optional format string.
    * @returns {Date} the parsed date.
    */
   format.parse = function(s) {
@@ -614,6 +726,18 @@ pv.Format.date = function(pattern) {
 
   return format;
 };
+/**
+ * Returns a time format of the given type, either "short" or "long".
+ *
+ * @class Represents a time format, converting between a <tt>number</tt>
+ * representing a duration in milliseconds, and a <tt>string</tt>. Two types of
+ * time formats are supported: "short" and "long". The <i>short</i> format type
+ * returns a string such as "3.3 days" or "12.1 minutes", while the <i>long</i>
+ * format returns "13:04:12" or similar.
+ *
+ * @extends pv.Format
+ * @param {string} type the type; "short" or "long".
+ */
 pv.Format.time = function(type) {
   var pad = pv.Format.pad;
 
@@ -668,6 +792,24 @@ pv.Format.time = function(type) {
     }
   }
 
+  /**
+   * Formats the specified time, returning the string representation.
+   *
+   * @function
+   * @name pv.Format.time.prototype.format
+   * @param {number} t the duration in milliseconds. May also be a <tt>Date</tt>.
+   * @returns {string} the formatted string.
+   */
+  format.format = format;
+
+  /**
+   * Parses the specified string, returning the time in milliseconds.
+   *
+   * @function
+   * @name pv.Format.time.prototype.parse
+   * @param {string} s a formatted string.
+   * @returns {number} the parsed duration in milliseconds.
+   */
   format.parse = function(s) {
     switch (type) {
       case "short": {
@@ -721,7 +863,9 @@ pv.Format.number = function() {
       padf = "0", // default fraction pad
       padg = true, // whether group separator affects integer padding
       decimal = ".", // default decimal separator
-      group = ","; // default group separator
+      group = ",", // default group separator
+      np = "\u2212", // default negative prefix
+      ns = ""; // default negative suffix
 
   /** @private */
   function format(x) {
@@ -730,12 +874,12 @@ pv.Format.number = function() {
     var s = String(Math.abs(x)).split(".");
 
     /* Pad, truncate and group the integral part. */
-    var i = s[0], n = (x < 0) ? "-" : "";
+    var i = s[0];
     if (i.length > maxi) i = i.substring(i.length - maxi);
-    if (padg && (i.length < mini)) i = n + new Array(mini - i.length + 1).join(padi) + i;
+    if (padg && (i.length < mini)) i = new Array(mini - i.length + 1).join(padi) + i;
     if (i.length > 3) i = i.replace(/\B(?=(?:\d{3})+(?!\d))/g, group);
-    if (!padg && (i.length < mins)) i = new Array(mins - i.length + 1).join(padi) + n + i;
-    s[0] = i;
+    if (!padg && (i.length < mins)) i = new Array(mins - i.length + 1).join(padi) + i;
+    s[0] = x < 0 ? np + i + ns : i;
 
     /* Pad the fractional part. */
     var f = s[1] || "";
@@ -743,6 +887,14 @@ pv.Format.number = function() {
 
     return s.join(decimal);
   }
+
+  /**
+   * @function
+   * @name pv.Format.number.prototype.format
+   * @param {number} x
+   * @returns {string}
+   */
+  format.format = format;
 
   /**
    * Parses the specified string as a number. Before parsing, leading and
@@ -897,149 +1049,24 @@ pv.Format.number = function() {
     return group;
   };
 
+  /**
+   * Sets or gets the negative prefix and suffix. The default negative prefix is
+   * "&minus;", and the default negative suffix is the empty string.
+   *
+   * @param {string} [x] the negative prefix.
+   * @param {string} [y] the negative suffix.
+   * @returns {pv.Format.number} <tt>this</tt> or the current negative format.
+   */
+  format.negativeAffix = function(x, y) {
+    if (arguments.length) {
+      np = String(x || "");
+      ns = String(y || "");
+      return this;
+    }
+    return [np, ns];
+  };
+
   return format;
-};
-/**
- * Supports CSV parsing and formatting.
- */
-pv.Format.csv = function() {
-  return new pv.CsvFormat();
-};
-
-pv.CsvFormat = function() {};
-
-/**
- * Gets or sets whether this CSV format uses a header line. When parsing and
- * formatting, the first line is the header line which specifies the field names
- * for each column. Note that enabling a header line changes the input and
- * output format: when headers are disabled, a two-dimensional array is used;
- * when headers are enabled, a one-dimensional array of objects is used.
- *
- * @param {boolean} x whether to enable the header line.
- */
-pv.CsvFormat.prototype.header = function(x) {
-  if (arguments.length) {
-    this.$header = x;
-    return this;
-  }
-  return this.$header;
-};
-
-/**
- * Parses the specified CSV string. If this formatter is configured to treat the
- * first line as the header line, then the return value will be an array of
- * objects. The attributes of these objects are determined by the field names
- * from the header line. Otherwise, the return value will be an array of arrays.
- *
- * @param {string} s the CSV string.
- * @param {array} an array of elements parsed from CSV.
- */
-pv.CsvFormat.prototype.parse = function(s) {
-  var EOL = {}, // sentinel value for end-of-line
-      EOF = {}, // sentinel value for end-of-file
-      rows = [], // output rows
-      re = /[,\n]/g, // field separator regex
-      t, // the current token
-      eol; // is the current token followed by EOL?
-
-  /* Returns the next token. */
-  function token() {
-    if (re.lastIndex == s.length) return EOF; // special case: end of file
-    if (eol) { eol = false; return EOL; } // special case: end of line
-
-    // special case: quotes
-    var j = re.lastIndex;
-    if (s.charAt(j) == "\"") {
-      var i = j;
-      out: while (i++ < s.length) {
-        switch (s.charAt(i)) {
-          case "\"": {
-            if (s.charAt(i + 1) == "\"") {
-              i++;
-              break;
-            }
-            break out;
-          }
-        }
-      }
-      if (s.charAt(i + 1) == "\n") eol = true;
-      re.lastIndex = i + 2;
-      return s.substring(j + 1, i).replace(/""/g, "\"");
-    }
-
-    // common case
-    var m = re.exec(s);
-    if (m) {
-      if (m[0] == "\n") eol = true;
-      return s.substring(j, m.index);
-    }
-    re.lastIndex = s.length;
-    return s.substring(j);
-  }
-
-  if (this.$header) {
-    var keys = [];
-    while (((t = token()) !== EOL) && (t !== EOF)) keys.push(t);
-    var k = 0;
-    while ((t = token()) !== EOF) {
-      var o = {}, j = 0;
-      rows.push(o);
-      while ((t !== EOL) && (t !== EOF)) {
-        o[keys[j++]] = t;
-        t = token();
-      }
-    }
-  } else {
-    while ((t = token()) !== EOF) {
-      var a = [];
-      rows.push(a);
-      while ((t !== EOL) && (t !== EOF)) {
-        a.push(t);
-        t = token();
-      }
-    }
-  }
-
-  return rows;
-};
-
-/**
- * Formats the specified array to a CSV string. If this formatter is configured
- * to output the header line as the first line, then <i>a</i> should be an array
- * of objects. The attributes of the first element will be used to determine the
- * field names. Otherwise, <i>a</i> should be an array of arrays.
- *
- * @param {array} a the array of elements to output as CSV.
- * @returns {string} a CSV string.
- */
-pv.CsvFormat.prototype.format = function(a) {
-  if (!a.length) return "";
-  var lines = [];
-  if (this.$header) {
-    var keys = pv.keys(a[0]);
-    lines.push(keys.map(pv.CsvFormat.quote).join(","));
-    for (var i = 0; i < a.length; i++) {
-      lines.push(keys.map(function(key) {
-          return pv.CsvFormat.quote(a[i][key]);
-        }).join(","));
-    }
-  } else {
-    for (var i = 0; i < a.length; i++) {
-      lines.push(a[i].map(pv.CsvFormat.quote).join(","));
-    }
-  }
-  return lines.join("\n");
-};
-
-/**
- * Quotes the specified string <i>s</i>, but only if necessary. Quoting is
- * necessary for special characters: double quotes, commas, and newlines.
- *
- * @param {string} s a string to quote.
- * @returns {string} the quoted string, or <i>s</i> is quoting is not needed.
- */
-pv.CsvFormat.quote = function(s) {
-  return /[",\n]/.test(s) ? ("\"" + s.replace(/\"/g, "\"\"") + "\"") : s;
 };
 /**
  * @private A private variant of Array.prototype.map that supports the index
@@ -1228,6 +1255,29 @@ pv.numerate = function(keys, f) {
 };
 
 /**
+ * Returns the unique elements in the specified array, in the order they appear.
+ * Note that since JavaScript maps only support string keys, <tt>array</tt> must
+ * contain strings, or other values that naturally map to distinct string
+ * values. Alternatively, an optional accessor function <tt>f</tt> can be
+ * specified to compute the string key for the given element. Accessor functions
+ * can refer to <tt>this.index</tt>.
+ *
+ * @param {array} array an array, usually of string keys.
+ * @param {function} [f] an optional key function.
+ * @returns {array} the unique values.
+ */
+pv.uniq = function(array, f) {
+  if (!f) f = pv.identity;
+  var map = {}, keys = [], o = {}, y;
+  array.forEach(function(x, i) {
+    o.index = i;
+    y = f.call(o, x);
+    if (!(y in map)) map[y] = keys.push(y);
+  });
+  return keys;
+};
+
+/**
  * The comparator function for natural order. This can be used in conjunction with
  * the built-in array <tt>sort</tt> method to sort elements by their natural
  * order, ascending. Note that if no comparator function is specified to the
@@ -1297,10 +1347,10 @@ pv.search.index = function(array, value, f) {
 };
 /**
  * Returns an array of numbers, starting at <tt>start</tt>, incrementing by
- * <tt>step</tt>, until <tt>stop</tt> is reached. The stop value is exclusive. If
- * only a single argument is specified, this value is interpeted as the
- * <i>stop</i> value, with the <i>start</i> value as zero. If only two arguments
- * are specified, the step value is implied to be one.
+ * <tt>step</tt>, until <tt>stop</tt> is reached. The stop value is
+ * exclusive. If only a single argument is specified, this value is interpeted
+ * as the <i>stop</i> value, with the <i>start</i> value as zero. If only two
+ * arguments are specified, the step value is implied to be one.
  *
  * <p>The method is modeled after the built-in <tt>range</tt> method from
  * Python. See the Python documentation for more details.
@@ -1317,8 +1367,9 @@ pv.range = function(start, stop, step) {
     start = 0;
   }
   if (step == undefined) step = 1;
-  else if (!step) throw new Error("step must be non-zero");
+  if ((stop - start) / step == Infinity) throw new Error("range must be finite");
   var array = [], i = 0, j;
+  stop -= (stop - start) * 1e-10; // floating point precision!
   if (step < 0) {
     while ((j = start + step * i++) > stop) {
       array.push(j);
@@ -1332,27 +1383,26 @@ pv.range = function(start, stop, step) {
 };
 
 /**
- * Returns a random number in the range [<tt>min</tt>, <tt>max</tt>) that is a
- * multiple of <tt>step</tt>. More specifically, the returned number is of the
- * form <tt>min</tt> + <i>n</i> * <tt>step</tt>, where <i>n</i> is a nonnegative
- * integer. If <tt>step</tt> is not specified, it defaults to 1, returning a
- * random integer if <tt>min</tt> is also an integer.
+ * Returns a random number in the range [<tt>start</tt>, <tt>stop</tt>) that is
+ * a multiple of <tt>step</tt>. More specifically, the returned number is of the
+ * form <tt>start</tt> + <i>n</i> * <tt>step</tt>, where <i>n</i> is a
+ * nonnegative integer. If <tt>step</tt> is not specified, it defaults to 1,
+ * returning a random integer if <tt>start</tt> is also an integer.
  *
- * @param min {number} minimum value.
- * @param [max] {number} maximum value.
- * @param [step] {numbeR} step value.
+ * @param {number} [start] the start value value.
+ * @param {number} stop the stop value.
+ * @param {number} [step] the step value.
+ * @returns {number} a random number between <i>start</i> and <i>stop</i>.
  */
-pv.random = function(min, max, step) {
+pv.random = function(start, stop, step) {
   if (arguments.length == 1) {
-    max = min;
-    min = 0;
+    stop = start;
+    start = 0;
   }
-  if (step == undefined) {
-    step = 1;
-  }
+  if (step == undefined) step = 1;
   return step
-      ? (Math.floor(Math.random() * (max - min) / step) * step + min)
-      : (Math.random() * (max - min) + min);
+      ? (Math.floor(Math.random() * (stop - start) / step) * step + start)
+      : (Math.random() * (stop - start) + start);
 };
 
 /**
@@ -1399,9 +1449,10 @@ pv.max = function(array, f) {
  * @returns {number} the index of the maximum value of the specified array.
  */
 pv.max.index = function(array, f) {
+  if (!array.length) return -1;
   if (f == pv.index) return array.length - 1;
   if (!f) f = pv.identity;
-  var maxi = -1, maxx = -Infinity, o = {};
+  var maxi = 0, maxx = -Infinity, o = {};
   for (var i = 0; i < array.length; i++) {
     o.index = i;
     var x = f.call(o, array[i]);
@@ -1440,9 +1491,10 @@ pv.min = function(array, f) {
  * @returns {number} the index of the minimum value of the specified array.
  */
 pv.min.index = function(array, f) {
+  if (!array.length) return -1;
   if (f == pv.index) return 0;
   if (!f) f = pv.identity;
-  var mini = -1, minx = Infinity, o = {};
+  var mini = 0, minx = Infinity, o = {};
   for (var i = 0; i < array.length; i++) {
     o.index = i;
     var x = f.call(o, array[i]);
@@ -1488,16 +1540,18 @@ pv.median = function(array, f) {
 };
 
 /**
- * Returns the variance of the specified array. If the specified array is not an
- * array of numbers, an optional accessor function <tt>f</tt> can be specified
- * to map the elements to numbers. See {@link #normalize} for an
- * example. Accessor functions can refer to <tt>this.index</tt>.
+ * Returns the unweighted variance of the specified array. If the specified
+ * array is not an array of numbers, an optional accessor function <tt>f</tt>
+ * can be specified to map the elements to numbers. See {@link #normalize} for
+ * an example. Accessor functions can refer to <tt>this.index</tt>.
  *
  * @param {array} array an array of objects, or numbers.
  * @param {function} [f] an optional accessor function.
  * @returns {number} the variance of the specified array.
  */
 pv.variance = function(array, f) {
+  if (array.length < 1) return NaN;
+  if (array.length == 1) return 0;
   var mean = pv.mean(array, f), sum = 0, o = {};
   if (!f) f = pv.identity;
   for (var i = 0; i < array.length; i++) {
@@ -1509,16 +1563,17 @@ pv.variance = function(array, f) {
 };
 
 /**
- * Returns the standard deviation of the specified array. If the specified array
- * is not an array of numbers, an optional accessor function <tt>f</tt> can be
- * specified to map the elements to numbers. See {@link #normalize} for an
- * example. Accessor functions can refer to <tt>this.index</tt>.
+ * Returns an unbiased estimation of the standard deviation of a population,
+ * given the specified random sample. If the specified array is not an array of
+ * numbers, an optional accessor function <tt>f</tt> can be specified to map the
+ * elements to numbers. See {@link #normalize} for an example. Accessor
+ * functions can refer to <tt>this.index</tt>.
  *
  * @param {array} array an array of objects, or numbers.
  * @param {function} [f] an optional accessor function.
  * @returns {number} the standard deviation of the specified array.
  */
-pv.stddev = function(array, f) {
+pv.deviation = function(array, f) {
   return Math.sqrt(pv.variance(array, f) / (array.length - 1));
 };
 
@@ -1557,6 +1612,7 @@ pv.logSymmetric = function(x, b) {
  * @returns {number} the adjusted, symmetric log value.
  */
 pv.logAdjusted = function(x, b) {
+  if (!isFinite(x)) return x;
   var negative = x < 0;
   if (x < b) x += (b - x) / b;
   return negative ? -pv.log(x, b) : pv.log(x, b);
@@ -1591,6 +1647,17 @@ pv.logCeil = function(x, b) {
       ? Math.pow(b, Math.ceil(pv.log(x, b)))
       : -Math.pow(b, -Math.ceil(-pv.log(-x, b)));
 };
+
+(function() {
+  var radians = Math.PI / 180,
+      degrees = 180 / Math.PI;
+
+  /** Returns the number of radians corresponding to the specified degrees. */
+  pv.radians = function(degrees) { return radians * degrees; };
+
+  /** Returns the number of degrees corresponding to the specified radians. */
+  pv.degrees = function(radians) { return degrees * radians; };
+})();
 /**
  * Returns all of the property names (keys) of the specified object (a map). The
  * order of the returned array is not defined.
@@ -1762,7 +1829,7 @@ pv.Dom.prototype.nodes = function() {
  * not typically created directly; instead they are generated from a JavaScript
  * map using the {@link pv.Dom} operator.
  *
- * @class Represents a <code>Node</tt> in the W3C Document Object Model.
+ * @class Represents a <tt>Node</tt> in the W3C Document Object Model.
  */
 pv.Dom.Node = function(value) {
   this.nodeValue = value;
@@ -1963,7 +2030,7 @@ pv.Dom.Node.prototype.visitAfter = function(f) {
  * sort operation.
  *
  * @param {function} f a comparator function.
- * @returns this
+ * @returns this.
  */
 pv.Dom.Node.prototype.sort = function(f) {
   if (this.firstChild) {
@@ -1983,6 +2050,20 @@ pv.Dom.Node.prototype.sort = function(f) {
   return this;
 };
 
+/**
+ * Reverses all sibling nodes.
+ *
+ * @returns this.
+ */
+pv.Dom.Node.prototype.reverse = function() {
+  var childNodes = [];
+  this.visitAfter(function(n) {
+      while (n.lastChild) childNodes.push(n.removeChild(n.lastChild));
+      for (var c; c = childNodes.pop();) n.insertBefore(c, n.firstChild);
+    });
+  return this;
+};
+
 /** Returns all descendants of this node in preorder traversal. */
 pv.Dom.Node.prototype.nodes = function() {
   var array = [];
@@ -1995,6 +2076,45 @@ pv.Dom.Node.prototype.nodes = function() {
 
   flatten(this, array);
   return array;
+};
+
+/**
+ * Toggles the child nodes of this node. If this node is not yet toggled, this
+ * method removes all child nodes and appends them to a new <tt>toggled</tt>
+ * array attribute on this node. Otherwise, if this node is toggled, this method
+ * re-adds all toggled child nodes and deletes the <tt>toggled</tt> attribute.
+ *
+ * <p>This method has no effect if the node has no child nodes.
+ *
+ * @param {boolean} [recursive] whether the toggle should apply to descendants.
+ */
+pv.Dom.Node.prototype.toggle = function(recursive) {
+  if (recursive) return this.toggled
+      ? this.visitBefore(function(n) { if (n.toggled) n.toggle(); })
+      : this.visitAfter(function(n) { if (!n.toggled) n.toggle(); });
+  var n = this;
+  if (n.toggled) {
+    for (var c; c = n.toggled.pop();) n.appendChild(c);
+    delete n.toggled;
+  } else if (n.lastChild) {
+    n.toggled = [];
+    while (n.lastChild) n.toggled.push(n.removeChild(n.lastChild));
+  }
+};
+
+/**
+ * Given a flat array of values, returns a simple DOM with each value wrapped by
+ * a node that is a child of the root node.
+ *
+ * @param {array} values.
+ * @returns {array} nodes.
+ */
+pv.nodes = function(values) {
+  var root = new pv.Dom.Node();
+  for (var i = 0; i < values.length; i++) {
+    root.appendChild(new pv.Dom.Node(values[i]));
+  }
+  return root.nodes();
 };
 /**
  * Returns a {@link pv.Tree} operator for the specified array. This is a
@@ -2454,6 +2574,23 @@ pv.Flatten = function(map) {
  */
 pv.Flatten.prototype.key = function(key, f) {
   this.keys.push({name: key, value: f});
+  delete this.$leaf;
+  return this;
+};
+
+/**
+ * Flattens using the specified leaf function. This is an alternative to
+ * specifying an explicit set of keys; the tiers of the underlying tree will be
+ * determined dynamically by recursing on the values, and the resulting keys
+ * will be stored in the entries <tt>keys</tt> attribute. The leaf function must
+ * return true for leaves, and false for internal nodes.
+ *
+ * @param {function} f a leaf function.
+ * @returns {pv.Nest} this.
+ */
+pv.Flatten.prototype.leaf = function(f) {
+  this.keys.length = 0;
+  this.$leaf = f;
   return this;
 };
 
@@ -2464,7 +2601,24 @@ pv.Flatten.prototype.key = function(key, f) {
  * @returns an array of elements from the flattened map.
  */
 pv.Flatten.prototype.array = function() {
-  var entries = [], stack = [], keys = this.keys;
+  var entries = [], stack = [], keys = this.keys, leaf = this.$leaf;
+
+  /* Recursively visit using the leaf function. */
+  if (leaf) {
+    function recurse(value, i) {
+      if (leaf(value)) {
+        entries.push({keys: stack.slice(), value: value});
+      } else {
+        for (var key in value) {
+          stack.push(key);
+          recurse(value[key], i + 1);
+          stack.pop();
+        }
+      }
+    }
+    recurse(this.map, 0);
+    return entries;
+  }
 
   /* Recursively visits the specified value. */
   function visit(value, i) {
@@ -2509,7 +2663,10 @@ pv.vector = function(x, y) {
  * {@link pv.vector} instead.
  *
  * @class Represents a two-dimensional vector; a 2-tuple <i>&#x27e8;x,
- * y&#x27e9;</i>.
+ * y&#x27e9;</i>. The intent of this class is to simplify vector math. Note that
+ * in performance-sensitive cases it may be more efficient to represent 2D
+ * vectors as simple objects with <tt>x</tt> and <tt>y</tt> attributes, rather
+ * than using instances of this class.
  *
  * @param {number} x the <i>x</i> coordinate.
  * @param {number} y the <i>y</i> coordinate.
@@ -2604,15 +2761,59 @@ pv.Vector.prototype.dot = function(x, y) {
       ? this.x * x.x + this.y * x.y
       : this.x * x + this.y * y;
 };
+/**
+ * Returns a new identity transform.
+ *
+ * @class Represents a transformation matrix. The transformation matrix is
+ * limited to expressing translate and uniform scale transforms only; shearing,
+ * rotation, general affine, and other transforms are not supported.
+ *
+ * <p>The methods on this class treat the transform as immutable, returning a
+ * copy of the transformation matrix with the specified transform applied. Note,
+ * alternatively, that the matrix fields can be get and set directly.
+ */
 pv.Transform = function() {};
 pv.Transform.prototype = {k: 1, x: 0, y: 0};
 
+/**
+ * The scale magnitude; defaults to 1.
+ *
+ * @type number
+ * @name pv.Transform.prototype.k
+ */
+
+/**
+ * The x-offset; defaults to 0.
+ *
+ * @type number
+ * @name pv.Transform.prototype.x
+ */
+
+/**
+ * The y-offset; defaults to 0.
+ *
+ * @type number
+ * @name pv.Transform.prototype.y
+ */
+
+/**
+ * @private The identity transform.
+ *
+ * @type pv.Transform
+ */
 pv.Transform.identity = new pv.Transform();
 
 // k 0 x   1 0 a   k 0 ka+x
 // 0 k y * 0 1 b = 0 k kb+y
 // 0 0 1   0 0 1   0 0 1
 
+/**
+ * Returns a translated copy of this transformation matrix.
+ *
+ * @param {number} x the x-offset.
+ * @param {number} y the y-offset.
+ * @returns {pv.Transform} the translated transformation matrix.
+ */
 pv.Transform.prototype.translate = function(x, y) {
   var v = new pv.Transform();
   v.k = this.k;
@@ -2625,6 +2826,12 @@ pv.Transform.prototype.translate = function(x, y) {
 // 0 k y * 0 d 0 =  0 kd y
 // 0 0 1   0 0 1    0  0 1
 
+/**
+ * Returns a scaled copy of this transformation matrix.
+ *
+ * @param {number} k
+ * @returns {pv.Transform} the scaled transformation matrix.
+ */
 pv.Transform.prototype.scale = function(k) {
   var v = new pv.Transform();
   v.k = this.k * k;
@@ -2633,6 +2840,11 @@ pv.Transform.prototype.scale = function(k) {
   return v;
 };
 
+/**
+ * Returns the inverse of this transformation matrix.
+ *
+ * @returns {pv.Transform} the inverted transformation matrix.
+ */
 pv.Transform.prototype.invert = function() {
   var v = new pv.Transform(), k = 1 / this.k;
   v.k = k;
@@ -2645,6 +2857,12 @@ pv.Transform.prototype.invert = function() {
 // 0 k y * 0 d b =  0 kd kb+y
 // 0 0 1   0 0 1    0  0    1
 
+/**
+ * Returns this matrix post-multiplied by the specified matrix <i>m</i>.
+ *
+ * @param {pv.Transform} m
+ * @returns {pv.Transform} the post-multiplied transformation matrix.
+ */
 pv.Transform.prototype.times = function(m) {
   var v = new pv.Transform();
   v.k = this.k * m.k;
@@ -2652,11 +2870,36 @@ pv.Transform.prototype.times = function(m) {
   v.y = this.k * m.y + this.y;
   return v;
 };
-// TODO code-sharing between scales
-
 /**
- * @ignore
- * @class
+ * Abstract; see the various scale implementations.
+ *
+ * @class Represents a scale; a function that performs a transformation from
+ * data domain to visual range. For quantitative and quantile scales, the domain
+ * is expressed as numbers; for ordinal scales, the domain is expressed as
+ * strings (or equivalently objects with unique string representations). The
+ * "visual range" may correspond to pixel space, colors, font sizes, and the
+ * like.
+ *
+ * <p>Note that scales are functions, and thus can be used as properties
+ * directly, assuming that the data associated with a mark is a number. While
+ * this is convenient for single-use scales, frequently it is desirable to
+ * define scales globally:
+ *
+ * <pre>var y = pv.Scale.linear(0, 100).range(0, 640);</pre>
+ *
+ * The <tt>y</tt> scale can now be equivalently referenced within a property:
+ *
+ * <pre>    .height(function(d) y(d))</pre>
+ *
+ * Alternatively, if the data are not simple numbers, the appropriate value can
+ * be passed to the <tt>y</tt> scale (e.g., <tt>d.foo</tt>). The {@link #by}
+ * method similarly allows the data to be mapped to a numeric value before
+ * performing the linear transformation.
+ *
+ * @see pv.Scale.quantitative
+ * @see pv.Scale.quantile
+ * @see pv.Scale.ordinal
+ * @extends function
  */
 pv.Scale = function() {};
 
@@ -2688,64 +2931,72 @@ pv.Scale.interpolator = function(start, end) {
             Math.round(start.b * (1 - t) + end.b * t), a));
   };
 };
+
 /**
- * Returns a linear scale for the specified domain. The arguments to this
- * constructor are optional, and equivalent to calling {@link #domain}.
+ * Returns a view of this scale by the specified accessor function <tt>f</tt>.
+ * Given a scale <tt>y</tt>, <tt>y.by(function(d) d.foo)</tt> is equivalent to
+ * <tt>function(d) y(d.foo)</tt>.
  *
- * @class Represents a linear scale. <style
- * type="text/css">sub{line-height:0}</style> <img src="../linear.png"
- * width="180" height="175" align="right"> Most commonly, a linear scale
- * represents a 1-dimensional linear transformation from a numeric domain of
+ * <p>This method is provided for convenience, such that scales can be
+ * succinctly defined inline. For example, given an array of data elements that
+ * have a <tt>score</tt> attribute with the domain [0, 1], the height property
+ * could be specified as:
+ *
+ * <pre>    .height(pv.Scale.linear().range(0, 480).by(function(d) d.score))</pre>
+ *
+ * This is equivalent to:
+ *
+ * <pre>    .height(function(d) d.score * 480)</pre>
+ *
+ * This method should be used judiciously; it is typically more clear to invoke
+ * the scale directly, passing in the value to be scaled.
+ *
+ * @function
+ * @name pv.Scale.prototype.by
+ * @param {function} f an accessor function.
+ * @returns {pv.Scale} a view of this scale by the specified accessor function.
+ */
+/**
+ * Returns a default quantitative, linear, scale for the specified domain. The
+ * arguments to this constructor are optional, and equivalent to calling
+ * {@link #domain}. The default domain and range are [0,1].
+ *
+ * <p>This constructor is typically not used directly; see one of the
+ * quantitative scale implementations instead.
+ *
+ * @class Represents an abstract quantitative scale; a function that performs a
+ * numeric transformation. This class is typically not used directly; see one of
+ * the quantitative scale implementations (linear, log, root, etc.)
+ * instead. <style type="text/css">sub{line-height:0}</style> A quantitative
+ * scale represents a 1-dimensional transformation from a numeric domain of
  * input data [<i>d<sub>0</sub></i>, <i>d<sub>1</sub></i>] to a numeric range of
- * pixels [<i>r<sub>0</sub></i>, <i>r<sub>1</sub></i>]. The equation for such a
- * scale is:
+ * pixels [<i>r<sub>0</sub></i>, <i>r<sub>1</sub></i>]. In addition to
+ * readability, scales offer several useful features:
  *
- * <blockquote><i>f(x) = (x - d<sub>0</sub>) / (d<sub>1</sub> - d<sub>0</sub>) *
- * (r<sub>1</sub> - r<sub>0</sub>) + r<sub>0</sub></i></blockquote>
+ * <p>1. The range can be expressed in colors, rather than pixels. For example:
  *
- * For example, a linear scale from the domain [0, 100] to range [0, 640]:
+ * <pre>    .fillStyle(pv.Scale.linear(0, 100).range("red", "green"))</pre>
  *
- * <blockquote><i>f(x) = (x - 0) / (100 - 0) * (640 - 0) + 0</i><br>
- * <i>f(x) = x / 100 * 640</i><br>
- * <i>f(x) = x * 6.4</i><br>
- * </blockquote>
+ * will fill the marks "red" on an input value of 0, "green" on an input value
+ * of 100, and some color in-between for intermediate values.
  *
- * Thus, saying
- *
- * <pre>.height(function(d) d * 6.4)</pre>
- *
- * is identical to
- *
- * <pre>.height(pv.Scale.linear(0, 100).range(0, 640))</pre>
- *
- * As you can see, scales do not always make code smaller, but they should make
- * code more explicit and easier to maintain. In addition to readability, scales
- * offer several useful features:
- *
- * <p>1. The range can be expressed in colors, rather than pixels. Changing the
- * example above to
- *
- * <pre>.fillStyle(pv.Scale.linear(0, 100).range("red", "green"))</pre>
- *
- * will cause it to fill the marks "red" on an input value of 0, "green" on an
- * input value of 100, and some color in-between for intermediate values.
- *
- * <p>2. The domain and range can be subdivided for a "poly-linear"
+ * <p>2. The domain and range can be subdivided for a non-uniform
  * transformation. For example, you may want a diverging color scale that is
  * increasingly red for negative values, and increasingly green for positive
  * values:
  *
- * <pre>.fillStyle(pv.Scale.linear(-1, 0, 1).range("red", "white", "green"))</pre>
+ * <pre>    .fillStyle(pv.Scale.linear(-1, 0, 1).range("red", "white", "green"))</pre>
  *
  * The domain can be specified as a series of <i>n</i> monotonically-increasing
  * values; the range must also be specified as <i>n</i> values, resulting in
  * <i>n - 1</i> contiguous linear scales.
  *
- * <p>3. Linear scales can be inverted for interaction. The {@link #invert}
- * method takes a value in the output range, and returns the corresponding value
- * in the input domain. This is frequently used to convert the mouse location
- * (see {@link pv.Mark#mouse}) to a value in the input domain. Note that
- * inversion is only supported for numeric ranges, and not colors.
+ * <p>3. Quantitative scales can be inverted for interaction. The
+ * {@link #invert} method takes a value in the output range, and returns the
+ * corresponding value in the input domain. This is frequently used to convert
+ * the mouse location (see {@link pv.Mark#mouse}) to a value in the input
+ * domain. Note that inversion is only supported for numeric ranges, and not
+ * colors.
  *
  * <p>4. A scale can be queried for reasonable "tick" values. The {@link #ticks}
  * method provides a convenient way to get a series of evenly-spaced rounded
@@ -2757,11 +3008,22 @@ pv.Scale.interpolator = function(start, end) {
  * derived from data, you can use {@link #nice} to round these values down and
  * up to even numbers.
  *
- * @param {number...} domain... domain values.
- * @returns {pv.Scale.linear} a linear scale.
+ * @param {number...} domain... optional domain values.
+ * @see pv.Scale.linear
+ * @see pv.Scale.log
+ * @see pv.Scale.root
+ * @extends pv.Scale
  */
-pv.Scale.linear = function() {
-  var d = [0, 1], r = [0, 1], i = [pv.identity], type = Number;
+pv.Scale.quantitative = function() {
+  var d = [0, 1], // default domain
+      l = [0, 1], // default transformed domain
+      r = [0, 1], // default range
+      i = [pv.identity], // default interpolators
+      type = Number, // default type
+      n = false, // whether the domain is negative
+      f = pv.identity, // default forward transform
+      g = pv.identity, // default inverse transform
+      tickFormat = String; // default tick formatting function
 
   /** @private */
   function newDate(x) {
@@ -2773,8 +3035,16 @@ pv.Scale.linear = function() {
     var j = pv.search(d, x);
     if (j < 0) j = -j - 2;
     j = Math.max(0, Math.min(i.length - 1, j));
-    return i[j]((x - d[j]) / (d[j + 1] - d[j]));
+    return i[j]((f(x) - l[j]) / (l[j + 1] - l[j]));
   }
+
+  /** @private */
+  scale.transform = function(forward, inverse) {
+    /** @ignore */ f = function(x) { return n ? -forward(-x) : forward(x); };
+    /** @ignore */ g = function(y) { return n ? -inverse(-y) : inverse(y); };
+    l = d.map(f);
+    return this;
+  };
 
   /**
    * Sets or gets the input domain. This method can be invoked several ways:
@@ -2784,10 +3054,10 @@ pv.Scale.linear = function() {
    * <p>Specifying the domain as a series of numbers is the most explicit and
    * recommended approach. Most commonly, two numbers are specified: the minimum
    * and maximum value. However, for a diverging scale, or other subdivided
-   * poly-linear scales, multiple values can be specified. Values can be derived
+   * non-uniform scales, multiple values can be specified. Values can be derived
    * from data using {@link pv.min} and {@link pv.max}. For example:
    *
-   * <pre>.domain(0, pv.max(array))</pre>
+   * <pre>    .domain(0, pv.max(array))</pre>
    *
    * An alternative method for deriving minimum and maximum values from data
    * follows.
@@ -2799,13 +3069,13 @@ pv.Scale.linear = function() {
    * data, followed by zero, one or two accessor functions. For example, if the
    * array of data is just an array of numbers:
    *
-   * <pre>.domain(array)</pre>
+   * <pre>    .domain(array)</pre>
    *
    * On the other hand, if the array elements are objects representing stock
    * values per day, and the domain should consider the stock's daily low and
    * daily high:
    *
-   * <pre>.domain(array, function(d) d.low, function(d) d.high)</pre>
+   * <pre>    .domain(array, function(d) d.low, function(d) d.high)</pre>
    *
    * The first method of setting the domain is preferred because it is more
    * explicit; setting the domain using this second method should be used only
@@ -2817,9 +3087,9 @@ pv.Scale.linear = function() {
    * current domain as an array of numbers.
    *
    * @function
-   * @name pv.Scale.linear.prototype.domain
+   * @name pv.Scale.quantitative.prototype.domain
    * @param {number...} domain... domain values.
-   * @returns {pv.Scale.linear} <tt>this</tt>, or the current domain.
+   * @returns {pv.Scale.quantitative} <tt>this</tt>, or the current domain.
    */
   scale.domain = function(array, min, max) {
     if (arguments.length) {
@@ -2828,11 +3098,15 @@ pv.Scale.linear = function() {
         if (arguments.length < 2) min = pv.identity;
         if (arguments.length < 3) max = min;
         o = array.length && min(array[0]);
-        d = [pv.min(array, min), pv.max(array, max)];
+        d = array.length ? [pv.min(array, min), pv.max(array, max)] : [];
       } else {
         o = array;
         d = Array.prototype.slice.call(arguments).map(Number);
       }
+      if (!d.length) d = [-Infinity, Infinity];
+      else if (d.length == 1) d = [d[0], d[0]];
+      n = (d[0] || d[d.length - 1]) < 0;
+      l = d.map(f);
       type = (o instanceof Date) ? newDate : Number;
       return this;
     }
@@ -2847,10 +3121,10 @@ pv.Scale.linear = function() {
    * <p>The range may be specified as a series of numbers or colors. Most
    * commonly, two numbers are specified: the minimum and maximum pixel values.
    * For a color scale, values may be specified as {@link pv.Color}s or
-   * equivalent strings. For a diverging scale, or other subdivided poly-linear
+   * equivalent strings. For a diverging scale, or other subdivided non-uniform
    * scales, multiple values can be specified. For example:
    *
-   * <pre>.range("red", "white", "green")</pre>
+   * <pre>    .range("red", "white", "green")</pre>
    *
    * <p>Currently, only numbers and colors are supported as range values. The
    * number of range values must exactly match the number of domain values, or
@@ -2862,13 +3136,15 @@ pv.Scale.linear = function() {
    * range as an array of numbers or colors.
    *
    * @function
-   * @name pv.Scale.linear.prototype.range
+   * @name pv.Scale.quantitative.prototype.range
    * @param {...} range... range values.
-   * @returns {pv.Scale.linear} <tt>this</tt>, or the current range.
+   * @returns {pv.Scale.quantitative} <tt>this</tt>, or the current range.
    */
   scale.range = function() {
     if (arguments.length) {
       r = Array.prototype.slice.call(arguments);
+      if (!r.length) r = [-Infinity, Infinity];
+      else if (r.length == 1) r = [r[0], r[0]];
       i = [];
       for (var j = 0; j < r.length - 1; j++) {
         i.push(pv.Scale.interpolator(r[j], r[j + 1]));
@@ -2890,7 +3166,7 @@ pv.Scale.linear = function() {
    * the returned value may be equivalently outside the input domain.
    *
    * @function
-   * @name pv.Scale.linear.prototype.invert
+   * @name pv.Scale.quantitative.prototype.invert
    * @param {number} y a value in the output range (a pixel location).
    * @returns {number} a value in the input domain.
    */
@@ -2898,7 +3174,7 @@ pv.Scale.linear = function() {
     var j = pv.search(r, y);
     if (j < 0) j = -j - 2;
     j = Math.max(0, Math.min(i.length - 1, j));
-    return type((y - r[j]) / (r[j + 1] - r[j]) * (d[j + 1] - d[j]) + d[j]);
+    return type(g(l[j] + (y - r[j]) / (r[j + 1] - r[j]) * (l[j + 1] - l[j])));
   };
 
   /**
@@ -2908,13 +3184,23 @@ pv.Scale.linear = function() {
    * tick marks or grid lines.
    *
    * @function
-   * @name pv.Scale.linear.prototype.ticks
+   * @name pv.Scale.quantitative.prototype.ticks
+   * @param {number} [m] optional number of desired ticks.
    * @returns {number[]} an array input domain values to use as ticks.
    */
-  scale.ticks = function() {
-    var min = d[0],
-        max = d[d.length - 1],
+  scale.ticks = function(m) {
+    var start = d[0],
+        end = d[d.length - 1],
+        reverse = end < start,
+        min = reverse ? end : start,
+        max = reverse ? start : end,
         span = max - min;
+
+    /* Special case: empty, invalid or infinite span. */
+    if (!span || !isFinite(span)) {
+      if (type == newDate) tickFormat = pv.Format.date("%x");
+      return [type(min)];
+    }
 
     /* Special case: dates. */
     if (type == newDate) {
@@ -2932,39 +3218,40 @@ pv.Scale.linear = function() {
       }
 
       var precision, format, increment, step = 1;
-      if (span >= 2 * 31536e6) {
+      if (span >= 3 * 31536e6) {
         precision = 31536e6;
         format = "%Y";
-        increment = function(d) { d.setFullYear(d.getFullYear() + step); };
-      } else if (span >= 2 * 2592e6) {
+        /** @ignore */ increment = function(d) { d.setFullYear(d.getFullYear() + step); };
+      } else if (span >= 3 * 2592e6) {
         precision = 2592e6;
         format = "%m/%Y";
-        increment = function(d) { d.setMonth(d.getMonth() + step); };
-      } else if (span >= 2 * 6048e5) {
+        /** @ignore */ increment = function(d) { d.setMonth(d.getMonth() + step); };
+      } else if (span >= 3 * 6048e5) {
         precision = 6048e5;
         format = "%m/%d";
-        increment = function(d) { d.setDate(d.getDate() + 7 * step); };
-      } else if (span >= 2 * 864e5) {
+        /** @ignore */ increment = function(d) { d.setDate(d.getDate() + 7 * step); };
+      } else if (span >= 3 * 864e5) {
         precision = 864e5;
         format = "%m/%d";
-        increment = function(d) { d.setDate(d.getDate() + step); };
-      } else if (span >= 2 * 36e5) {
+        /** @ignore */ increment = function(d) { d.setDate(d.getDate() + step); };
+      } else if (span >= 3 * 36e5) {
         precision = 36e5;
         format = "%I:%M %p";
-        increment = function(d) { d.setHours(d.getHours() + step); };
+        /** @ignore */ increment = function(d) { d.setHours(d.getHours() + step); };
       } else if (span >= 3 * 6e4) {
         precision = 6e4;
         format = "%I:%M %p";
-        increment = function(d) { d.setMinutes(d.getMinutes() + step); };
+        /** @ignore */ increment = function(d) { d.setMinutes(d.getMinutes() + step); };
       } else if (span >= 3 * 1e3) {
         precision = 1e3;
         format = "%I:%M:%S";
-        increment = function(d) { d.setSeconds(d.getSeconds() + step); };
+        /** @ignore */ increment = function(d) { d.setSeconds(d.getSeconds() + step); };
       } else {
         precision = 1;
         format = "%S.%Qs";
-        increment = function(d) { d.setTime(d.getTime() + step); };
+        /** @ignore */ increment = function(d) { d.setTime(d.getTime() + step); };
       }
+      tickFormat = pv.Format.date(format);
 
       var date = new Date(min), dates = [];
       floor(date, precision);
@@ -3000,7 +3287,7 @@ pv.Scale.linear = function() {
           }
           default: {
             step = pv.logCeil(n / 15, 10);
-            if (n / step < 2) step /= 2;
+            if (n / step < 2) step /= 5;
             else if (n / step < 5) step /= 2;
             date.setFullYear(Math.floor(date.getFullYear() / step) * step);
             break;
@@ -3008,38 +3295,40 @@ pv.Scale.linear = function() {
         }
       }
 
-      scale.tickFormat = pv.Format.date(format);
-
       while (true) {
         increment(date);
         if (date > max) break;
         dates.push(new Date(date));
       }
-      return dates;
+      return reverse ? dates.reverse() : dates;
     }
 
     /* Normal case: numbers. */
-    var step = pv.logCeil(span / 15, 10);
-    if (span / step < 2) step /= 5;
-    else if (span / step < 5) step /= 2;
+    if (!arguments.length) m = 10;
+    var step = pv.logFloor(span / m, 10),
+        err = m / (span / step);
+    if (err <= .15) step *= 10;
+    else if (err <= .35) step *= 5;
+    else if (err <= .75) step *= 2;
     var start = Math.ceil(min / step) * step,
-        end = Math.floor(max / step) * step,
-        precision = Math.max(0, -Math.floor(pv.log(step, 10) + .01));
-    scale.tickFormat = function(x) { return x.toFixed(precision); };
-    return pv.range(start, end + step, step);
+        end = Math.floor(max / step) * step;
+    tickFormat = pv.Format.number()
+        .fractionDigits(Math.max(0, -Math.floor(pv.log(step, 10) + .01)));
+    var ticks = pv.range(start, end + step, step);
+    return reverse ? ticks.reverse() : ticks;
   };
 
   /**
    * Formats the specified tick value using the appropriate precision, based on
-   * the step interval between tick marks. This method is only defined after
-   * {@link #ticks} has been called, since tick generation determines the
-   * formatting.
+   * the step interval between tick marks. If {@link #ticks} has not been called,
+   * the argument is converted to a string, but no formatting is applied.
    *
    * @function
-   * @name pv.Scale.linear.prototype.tickFormat
+   * @name pv.Scale.quantitative.prototype.tickFormat
    * @param {number} t a tick value.
    * @returns {string} a formatted tick value.
    */
+  scale.tickFormat = function (t) { return tickFormat(t); };
 
   /**
    * "Nices" this scale, extending the bounds of the input domain to
@@ -3051,14 +3340,25 @@ pv.Scale.linear = function() {
    * <p>This method must be invoked each time after setting the domain.
    *
    * @function
-   * @name pv.Scale.linear.prototype.nice
-   * @returns {pv.Scale.linear} <tt>this</tt>.
+   * @name pv.Scale.quantitative.prototype.nice
+   * @returns {pv.Scale.quantitative} <tt>this</tt>.
    */
   scale.nice = function() {
-    var min = d[0],
-        max = d[d.length - 1],
-        step = Math.pow(10, Math.round(Math.log(max - min) / Math.log(10)) - 1);
+    if (d.length != 2) return this; // TODO support non-uniform domains
+    var start = d[0],
+        end = d[d.length - 1],
+        reverse = end < start,
+        min = reverse ? end : start,
+        max = reverse ? start : end,
+        span = max - min;
+
+    /* Special case: empty, invalid or infinite span. */
+    if (!span || !isFinite(span)) return this;
+
+    var step = Math.pow(10, Math.round(Math.log(span) / Math.log(10)) - 1);
     d = [Math.floor(min / step) * step, Math.ceil(max / step) * step];
+    if (reverse) d.reverse();
+    l = d.map(f);
     return this;
   };
 
@@ -3072,20 +3372,20 @@ pv.Scale.linear = function() {
    * that have a <tt>score</tt> attribute with the domain [0, 1], the height
    * property could be specified as:
    *
-   * <pre>.height(pv.Scale.linear().range(0, 480).by(function(d) d.score))</pre>
+   * <pre>    .height(pv.Scale.linear().range(0, 480).by(function(d) d.score))</pre>
    *
    * This is equivalent to:
    *
-   * <pre>.height(function(d) d.score * 480)</pre>
+   * <pre>    .height(function(d) d.score * 480)</pre>
    *
    * This method should be used judiciously; it is typically more clear to
    * invoke the scale directly, passing in the value to be scaled.
    *
    * @function
-   * @name pv.Scale.linear.prototype.by
+   * @name pv.Scale.quantitative.prototype.by
    * @param {function} f an accessor function.
-   * @returns {pv.Scale.linear} a view of this scale by the specified accessor
-   * function.
+   * @returns {pv.Scale.quantitative} a view of this scale by the specified
+   * accessor function.
    */
   scale.by = function(f) {
     function by() { return scale(f.apply(this, arguments)); }
@@ -3097,16 +3397,70 @@ pv.Scale.linear = function() {
   return scale;
 };
 /**
+ * Returns a linear scale for the specified domain. The arguments to this
+ * constructor are optional, and equivalent to calling {@link #domain}.
+ * The default domain and range are [0,1].
+ *
+ * @class Represents a linear scale; a function that performs a linear
+ * transformation. <style type="text/css">sub{line-height:0}</style> Most
+ * commonly, a linear scale represents a 1-dimensional linear transformation
+ * from a numeric domain of input data [<i>d<sub>0</sub></i>,
+ * <i>d<sub>1</sub></i>] to a numeric range of pixels [<i>r<sub>0</sub></i>,
+ * <i>r<sub>1</sub></i>]. The equation for such a scale is:
+ *
+ * <blockquote><i>f(x) = (x - d<sub>0</sub>) / (d<sub>1</sub> - d<sub>0</sub>) *
+ * (r<sub>1</sub> - r<sub>0</sub>) + r<sub>0</sub></i></blockquote>
+ *
+ * For example, a linear scale from the domain [0, 100] to range [0, 640]:
+ *
+ * <blockquote><i>f(x) = (x - 0) / (100 - 0) * (640 - 0) + 0</i><br>
+ * <i>f(x) = x / 100 * 640</i><br>
+ * <i>f(x) = x * 6.4</i><br>
+ * </blockquote>
+ *
+ * Thus, saying
+ *
+ * <pre>    .height(function(d) d * 6.4)</pre>
+ *
+ * is identical to
+ *
+ * <pre>    .height(pv.Scale.linear(0, 100).range(0, 640))</pre>
+ *
+ * Note that the scale is itself a function, and thus can be used as a property
+ * directly, assuming that the data associated with a mark is a number. While
+ * this is convenient for single-use scales, frequently it is desirable to
+ * define scales globally:
+ *
+ * <pre>var y = pv.Scale.linear(0, 100).range(0, 640);</pre>
+ *
+ * The <tt>y</tt> scale can now be equivalently referenced within a property:
+ *
+ * <pre>    .height(function(d) y(d))</pre>
+ *
+ * Alternatively, if the data are not simple numbers, the appropriate value can
+ * be passed to the <tt>y</tt> scale (e.g., <tt>d.foo</tt>). The {@link #by}
+ * method similarly allows the data to be mapped to a numeric value before
+ * performing the linear transformation.
+ *
+ * @param {number...} domain... optional domain values.
+ * @extends pv.Scale.quantitative
+ */
+pv.Scale.linear = function() {
+  var scale = pv.Scale.quantitative();
+  scale.domain.apply(scale, arguments);
+  return scale;
+};
+/**
  * Returns a log scale for the specified domain. The arguments to this
  * constructor are optional, and equivalent to calling {@link #domain}.
+ * The default domain is [1,10] and the default range is [0,1].
  *
  * @class Represents a log scale. <style
- * type="text/css">sub{line-height:0}</style> <img src="../log.png"
- * width="190" height="175" align="right"> Most commonly, a log scale represents
- * a 1-dimensional log transformation from a numeric domain of input data
- * [<i>d<sub>0</sub></i>, <i>d<sub>1</sub></i>] to a numeric range of pixels
- * [<i>r<sub>0</sub></i>, <i>r<sub>1</sub></i>]. The equation for such a scale
- * is:
+ * type="text/css">sub{line-height:0}</style> Most commonly, a log scale
+ * represents a 1-dimensional log transformation from a numeric domain of input
+ * data [<i>d<sub>0</sub></i>, <i>d<sub>1</sub></i>] to a numeric range of
+ * pixels [<i>r<sub>0</sub></i>, <i>r<sub>1</sub></i>]. The equation for such a
+ * scale is:
  *
  * <blockquote><i>f(x) = (log(x) - log(d<sub>0</sub>)) / (log(d<sub>1</sub>) -
  * log(d<sub>0</sub>)) * (r<sub>1</sub> - r<sub>0</sub>) +
@@ -3123,207 +3477,64 @@ pv.Scale.linear = function() {
  *
  * Thus, saying
  *
- * <pre>.height(function(d) Math.log(d) * 138.974)</pre>
+ * <pre>    .height(function(d) Math.log(d) * 138.974)</pre>
  *
  * is equivalent to
  *
- * <pre>.height(pv.Scale.log(1, 100).range(0, 640))</pre>
+ * <pre>    .height(pv.Scale.log(1, 100).range(0, 640))</pre>
  *
- * As you can see, scales do not always make code smaller, but they should make
- * code more explicit and easier to maintain. In addition to readability, scales
- * offer several useful features:
+ * Note that the scale is itself a function, and thus can be used as a property
+ * directly, assuming that the data associated with a mark is a number. While
+ * this is convenient for single-use scales, frequently it is desirable to
+ * define scales globally:
  *
- * <p>1. The range can be expressed in colors, rather than pixels. Changing the
- * example above to
+ * <pre>var y = pv.Scale.log(1, 100).range(0, 640);</pre>
  *
- * <pre>.fillStyle(pv.Scale.log(1, 100).range("red", "green"))</pre>
+ * The <tt>y</tt> scale can now be equivalently referenced within a property:
  *
- * will cause it to fill the marks "red" on an input value of 1, "green" on an
- * input value of 100, and some color in-between for intermediate values.
+ * <pre>    .height(function(d) y(d))</pre>
  *
- * <p>2. The domain and range can be subdivided for a "poly-log"
- * transformation. For example, you may want a diverging color scale that is
- * increasingly red for small values, and increasingly green for large values:
+ * Alternatively, if the data are not simple numbers, the appropriate value can
+ * be passed to the <tt>y</tt> scale (e.g., <tt>d.foo</tt>). The {@link #by}
+ * method similarly allows the data to be mapped to a numeric value before
+ * performing the log transformation.
  *
- * <pre>.fillStyle(pv.Scale.log(1, 10, 100).range("red", "white", "green"))</pre>
- *
- * The domain can be specified as a series of <i>n</i> monotonically-increasing
- * values; the range must also be specified as <i>n</i> values, resulting in
- * <i>n - 1</i> contiguous log scales.
- *
- * <p>3. Log scales can be inverted for interaction. The {@link #invert} method
- * takes a value in the output range, and returns the corresponding value in the
- * input domain. This is frequently used to convert the mouse location (see
- * {@link pv.Mark#mouse}) to a value in the input domain. Note that inversion is
- * only supported for numeric ranges, and not colors.
- *
- * <p>4. A scale can be queried for reasonable "tick" values. The {@link #ticks}
- * method provides a convenient way to get a series of evenly-spaced rounded
- * values in the input domain. Frequently these are used in conjunction with
- * {@link pv.Rule} to display tick marks or grid lines.
- *
- * <p>5. A scale can be "niced" to extend the domain to suitable rounded
- * numbers. If the minimum and maximum of the domain are messy because they are
- * derived from data, you can use {@link #nice} to round these values down and
- * up to even numbers.
- *
- * @param {number...} domain... domain values.
- * @returns {pv.Scale.log} a log scale.
+ * @param {number...} domain... optional domain values.
+ * @extends pv.Scale.quantitative
  */
 pv.Scale.log = function() {
-  var d = [1, 10], l = [0, 1], b = 10, r = [0, 1], i = [pv.identity];
-
-  /** @private */
-  function scale(x) {
-    var j = pv.search(d, x);
-    if (j < 0) j = -j - 2;
-    j = Math.max(0, Math.min(i.length - 1, j));
-    return i[j]((log(x) - l[j]) / (l[j + 1] - l[j]));
-  }
-
-  /** @private */
-  function log(x) {
-    return pv.logSymmetric(x, b);
-  }
-
-  /**
-   * Sets or gets the input domain. This method can be invoked several ways:
-   *
-   * <p>1. <tt>domain(min, ..., max)</tt>
-   *
-   * <p>Specifying the domain as a series of numbers is the most explicit and
-   * recommended approach. Most commonly, two numbers are specified: the minimum
-   * and maximum value. However, for a diverging scale, or other subdivided
-   * poly-log scales, multiple values can be specified. Values can be derived
-   * from data using {@link pv.min} and {@link pv.max}. For example:
-   *
-   * <pre>.domain(1, pv.max(array))</pre>
-   *
-   * An alternative method for deriving minimum and maximum values from data
-   * follows.
-   *
-   * <p>2. <tt>domain(array, minf, maxf)</tt>
-   *
-   * <p>When both the minimum and maximum value are derived from data, the
-   * arguments to the <tt>domain</tt> method can be specified as the array of
-   * data, followed by zero, one or two accessor functions. For example, if the
-   * array of data is just an array of numbers:
-   *
-   * <pre>.domain(array)</pre>
-   *
-   * On the other hand, if the array elements are objects representing stock
-   * values per day, and the domain should consider the stock's daily low and
-   * daily high:
-   *
-   * <pre>.domain(array, function(d) d.low, function(d) d.high)</pre>
-   *
-   * The first method of setting the domain is preferred because it is more
-   * explicit; setting the domain using this second method should be used only
-   * if brevity is required.
-   *
-   * <p>3. <tt>domain()</tt>
-   *
-   * <p>Invoking the <tt>domain</tt> method with no arguments returns the
-   * current domain as an array of numbers.
-   *
-   * @function
-   * @name pv.Scale.log.prototype.domain
-   * @param {number...} domain... domain values.
-   * @returns {pv.Scale.log} <tt>this</tt>, or the current domain.
-   */
-  scale.domain = function(array, min, max) {
-    if (arguments.length) {
-      if (array instanceof Array) {
-        if (arguments.length < 2) min = pv.identity;
-        if (arguments.length < 3) max = min;
-        d = [pv.min(array, min), pv.max(array, max)];
-      } else {
-        d = Array.prototype.slice.call(arguments);
-      }
-      l = d.map(log);
-      return this;
-    }
-    return d;
-  };
-
-  /**
-   * @function
-   * @name pv.Scale.log.prototype.range
-   * @param {...} range... range values.
-   * @returns {pv.Scale.log} <tt>this</tt>.
-   */
-  scale.range = function() {
-    if (arguments.length) {
-      r = Array.prototype.slice.call(arguments);
-      i = [];
-      for (var j = 0; j < r.length - 1; j++) {
-        i.push(pv.Scale.interpolator(r[j], r[j + 1]));
-      }
-      return this;
-    }
-    return r;
-  };
-
-  /**
-   * Sets or gets the output range. This method can be invoked several ways:
-   *
-   * <p>1. <tt>range(min, ..., max)</tt>
-   *
-   * <p>The range may be specified as a series of numbers or colors. Most
-   * commonly, two numbers are specified: the minimum and maximum pixel values.
-   * For a color scale, values may be specified as {@link pv.Color}s or
-   * equivalent strings. For a diverging scale, or other subdivided poly-log
-   * scales, multiple values can be specified. For example:
-   *
-   * <pre>.range("red", "white", "green")</pre>
-   *
-   * <p>Currently, only numbers and colors are supported as range values. The
-   * number of range values must exactly match the number of domain values, or
-   * the behavior of the scale is undefined.
-   *
-   * <p>2. <tt>range()</tt>
-   *
-   * <p>Invoking the <tt>range</tt> method with no arguments returns the current
-   * range as an array of numbers or colors.
-   *
-   * @function
-   * @name pv.Scale.log.prototype.invert
-   * @param {...} range... range values.
-   * @returns {pv.Scale.log} <tt>this</tt>, or the current range.
-   */
-  scale.invert = function(y) {
-    var j = pv.search(r, y);
-    if (j < 0) j = -j - 2;
-    j = Math.max(0, Math.min(i.length - 1, j));
-    var t = l[j] + (y - r[j]) / (r[j + 1] - r[j]) * (l[j + 1] - l[j]);
-    return (d[j] < 0) ? -Math.pow(b, -t) : Math.pow(b, t);
-  };
+  var scale = pv.Scale.quantitative(1, 10),
+      b, // logarithm base
+      p, // cached Math.log(b)
+      /** @ignore */ log = function(x) { return Math.log(x) / p; },
+      /** @ignore */ pow = function(y) { return Math.pow(b, y); };
 
   /**
    * Returns an array of evenly-spaced, suitably-rounded values in the input
-   * domain. These values are frequently used in conjunction with {@link
-   * pv.Rule} to display tick marks or grid lines.
+   * domain. These values are frequently used in conjunction with
+   * {@link pv.Rule} to display tick marks or grid lines.
    *
    * @function
    * @name pv.Scale.log.prototype.ticks
    * @returns {number[]} an array input domain values to use as ticks.
    */
   scale.ticks = function() {
-    // TODO: support multiple domains
-    var start = Math.floor(l[0]),
-        end = Math.ceil(l[1]),
+    // TODO support non-uniform domains
+    var d = scale.domain(),
+        n = d[0] < 0,
+        i = Math.floor(n ? -log(-d[0]) : log(d[0])),
+        j = Math.ceil(n ? -log(-d[1]) : log(d[1])),
         ticks = [];
-    for (var i = start; i < end; i++) {
-      var x = Math.pow(b, i);
-      if (d[0] < 0) x = -x;
-      for (var j = 1; j < b; j++) {
-        ticks.push(x * j);
-      }
+    if (n) {
+      ticks.push(-pow(-i));
+      for (; i++ < j;) for (var k = b - 1; k > 0; k--) ticks.push(-pow(-i) * k);
+    } else {
+      for (; i < j; i++) for (var k = 1; k < b; k++) ticks.push(pow(i) * k);
+      ticks.push(pow(i));
     }
-    ticks.push(Math.pow(b, end));
-    if (ticks[0] < d[0]) ticks.shift();
-    if (ticks[ticks.length - 1] > d[1]) ticks.pop();
-    return ticks;
+    for (i = 0; ticks[i] < d[0]; i++); // strip small values
+    for (j = ticks.length; ticks[j - 1] > d[1]; j--); // strip big values
+    return ticks.slice(i, j);
   };
 
   /**
@@ -3341,9 +3552,9 @@ pv.Scale.log = function() {
 
   /**
    * "Nices" this scale, extending the bounds of the input domain to
-   * evenly-rounded values. This method uses {@link pv.logFloor} and {@link
-   * pv.logCeil}. Nicing is useful if the domain is computed dynamically from
-   * data, and may be irregular. For example, given a domain of
+   * evenly-rounded values. This method uses {@link pv.logFloor} and
+   * {@link pv.logCeil}. Nicing is useful if the domain is computed dynamically
+   * from data, and may be irregular. For example, given a domain of
    * [0.20147987687960267, 0.996679553296417], a call to <tt>nice()</tt> might
    * extend the domain to [0.1, 1].
    *
@@ -3355,10 +3566,9 @@ pv.Scale.log = function() {
    * @returns {pv.Scale.log} <tt>this</tt>.
    */
   scale.nice = function() {
-    // TODO: support multiple domains
-    d = [pv.logFloor(d[0], b), pv.logCeil(d[1], b)];
-    l = d.map(log);
-    return this;
+    // TODO support non-uniform domains
+    var d = scale.domain();
+    return scale.domain(pv.logFloor(d[0], b), pv.logCeil(d[1], b));
   };
 
   /**
@@ -3371,46 +3581,71 @@ pv.Scale.log = function() {
    */
   scale.base = function(v) {
     if (arguments.length) {
-      b = v;
-      l = d.map(log);
+      b = Number(v);
+      p = Math.log(b);
+      scale.transform(log, pow); // update transformed domain
       return this;
     }
     return b;
   };
 
+  scale.domain.apply(scale, arguments);
+  return scale.base(10);
+};
+/**
+ * Returns a root scale for the specified domain. The arguments to this
+ * constructor are optional, and equivalent to calling {@link #domain}.
+ * The default domain and range are [0,1].
+ *
+ * @class Represents a root scale; a function that performs a power
+ * transformation. <style type="text/css">sub{line-height:0}</style> Most
+ * commonly, a root scale represents a 1-dimensional root transformation from a
+ * numeric domain of input data [<i>d<sub>0</sub></i>, <i>d<sub>1</sub></i>] to
+ * a numeric range of pixels [<i>r<sub>0</sub></i>, <i>r<sub>1</sub></i>].
+ *
+ * <p>Note that the scale is itself a function, and thus can be used as a
+ * property directly, assuming that the data associated with a mark is a
+ * number. While this is convenient for single-use scales, frequently it is
+ * desirable to define scales globally:
+ *
+ * <pre>var y = pv.Scale.root(0, 100).range(0, 640);</pre>
+ *
+ * The <tt>y</tt> scale can now be equivalently referenced within a property:
+ *
+ * <pre>    .height(function(d) y(d))</pre>
+ *
+ * Alternatively, if the data are not simple numbers, the appropriate value can
+ * be passed to the <tt>y</tt> scale (e.g., <tt>d.foo</tt>). The {@link #by}
+ * method similarly allows the data to be mapped to a numeric value before
+ * performing the root transformation.
+ *
+ * @param {number...} domain... optional domain values.
+ * @extends pv.Scale.quantitative
+ */
+pv.Scale.root = function() {
+  var scale = pv.Scale.quantitative();
+
   /**
-   * Returns a view of this scale by the specified accessor function <tt>f</tt>.
-   * Given a scale <tt>y</tt>, <tt>y.by(function(d) d.foo)</tt> is equivalent to
-   * <tt>function(d) y(d.foo)</tt>.
-   *
-   * <p>This method is provided for convenience, such that scales can be
-   * succinctly defined inline. For example, given an array of data elements
-   * that have a <tt>score</tt> attribute with the domain [0, 1], the height
-   * property could be specified as:
-   *
-   * <pre>.height(pv.Scale.log().range(0, 480).by(function(d) d.score))</pre>
-   *
-   * This is equivalent to:
-   *
-   * <pre>.height(function(d) d.score * 480)</pre>
-   *
-   * This method should be used judiciously; it is typically more clear to
-   * invoke the scale directly, passing in the value to be scaled.
+   * Sets or gets the exponent; defaults to 2.
    *
    * @function
-   * @name pv.Scale.log.prototype.by
-   * @param {function} f an accessor function.
-   * @returns {pv.Scale.log} a view of this scale by the specified accessor
-   * function.
+   * @name pv.Scale.root.prototype.power
+   * @param {number} [v] the new exponent.
+   * @returns {pv.Scale.root} <tt>this</tt>, or the current base.
    */
-  scale.by = function(f) {
-    function by() { return scale(f.apply(this, arguments)); }
-    for (var method in scale) by[method] = scale[method];
-    return by;
+  scale.power = function(v) {
+    if (arguments.length) {
+      var b = Number(v), p = 1 / b;
+      scale.transform(
+        function(x) { return Math.pow(x, p); },
+        function(y) { return Math.pow(y, b); });
+      return this;
+    }
+    return b;
   };
 
   scale.domain.apply(scale, arguments);
-  return scale;
+  return scale.power(2);
 };
 /**
  * Returns an ordinal scale for the specified domain. The arguments to this
@@ -3423,26 +3658,26 @@ pv.Scale.log = function() {
  * might map a domain of species ["setosa", "versicolor", "virginica"] to colors
  * ["red", "green", "blue"]. Thus, saying
  *
- * <pre>.fillStyle(function(d) {
- *     switch (d.species) {
- *       case "setosa": return "red";
- *       case "versicolor": return "green";
- *       case "virginica": return "blue";
- *     }
- *   })</pre>
+ * <pre>    .fillStyle(function(d) {
+ *         switch (d.species) {
+ *           case "setosa": return "red";
+ *           case "versicolor": return "green";
+ *           case "virginica": return "blue";
+ *         }
+ *       })</pre>
  *
  * is equivalent to
  *
- * <pre>.fillStyle(pv.Scale.ordinal("setosa", "versicolor", "virginica")
- *     .range("red", "green", "blue")
- *     .by(function(d) d.species))</pre>
+ * <pre>    .fillStyle(pv.Scale.ordinal("setosa", "versicolor", "virginica")
+ *         .range("red", "green", "blue")
+ *         .by(function(d) d.species))</pre>
  *
  * If the mapping from species to color does not need to be specified
  * explicitly, the domain can be omitted. In this case it will be inferred
  * lazily from the data:
  *
- * <pre>.fillStyle(pv.colors("red", "green", "blue")
- *     .by(function(d) d.species))</pre>
+ * <pre>    .fillStyle(pv.colors("red", "green", "blue")
+ *         .by(function(d) d.species))</pre>
  *
  * When the domain is inferred, the first time the scale is invoked, the first
  * element from the range will be returned. Subsequent calls with unique values
@@ -3457,15 +3692,15 @@ pv.Scale.log = function() {
  * <tt>states</tt> is an array of the fifty U.S. state names, the state name can
  * be encoded in the left position:
  *
- * <pre>.left(pv.Scale.ordinal(states)
- *     .split(0, 640)
- *     .by(function(d) d.state))</pre>
+ * <pre>    .left(pv.Scale.ordinal(states)
+ *         .split(0, 640)
+ *         .by(function(d) d.state))</pre>
  *
  * <p>N.B.: ordinal scales are not invertible (at least not yet), since the
  * domain and range and discontinuous. A workaround is to use a linear scale.
  *
- * @param {...} domain... domain values.
- * @returns {pv.Scale.ordinal} an ordinal scale.
+ * @param {...} domain... optional domain values.
+ * @extends pv.Scale
  * @see pv.colors
  */
 pv.Scale.ordinal = function() {
@@ -3680,6 +3915,306 @@ pv.Scale.ordinal = function() {
   return scale;
 };
 /**
+ * Constructs a default quantile scale. The arguments to this constructor are
+ * optional, and equivalent to calling {@link #domain}. The default domain is
+ * the empty set, and the default range is [0,1].
+ *
+ * @class Represents a quantile scale; a function that maps from a value within
+ * a sortable domain to a quantized numeric range. Typically, the domain is a
+ * set of numbers, but any sortable value (such as strings) can be used as the
+ * domain of a quantile scale. The range defaults to [0,1], with 0 corresponding
+ * to the smallest value in the domain, 1 the largest, .5 the median, etc.
+ *
+ * <p>By default, the number of quantiles in the range corresponds to the number
+ * of values in the domain. The {@link #quantiles} method can be used to specify
+ * an explicit number of quantiles; for example, <tt>quantiles(4)</tt> produces
+ * a standard quartile scale. A quartile scale's range is a set of four discrete
+ * values, such as [0, 1/3, 2/3, 1]. Calling the {@link #range} method will
+ * scale these discrete values accordingly, similar to {@link
+ * pv.Scale.ordinal#splitFlush}.
+ *
+ * <p>For example, given the strings ["c", "a", "b"], a default quantile scale:
+ *
+ * <pre>pv.Scale.quantile("c", "a", "b")</pre>
+ *
+ * will return 0 for "a", .5 for "b", and 1 for "c".
+ *
+ * @extends pv.Scale
+ */
+pv.Scale.quantile = function() {
+  var n = -1, // number of quantiles
+      j = -1, // max quantile index
+      q = [], // quantile boundaries
+      d = [], // domain
+      y = pv.Scale.linear(); // range
+
+  /** @private */
+  function scale(x) {
+    return y(Math.max(0, Math.min(j, pv.search.index(q, x) - 1)) / j);
+  }
+
+  /**
+   * Sets or gets the quantile boundaries. By default, each element in the
+   * domain is in its own quantile. If the argument to this method is a number,
+   * it specifies the number of equal-sized quantiles by which to divide the
+   * domain.
+   *
+   * <p>If no arguments are specified, this method returns the quantile
+   * boundaries; the first element is always the minimum value of the domain,
+   * and the last element is the maximum value of the domain. Thus, the length
+   * of the returned array is always one greater than the number of quantiles.
+   *
+   * @function
+   * @name pv.Scale.quantile.prototype.quantiles
+   * @param {number} x the number of quantiles.
+   */
+  scale.quantiles = function(x) {
+    if (arguments.length) {
+      n = Number(x);
+      if (n < 0) {
+        q = [d[0]].concat(d);
+        j = d.length - 1;
+      } else {
+        q = [];
+        q[0] = d[0];
+        for (var i = 1; i <= n; i++) {
+          q[i] = d[~~(i * (d.length - 1) / n)];
+        }
+        j = n - 1;
+      }
+      return this;
+    }
+    return q;
+  };
+
+  /**
+   * Sets or gets the input domain. This method can be invoked several ways:
+   *
+   * <p>1. <tt>domain(values...)</tt>
+   *
+   * <p>Specifying the domain as a series of values is the most explicit and
+   * recommended approach. However, if the domain values are derived from data,
+   * you may find the second method more appropriate.
+   *
+   * <p>2. <tt>domain(array, f)</tt>
+   *
+   * <p>Rather than enumerating the domain values as explicit arguments to this
+   * method, you can specify a single argument of an array. In addition, you can
+   * specify an optional accessor function to extract the domain values from the
+   * array.
+   *
+   * <p>3. <tt>domain()</tt>
+   *
+   * <p>Invoking the <tt>domain</tt> method with no arguments returns the
+   * current domain as an array.
+   *
+   * @function
+   * @name pv.Scale.quantile.prototype.domain
+   * @param {...} domain... domain values.
+   * @returns {pv.Scale.quantile} <tt>this</tt>, or the current domain.
+   */
+  scale.domain = function(array, f) {
+    if (arguments.length) {
+      d = (array instanceof Array)
+          ? pv.map(array, f)
+          : Array.prototype.slice.call(arguments);
+      d.sort(pv.naturalOrder);
+      scale.quantiles(n); // recompute quantiles
+      return this;
+    }
+    return d;
+  };
+
+  /**
+   * Sets or gets the output range. This method can be invoked several ways:
+   *
+   * <p>1. <tt>range(min, ..., max)</tt>
+   *
+   * <p>The range may be specified as a series of numbers or colors. Most
+   * commonly, two numbers are specified: the minimum and maximum pixel values.
+   * For a color scale, values may be specified as {@link pv.Color}s or
+   * equivalent strings. For a diverging scale, or other subdivided non-uniform
+   * scales, multiple values can be specified. For example:
+   *
+   * <pre>    .range("red", "white", "green")</pre>
+   *
+   * <p>Currently, only numbers and colors are supported as range values. The
+   * number of range values must exactly match the number of domain values, or
+   * the behavior of the scale is undefined.
+   *
+   * <p>2. <tt>range()</tt>
+   *
+   * <p>Invoking the <tt>range</tt> method with no arguments returns the current
+   * range as an array of numbers or colors.
+   *
+   * @function
+   * @name pv.Scale.quantile.prototype.range
+   * @param {...} range... range values.
+   * @returns {pv.Scale.quantile} <tt>this</tt>, or the current range.
+   */
+  scale.range = function() {
+    if (arguments.length) {
+      y.range.apply(y, arguments);
+      return this;
+    }
+    return y.range();
+  };
+
+  /**
+   * Returns a view of this scale by the specified accessor function <tt>f</tt>.
+   * Given a scale <tt>y</tt>, <tt>y.by(function(d) d.foo)</tt> is equivalent to
+   * <tt>function(d) y(d.foo)</tt>.
+   *
+   * <p>This method is provided for convenience, such that scales can be
+   * succinctly defined inline. For example, given an array of data elements
+   * that have a <tt>score</tt> attribute with the domain [0, 1], the height
+   * property could be specified as:
+   *
+   * <pre>.height(pv.Scale.linear().range(0, 480).by(function(d) d.score))</pre>
+   *
+   * This is equivalent to:
+   *
+   * <pre>.height(function(d) d.score * 480)</pre>
+   *
+   * This method should be used judiciously; it is typically more clear to
+   * invoke the scale directly, passing in the value to be scaled.
+   *
+   * @function
+   * @name pv.Scale.quantile.prototype.by
+   * @param {function} f an accessor function.
+   * @returns {pv.Scale.quantile} a view of this scale by the specified
+   * accessor function.
+   */
+  scale.by = function(f) {
+    function by() { return scale(f.apply(this, arguments)); }
+    for (var method in scale) by[method] = scale[method];
+    return by;
+  };
+
+  scale.domain.apply(scale, arguments);
+  return scale;
+};
+/**
+ * Returns a histogram operator for the specified data, with an optional
+ * accessor function. If the data specified is not an array of numbers, an
+ * accessor function must be specified to map the data to numeric values.
+ *
+ * @class Represents a histogram operator.
+ *
+ * @param {array} data an array of numbers or objects.
+ * @param {function} [f] an optional accessor function.
+ */
+pv.histogram = function(data, f) {
+  var frequency = true;
+  return {
+
+    /**
+     * Returns the computed histogram bins. An optional array of numbers,
+     * <tt>ticks</tt>, may be specified as the break points. If the ticks are
+     * not specified, default ticks will be computed using a linear scale on the
+     * data domain.
+     *
+     * <p>The returned array contains {@link pv.histogram.Bin}s. The <tt>x</tt>
+     * attribute corresponds to the bin's start value (inclusive), while the
+     * <tt>dx</tt> attribute stores the bin size (end - start). The <tt>y</tt>
+     * attribute stores either the frequency count or probability, depending on
+     * how the histogram operator has been configured.
+     *
+     * <p>The {@link pv.histogram.Bin} objects are themselves arrays, containing
+     * the data elements present in each bin, i.e., the elements in the
+     * <tt>data</tt> array (prior to invoking the accessor function, if any).
+     * For example, if the data represented countries, and the accessor function
+     * returned the GDP of each country, the returned bins would be arrays of
+     * countries (not GDPs).
+     *
+     * @function
+     * @name pv.histogram.prototype.bins
+     * @param {array} [ticks]
+     * @returns {array}
+     */ /** @private */
+    bins: function(ticks) {
+      var x = pv.map(data, f), bins = [];
+
+      /* Initialize default ticks. */
+      if (!arguments.length) ticks = pv.Scale.linear(x).ticks();
+
+      /* Initialize the bins. */
+      for (var i = 0; i < ticks.length - 1; i++) {
+        var bin = bins[i] = [];
+        bin.x = ticks[i];
+        bin.dx = ticks[i + 1] - ticks[i];
+        bin.y = 0;
+      }
+
+      /* Count the number of samples per bin. */
+      for (var i = 0; i < x.length; i++) {
+        var j = pv.search.index(ticks, x[i]) - 1,
+            bin = bins[Math.max(0, Math.min(bins.length - 1, j))];
+        bin.y++;
+        bin.push(data[i]);
+      }
+
+      /* Convert frequencies to probabilities. */
+      if (!frequency) for (var i = 0; i < bins.length; i++) {
+        bins[i].y /= x.length;
+      }
+
+      return bins;
+    },
+
+    /**
+     * Sets or gets whether this histogram operator returns frequencies or
+     * probabilities.
+     *
+     * @function
+     * @name pv.histogram.prototype.frequency
+     * @param {boolean} [x]
+     * @returns {pv.histogram} this.
+     */ /** @private */
+    frequency: function(x) {
+      if (arguments.length) {
+        frequency = Boolean(x);
+        return this;
+      }
+      return frequency;
+    }
+  };
+};
+
+/**
+ * @class Represents a bin returned by the {@link pv.histogram} operator. Bins
+ * are themselves arrays containing the data elements present in the given bin
+ * (prior to the accessor function being invoked to convert the data object to a
+ * numeric value). These bin arrays have additional attributes with meta
+ * information about the bin.
+ *
+ * @name pv.histogram.Bin
+ * @extends array
+ * @see pv.histogram
+ */
+
+/**
+ * The start value of the bin's range.
+ *
+ * @type number
+ * @name pv.histogram.Bin.prototype.x
+ */
+
+/**
+ * The magnitude value of the bin's range; end - start.
+ *
+ * @type number
+ * @name pv.histogram.Bin.prototype.dx
+ */
+
+/**
+ * The frequency or probability of the bin, depending on how the histogram
+ * operator was configured.
+ *
+ * @type number
+ * @name pv.histogram.Bin.prototype.y
+ */
+/**
  * Returns the {@link pv.Color} for the specified color format string. Colors
  * may have an associated opacity, or alpha channel. Color formats are specified
  * by CSS Color Modular Level 3, using either in RGB or HSL color space. For
@@ -3694,8 +4229,8 @@ pv.Scale.ordinal = function() {
  * <li>hsla(120, 100%, 50%, 1)
  *
  * </ul>The SVG 1.0 color keywords names are also supported, such as "aliceblue"
- * and "yellowgreen". The "transparent" keyword is supported for a
- * fully-transparent color.
+ * and "yellowgreen". The "transparent" keyword is supported for fully-
+ * transparent black.
  *
  * <p>If the <tt>format</tt> argument is already an instance of <tt>Color</tt>,
  * the argument is returned with no further processing.
@@ -3707,8 +4242,7 @@ pv.Scale.ordinal = function() {
  * @see <a href="http://www.w3.org/TR/css3-color/">CSS3 color module</a>
  */
 pv.color = function(format) {
-  if (format == "transparent") return pv.Color.transparent;
-  if (format instanceof pv.Color) return format.rgb();
+  if (format.rgb) return format.rgb();
 
   /* Handle hsl, rgb. */
   var m1 = /([a-z]+)\((.*)\)/i.exec(format);
@@ -3743,7 +4277,8 @@ pv.color = function(format) {
   }
 
   /* Named colors. */
-  format = pv.Color.names[format] || format;
+  var named = pv.Color.names[format];
+  if (named) return named;
 
   /* Hexadecimal colors: #rgb and #rrggbb. */
   if (format.charAt(0) == "#") {
@@ -3760,7 +4295,7 @@ pv.color = function(format) {
     return pv.rgb(parseInt(r, 16), parseInt(g, 16), parseInt(b, 16), 1);
   }
 
-  /* Otherwise, assume named colors. TODO allow lazy conversion to RGB. */
+  /* Otherwise, pass-through unsupported colors. */
   return new pv.Color(format, 1);
 };
 
@@ -4268,11 +4803,15 @@ pv.Color.names = {
   white: "#ffffff",
   whitesmoke: "#f5f5f5",
   yellow: "#ffff00",
-  yellowgreen: "#9acd32"
+  yellowgreen: "#9acd32",
+  transparent: pv.Color.transparent = pv.rgb(0, 0, 0, 0)
 };
 
-/** @private */
-pv.Color.transparent = pv.rgb(0, 0, 0, 0);
+/* Initialized named colors. */
+(function() {
+  var names = pv.Color.names;
+  for (var name in names) names[name] = pv.color(names[name]);
+})();
 /**
  * Returns a new categorical color encoding using the specified colors.  The
  * arguments to this method are an array of colors; see {@link pv.color}. For
@@ -4411,7 +4950,9 @@ pv.Colors.category19 = function() {
 /**
  * Returns a linear color ramp from the specified <tt>start</tt> color to the
  * specified <tt>end</tt> color. The color arguments may be specified either as
- * <tt>string</tt>s or as {@link pv.Color}s.
+ * <tt>string</tt>s or as {@link pv.Color}s. This is equivalent to:
+ *
+ * <pre>    pv.Scale.linear().domain(0, 1).range(...)</pre>
  *
  * @param {string} start the start color; may be a <tt>pv.Color</tt>.
  * @param {string} end the end color; may be a <tt>pv.Color</tt>.
@@ -4432,14 +4973,29 @@ pv.Scene = pv.SvgScene = {
   svg: "http://www.w3.org/2000/svg",
   xmlns: "http://www.w3.org/2000/xmlns",
   xlink: "http://www.w3.org/1999/xlink",
+  xhtml: "http://www.w3.org/1999/xhtml",
 
   /** The pre-multipled scale, based on any enclosing transforms. */
   scale: 1,
+
+  /** The set of supported events. */
+  events: [
+    "DOMMouseScroll", // for Firefox
+    "mousewheel",
+    "mousedown",
+    "mouseup",
+    "mouseover",
+    "mouseout",
+    "mousemove",
+    "click",
+    "dblclick"
+  ],
 
   /** Implicit values for SVG and CSS properties. */
   implicit: {
     svg: {
       "shape-rendering": "auto",
+      "pointer-events": "painted",
       "x": 0,
       "y": 0,
       "dy": 0,
@@ -4449,7 +5005,8 @@ pv.Scene = pv.SvgScene = {
       "fill-opacity": 1,
       "stroke": "none",
       "stroke-opacity": 1,
-      "stroke-width": 1.5
+      "stroke-width": 1.5,
+      "stroke-linejoin": "miter"
     },
     css: {
       "font": "10px sans-serif"
@@ -4463,8 +5020,8 @@ pv.Scene = pv.SvgScene = {
  * @param scenes {array} an array of scene nodes.
  */
 pv.SvgScene.updateAll = function(scenes) {
-  if (!scenes.length) return;
-  if ((scenes[0].reverse)
+  if (scenes.length
+      && scenes[0].reverse
       && (scenes.type != "line")
       && (scenes.type != "area")) {
     var reversed = pv.extend(scenes);
@@ -4561,10 +5118,27 @@ pv.SvgScene.title = function(e, s) {
 /** TODO */
 pv.SvgScene.dispatch = pv.listener(function(e) {
   var t = e.target.$scene;
-  if (t) pv.Mark.dispatch(e, t.scenes, t.index);
+  if (t) {
+    var type = e.type;
+
+    /* Fixes for mousewheel support on Firefox & Opera. */
+    switch (type) {
+      case "DOMMouseScroll": {
+        type = "mousewheel";
+        e.wheel = -480 * e.detail;
+        break;
+      }
+      case "mousewheel": {
+        e.wheel = (window.opera ? 12 : 1) * e.wheelDelta;
+        break;
+      }
+    }
+
+    if (pv.Mark.dispatch(type, t.scenes, t.index)) e.preventDefault();
+  }
 });
 
-/** TODO */
+/** @private Remove siblings following element <i>e</i>. */
 pv.SvgScene.removeSiblings = function(e) {
   while (e) {
     var n = e.nextSibling;
@@ -4575,8 +5149,360 @@ pv.SvgScene.removeSiblings = function(e) {
 
 /** @private Do nothing when rendering undefined mark types. */
 pv.SvgScene.undefined = function() {};
-// TODO strokeStyle for areaSegment?
+/**
+ * @private Converts the specified b-spline curve segment to a bezier curve
+ * compatible with SVG "C".
+ *
+ * @param p0 the first control point.
+ * @param p1 the second control point.
+ * @param p2 the third control point.
+ * @param p3 the fourth control point.
+ */
+pv.SvgScene.pathBasis = (function() {
 
+  /**
+   * Matrix to transform basis (b-spline) control points to bezier control
+   * points. Derived from FvD 11.2.8.
+   */
+  var basis = [
+    [ 1/6, 2/3, 1/6,   0 ],
+    [   0, 2/3, 1/3,   0 ],
+    [   0, 1/3, 2/3,   0 ],
+    [   0, 1/6, 2/3, 1/6 ]
+  ];
+
+  /**
+   * Returns the point that is the weighted sum of the specified control points,
+   * using the specified weights. This method requires that there are four
+   * weights and four control points.
+   */
+  function weight(w, p0, p1, p2, p3) {
+    return {
+      x: w[0] * p0.left + w[1] * p1.left + w[2] * p2.left + w[3] * p3.left,
+      y: w[0] * p0.top  + w[1] * p1.top  + w[2] * p2.top  + w[3] * p3.top
+    };
+  }
+
+  var convert = function(p0, p1, p2, p3) {
+    var b1 = weight(basis[1], p0, p1, p2, p3),
+        b2 = weight(basis[2], p0, p1, p2, p3),
+        b3 = weight(basis[3], p0, p1, p2, p3);
+    return "C" + b1.x + "," + b1.y
+         + "," + b2.x + "," + b2.y
+         + "," + b3.x + "," + b3.y;
+  };
+
+  convert.segment = function(p0, p1, p2, p3) {
+    var b0 = weight(basis[0], p0, p1, p2, p3),
+        b1 = weight(basis[1], p0, p1, p2, p3),
+        b2 = weight(basis[2], p0, p1, p2, p3),
+        b3 = weight(basis[3], p0, p1, p2, p3);
+    return "M" + b0.x + "," + b0.y
+         + "C" + b1.x + "," + b1.y
+         + "," + b2.x + "," + b2.y
+         + "," + b3.x + "," + b3.y;
+  };
+
+  return convert;
+})();
+
+/**
+ * @private Interpolates the given points using the basis spline interpolation.
+ * Returns an SVG path without the leading M instruction to allow path
+ * appending.
+ *
+ * @param points the array of points.
+ */
+pv.SvgScene.curveBasis = function(points) {
+  if (points.length <= 2) return "";
+  var path = "",
+      p0 = points[0],
+      p1 = p0,
+      p2 = p0,
+      p3 = points[1];
+  path += this.pathBasis(p0, p1, p2, p3);
+  for (var i = 2; i < points.length; i++) {
+    p0 = p1;
+    p1 = p2;
+    p2 = p3;
+    p3 = points[i];
+    path += this.pathBasis(p0, p1, p2, p3);
+  }
+  /* Cycle through to get the last point. */
+  path += this.pathBasis(p1, p2, p3, p3);
+  path += this.pathBasis(p2, p3, p3, p3);
+  return path;
+};
+
+/**
+ * @private Interpolates the given points using the basis spline interpolation.
+ * If points.length == tangents.length then a regular Hermite interpolation is
+ * performed, if points.length == tangents.length + 2 then the first and last
+ * segments are filled in with cubic bazier segments.  Returns an array of path
+ * strings.
+ *
+ * @param points the array of points.
+ */
+pv.SvgScene.curveBasisSegments = function(points) {
+  if (points.length <= 2) return "";
+  var paths = [],
+      p0 = points[0],
+      p1 = p0,
+      p2 = p0,
+      p3 = points[1],
+      firstPath = this.pathBasis.segment(p0, p1, p2, p3);
+
+  p0 = p1;
+  p1 = p2;
+  p2 = p3;
+  p3 = points[2];
+  paths.push(firstPath + this.pathBasis(p0, p1, p2, p3)); // merge first & second path
+  for (var i = 3; i < points.length; i++) {
+    p0 = p1;
+    p1 = p2;
+    p2 = p3;
+    p3 = points[i];
+    paths.push(this.pathBasis.segment(p0, p1, p2, p3));
+  }
+
+  // merge last & second-to-last path
+  paths.push(this.pathBasis.segment(p1, p2, p3, p3) + this.pathBasis(p2, p3, p3, p3));
+  return paths;
+};
+
+/**
+ * @private Interpolates the given points with respective tangents using the cubic
+ * Hermite spline interpolation. If points.length == tangents.length then a regular
+ * Hermite interpolation is performed, if points.length == tangents.length + 2 then
+ * the first and last segments are filled in with cubic bazier segments.
+ * Returns an SVG path without the leading M instruction to allow path appending.
+ *
+ * @param points the array of points.
+ * @param tangents the array of tangent vectors.
+ */
+pv.SvgScene.curveHermite = function(points, tangents) {
+  if (tangents.length < 1
+      || (points.length != tangents.length
+      && points.length != tangents.length + 2)) return "";
+  var quad = points.length != tangents.length,
+      path = "",
+      p0 = points[0],
+      p = points[1],
+      t0 = tangents[0],
+      t = t0,
+      pi = 1;
+
+  if (quad) {
+    path += "Q" + (p.left - t0.x * 2 / 3) + ","  + (p.top - t0.y * 2 / 3)
+        + "," + p.left + "," + p.top;
+    p0 = points[1];
+    pi = 2;
+  }
+
+  if (tangents.length > 1) {
+    t = tangents[1];
+    p = points[pi];
+    pi++;
+    path += "C" + (p0.left + t0.x) + "," + (p0.top + t0.y)
+        + "," + (p.left - t.x) + "," + (p.top - t.y)
+        + "," + p.left + "," + p.top;
+    for (var i = 2; i < tangents.length; i++, pi++) {
+      p = points[pi];
+      t = tangents[i];
+      path += "S" + (p.left - t.x) + "," + (p.top - t.y)
+          + "," + p.left + "," + p.top;
+    }
+  }
+
+  if (quad) {
+    var lp = points[pi];
+    path += "Q" + (p.left + t.x * 2 / 3) + ","  + (p.top + t.y * 2 / 3) + ","
+        + lp.left + "," + lp.top;
+  }
+
+  return path;
+};
+
+/**
+ * @private Interpolates the given points with respective tangents using the
+ * cubic Hermite spline interpolation. Returns an array of path strings.
+ *
+ * @param points the array of points.
+ * @param tangents the array of tangent vectors.
+ */
+pv.SvgScene.curveHermiteSegments = function(points, tangents) {
+  if (tangents.length < 1
+      || (points.length != tangents.length
+      && points.length != tangents.length + 2)) return [];
+  var quad = points.length != tangents.length,
+      paths = [],
+      p0 = points[0],
+      p = p0,
+      t0 = tangents[0],
+      t = t0,
+      pi = 1;
+
+  if (quad) {
+    p = points[1];
+    paths.push("M" + p0.left + "," + p0.top
+        + "Q" + (p.left - t.x * 2 / 3) + "," + (p.top - t.y * 2 / 3)
+        + "," + p.left + "," + p.top);
+    pi = 2;
+  }
+
+  for (var i = 1; i < tangents.length; i++, pi++) {
+    p0 = p;
+    t0 = t;
+    p = points[pi];
+    t = tangents[i];
+    paths.push("M" + p0.left + "," + p0.top
+        + "C" + (p0.left + t0.x) + "," + (p0.top + t0.y)
+        + "," + (p.left - t.x) + "," + (p.top - t.y)
+        + "," + p.left + "," + p.top);
+  }
+
+  if (quad) {
+    var lp = points[pi];
+    paths.push("M" + p.left + "," + p.top
+        + "Q" + (p.left + t.x * 2 / 3) + ","  + (p.top + t.y * 2 / 3) + ","
+        + lp.left + "," + lp.top);
+  }
+
+  return paths;
+};
+
+/**
+ * @private Computes the tangents for the given points needed for cardinal
+ * spline interpolation. Returns an array of tangent vectors. Note: that for n
+ * points only the n-2 well defined tangents are returned.
+ *
+ * @param points the array of points.
+ * @param tension the tension of hte cardinal spline.
+ */
+pv.SvgScene.cardinalTangents = function(points, tension) {
+  var tangents = [],
+      a = (1 - tension) / 2,
+      p0 = points[0],
+      p1 = points[1],
+      p2 = points[2];
+
+  for (var i = 3; i < points.length; i++) {
+    tangents.push({x: a * (p2.left - p0.left), y: a * (p2.top - p0.top)});
+    p0 = p1;
+    p1 = p2;
+    p2 = points[i];
+  }
+
+  tangents.push({x: a * (p2.left - p0.left), y: a * (p2.top - p0.top)});
+  return tangents;
+};
+
+/**
+ * @private Interpolates the given points using cardinal spline interpolation.
+ * Returns an SVG path without the leading M instruction to allow path
+ * appending.
+ *
+ * @param points the array of points.
+ * @param tension the tension of hte cardinal spline.
+ */
+pv.SvgScene.curveCardinal = function(points, tension) {
+  if (points.length <= 2) return "";
+  return this.curveHermite(points, this.cardinalTangents(points, tension));
+};
+
+/**
+ * @private Interpolates the given points using cardinal spline interpolation.
+ * Returns an array of path strings.
+ *
+ * @param points the array of points.
+ * @param tension the tension of hte cardinal spline.
+ */
+pv.SvgScene.curveCardinalSegments = function(points, tension) {
+  if (points.length <= 2) return "";
+  return this.curveHermiteSegments(points, this.cardinalTangents(points, tension));
+};
+
+/**
+ * @private Interpolates the given points using Fritsch-Carlson Monotone cubic
+ * Hermite interpolation. Returns an array of tangent vectors.
+ *
+ * @param points the array of points.
+ */
+pv.SvgScene.monotoneTangents = function(points) {
+  var tangents = [],
+      d = [],
+      m = [],
+      dx = [],
+      k = 0;
+
+  /* Compute the slopes of the secant lines between successive points. */
+  for (k = 0; k < points.length-1; k++) {
+    d[k] = (points[k+1].top - points[k].top)/(points[k+1].left - points[k].left);
+  }
+
+  /* Initialize the tangents at every point as the average of the secants. */
+  m[0] = d[0];
+  dx[0] = points[1].left - points[0].left;
+  for (k = 1; k < points.length - 1; k++) {
+    m[k] = (d[k-1]+d[k])/2;
+    dx[k] = (points[k+1].left - points[k-1].left)/2;
+  }
+  m[k] = d[k-1];
+  dx[k] = (points[k].left - points[k-1].left);
+
+  /* Step 3. Very important, step 3. Yep. Wouldn't miss it. */
+  for (k = 0; k < points.length - 1; k++) {
+    if (d[k] == 0) {
+      m[ k ] = 0;
+      m[k+1] = 0;
+    }
+  }
+
+  /* Step 4 + 5. Out of 5 or more steps. */
+  for (k = 0; k < points.length - 1; k++) {
+    if ((Math.abs(m[k]) < 1e-5) || (Math.abs(m[k+1]) < 1e-5)) continue;
+    var ak = m[k] / d[k],
+        bk = m[k + 1] / d[k],
+        s = ak * ak + bk * bk; // monotone constant (?)
+    if (s > 9) {
+      var tk = 3 / Math.sqrt(s);
+      m[k] = tk * ak * d[k];
+      m[k + 1] = tk * bk * d[k];
+    }
+  }
+
+  var len;
+  for (var i = 0; i < points.length; i++) {
+    len = 1 + m[i] * m[i]; // pv.vector(1, m[i]).norm().times(dx[i]/3)
+    tangents.push({x: dx[i] / 3 / len, y: m[i] * dx[i] / 3 / len});
+  }
+
+  return tangents;
+};
+
+/**
+ * @private Interpolates the given points using Fritsch-Carlson Monotone cubic
+ * Hermite interpolation. Returns an SVG path without the leading M instruction
+ * to allow path appending.
+ *
+ * @param points the array of points.
+ */
+pv.SvgScene.curveMonotone = function(points) {
+  if (points.length <= 2) return "";
+  return this.curveHermite(points, this.monotoneTangents(points));
+}
+
+/**
+ * @private Interpolates the given points using Fritsch-Carlson Monotone cubic
+ * Hermite interpolation.
+ * Returns an array of path strings.
+ *
+ * @param points the array of points.
+ */
+pv.SvgScene.curveMonotoneSegments = function(points) {
+  if (points.length <= 2) return "";
+  return this.curveHermiteSegments(points, this.monotoneTangents(points));
+};
 pv.SvgScene.area = function(scenes) {
   var e = scenes.$g.firstChild;
   if (!scenes.length) return e;
@@ -4590,10 +5516,7 @@ pv.SvgScene.area = function(scenes) {
   var fill = s.fillStyle, stroke = s.strokeStyle;
   if (!fill.opacity && !stroke.opacity) return e;
 
-  /* interpolate */
-  var step = {"step-before": 1, "step-after": 2}[s.interpolate];
-
-  /** @private Computes the path for the range [i, j]. */
+  /** @private Computes the straight path for the range [i, j]. */
   function path(i, j) {
     var p1 = [], p2 = [];
     for (var k = j; i <= k; i++, j--) {
@@ -4603,14 +5526,19 @@ pv.SvgScene.area = function(scenes) {
           pj = (sj.left + sj.width) + "," + (sj.top + sj.height);
 
       /* interpolate */
-      if (step && (i < k)) {
+      if (i < k) {
         var sk = scenes[i + 1], sl = scenes[j - 1];
-        if (step & 1) {
-          pi += "V" + sk.top;
-          pj += "H" + (sl.left + sl.width);
-        } else {
-          pi += "H" + sk.left;
-          pj += "V" + (sl.top + sl.height);
+        switch (s.interpolate) {
+          case "step-before": {
+            pi += "V" + sk.top;
+            pj += "H" + (sl.left + sl.width);
+            break;
+          }
+          case "step-after": {
+            pi += "H" + sk.left;
+            pj += "V" + (sl.top + sl.height);
+            break;
+          }
         }
       }
 
@@ -4620,6 +5548,31 @@ pv.SvgScene.area = function(scenes) {
     return p1.concat(p2).join("L");
   }
 
+  /** @private Computes the curved path for the range [i, j]. */
+  function pathCurve(i, j) {
+    var pointsT = [], pointsB = [], pathT, pathB;
+
+    for (var k = j; i <= k; i++, j--) {
+      var sj = scenes[j];
+      pointsT.push(scenes[i]);
+      pointsB.push({left: sj.left + sj.width, top: sj.top + sj.height});
+    }
+
+    if (s.interpolate == "basis") {
+      pathT = pv.SvgScene.curveBasis(pointsT);
+      pathB = pv.SvgScene.curveBasis(pointsB);
+    } else if (s.interpolate == "cardinal") {
+      pathT = pv.SvgScene.curveCardinal(pointsT, s.tension);
+      pathB = pv.SvgScene.curveCardinal(pointsB, s.tension);
+    } else { // monotone
+      pathT = pv.SvgScene.curveMonotone(pointsT);
+      pathB = pv.SvgScene.curveMonotone(pointsB);
+    }
+
+    return pointsT[0].left + "," + pointsT[0].top + pathT
+         + "L" + pointsB[0].left + "," + pointsB[0].top + pathB;
+  }
+
   /* points */
   var d = [], si, sj;
   for (var i = 0; i < scenes.length; i++) {
@@ -4627,14 +5580,20 @@ pv.SvgScene.area = function(scenes) {
     for (var j = i + 1; j < scenes.length; j++) {
       sj = scenes[j]; if (!sj.width && !sj.height) break;
     }
-    if (i && (step != 2)) i--;
-    if ((j < scenes.length) && (step != 1)) j++;
-    d.push(path(i, i = j - 1));
+    if (i && (s.interpolate != "step-after")) i--;
+    if ((j < scenes.length) && (s.interpolate != "step-before")) j++;
+    d.push(((j - i > 2
+        && (s.interpolate == "basis"
+        || s.interpolate == "cardinal"
+        || s.interpolate == "monotone"))
+        ? pathCurve : path)(i, j - 1));
+    i = j - 1;
   }
   if (!d.length) return e;
 
   e = this.expect(e, "path", {
       "shape-rendering": s.antialias ? null : "crispEdges",
+      "pointer-events": s.events,
       "cursor": s.cursor,
       "d": "M" + d.join("ZM") + "Z",
       "fill": fill.color,
@@ -4647,7 +5606,30 @@ pv.SvgScene.area = function(scenes) {
 };
 
 pv.SvgScene.areaSegment = function(scenes) {
-  var e = scenes.$g.firstChild;
+  var e = scenes.$g.firstChild, s = scenes[0], pathsT, pathsB;
+  if (s.interpolate == "basis"
+      || s.interpolate == "cardinal"
+      || s.interpolate == "monotone") {
+    var pointsT = [], pointsB = [];
+
+    for (var i = 0, n = scenes.length; i < n; i++) {
+      var sj = scenes[n - i - 1];
+      pointsT.push(scenes[i]);
+      pointsB.push({left: sj.left + sj.width, top: sj.top + sj.height});
+    }
+
+    if (s.interpolate == "basis") {
+      pathsT = this.curveBasisSegments(pointsT);
+      pathsB = this.curveBasisSegments(pointsB);
+    } else if (s.interpolate == "cardinal") {
+      pathsT = this.curveCardinalSegments(pointsT, s.tension);
+      pathsB = this.curveCardinalSegments(pointsB, s.tension);
+    } else { // monotone
+      pathsT = this.curveMonotoneSegments(pointsT);
+      pathsB = this.curveMonotoneSegments(pointsB);
+    }
+  }
+
   for (var i = 0, n = scenes.length - 1; i < n; i++) {
     var s1 = scenes[i], s2 = scenes[i + 1];
 
@@ -4656,23 +5638,33 @@ pv.SvgScene.areaSegment = function(scenes) {
     var fill = s1.fillStyle, stroke = s1.strokeStyle;
     if (!fill.opacity && !stroke.opacity) continue;
 
-    /* interpolate */
-    var si = s1, sj = s2;
-    switch (s1.interpolate) {
-      case "step-before": si = s2; break;
-      case "step-after": sj = s1; break;
+    var d;
+    if (pathsT) {
+      var pathT = pathsT[i],
+          pathB = "L" + pathsB[n - i - 1].substr(1);
+
+      d = pathT + pathB + "Z";
+    } else {
+      /* interpolate */
+      var si = s1, sj = s2;
+      switch (s1.interpolate) {
+        case "step-before": si = s2; break;
+        case "step-after": sj = s1; break;
+      }
+
+      /* path */
+      d = "M" + s1.left + "," + si.top
+        + "L" + s2.left + "," + sj.top
+        + "L" + (s2.left + s2.width) + "," + (sj.top + sj.height)
+        + "L" + (s1.left + s1.width) + "," + (si.top + si.height)
+        + "Z";
     }
 
-    /* points */
-    var p = s1.left + "," + si.top + " "
-        + s2.left + "," + sj.top + " "
-        + (s2.left + s2.width) + "," + (sj.top + sj.height) + " "
-        + (s1.left + s1.width) + "," + (si.top + si.height);
-
-    e = this.expect(e, "polygon", {
+    e = this.expect(e, "path", {
         "shape-rendering": s1.antialias ? null : "crispEdges",
+        "pointer-events": s1.events,
         "cursor": s1.cursor,
-        "points": p,
+        "d": d,
         "fill": fill.color,
         "fill-opacity": fill.opacity || null,
         "stroke": stroke.color,
@@ -4695,6 +5687,7 @@ pv.SvgScene.bar = function(scenes) {
 
     e = this.expect(e, "rect", {
         "shape-rendering": s.antialias ? null : "crispEdges",
+        "pointer-events": s.events,
         "cursor": s.cursor,
         "x": s.left,
         "y": s.top,
@@ -4721,7 +5714,7 @@ pv.SvgScene.dot = function(scenes) {
     if (!fill.opacity && !stroke.opacity) continue;
 
     /* points */
-    var radius = s.radius, path;
+    var radius = s.shapeRadius, path = null;
     switch (s.shape) {
       case "cross": {
         path = "M" + -radius + "," + -radius
@@ -4739,7 +5732,7 @@ pv.SvgScene.dot = function(scenes) {
         break;
       }
       case "diamond": {
-        radius *= 1.414214; // Math.sqrt(2)
+        radius *= Math.SQRT2;
         path = "M0," + -radius
             + "L" + radius + ",0"
             + " 0," + radius
@@ -4756,7 +5749,11 @@ pv.SvgScene.dot = function(scenes) {
         break;
       }
       case "tick": {
-        path = "M0,0L0," + -s.size;
+        path = "M0,0L0," + -s.shapeSize;
+        break;
+      }
+      case "bar": {
+        path = "M0," + (s.shapeSize / 2) + "L0," + -(s.shapeSize / 2);
         break;
       }
     }
@@ -4764,6 +5761,8 @@ pv.SvgScene.dot = function(scenes) {
     /* Use <circle> for circles, <path> for everything else. */
     var svg = {
       "shape-rendering": s.antialias ? null : "crispEdges",
+      "pointer-events": s.events,
+      "cursor": s.cursor,
       "fill": fill.color,
       "fill-opacity": fill.opacity || null,
       "stroke": stroke.color,
@@ -4772,7 +5771,7 @@ pv.SvgScene.dot = function(scenes) {
     };
     if (path) {
       svg.transform = "translate(" + s.left + "," + s.top + ")";
-      if (s.angle) svg.transform += " rotate(" + 180 * s.angle / Math.PI + ")";
+      if (s.shapeAngle) svg.transform += " rotate(" + 180 * s.shapeAngle / Math.PI + ")";
       svg.d = path;
       e = this.expect(e, "path", svg);
     } else {
@@ -4797,15 +5796,32 @@ pv.SvgScene.image = function(scenes) {
     e = this.fill(e, scenes, i);
 
     /* image */
-    e = this.expect(e, "image", {
-        "preserveAspectRatio": "none",
-        "cursor": s.cursor,
-        "x": s.left,
-        "y": s.top,
-        "width": s.width,
-        "height": s.height
-      });
-    e.setAttributeNS(this.xlink, "href", s.url);
+    if (s.image) {
+      e = this.expect(e, "foreignObject", {
+          "cursor": s.cursor,
+          "x": s.left,
+          "y": s.top,
+          "width": s.width,
+          "height": s.height
+        });
+      var c = e.firstChild || e.appendChild(document.createElementNS(this.xhtml, "canvas"));
+      c.$scene = {scenes:scenes, index:i};
+      c.style.width = s.width;
+      c.style.height = s.height;
+      c.width = s.imageWidth;
+      c.height = s.imageHeight;
+      c.getContext("2d").putImageData(s.image, 0, 0);
+    } else {
+      e = this.expect(e, "image", {
+          "preserveAspectRatio": "none",
+          "cursor": s.cursor,
+          "x": s.left,
+          "y": s.top,
+          "width": s.width,
+          "height": s.height
+        });
+      e.setAttributeNS(this.xlink, "href", s.url);
+    }
     e = this.append(e, scenes, i);
 
     /* stroke */
@@ -4837,7 +5853,8 @@ pv.SvgScene.label = function(scenes) {
     }
 
     e = this.expect(e, "text", {
-        "pointer-events": "none",
+        "pointer-events": s.events,
+        "cursor": s.cursor,
         "x": x,
         "y": y,
         "dy": dy,
@@ -4858,9 +5875,6 @@ pv.SvgScene.label = function(scenes) {
   }
   return e;
 };
-// TODO fillStyle for lineSegment?
-// TODO lineOffset for flow maps?
-
 pv.SvgScene.line = function(scenes) {
   var e = scenes.$g.firstChild;
   if (scenes.length < 2) return e;
@@ -4876,25 +5890,45 @@ pv.SvgScene.line = function(scenes) {
 
   /* points */
   var d = "M" + s.left + "," + s.top;
-  for (var i = 1; i < scenes.length; i++) {
-    d += this.pathSegment(scenes[i - 1], scenes[i]);
+
+  if (scenes.length > 2 && (s.interpolate == "basis" || s.interpolate == "cardinal" || s.interpolate == "monotone")) {
+    switch (s.interpolate) {
+      case "basis": d += this.curveBasis(scenes); break;
+      case "cardinal": d += this.curveCardinal(scenes, s.tension); break;
+      case "monotone": d += this.curveMonotone(scenes); break;
+    }
+  } else {
+    for (var i = 1; i < scenes.length; i++) {
+      d += this.pathSegment(scenes[i - 1], scenes[i]);
+    }
   }
 
   e = this.expect(e, "path", {
       "shape-rendering": s.antialias ? null : "crispEdges",
+      "pointer-events": s.events,
       "cursor": s.cursor,
       "d": d,
       "fill": fill.color,
       "fill-opacity": fill.opacity || null,
       "stroke": stroke.color,
       "stroke-opacity": stroke.opacity || null,
-      "stroke-width": stroke.opacity ? s.lineWidth / this.scale : null
+      "stroke-width": stroke.opacity ? s.lineWidth / this.scale : null,
+      "stroke-linejoin": s.lineJoin
     });
   return this.append(e, scenes, 0);
 };
 
 pv.SvgScene.lineSegment = function(scenes) {
   var e = scenes.$g.firstChild;
+
+  var s = scenes[0];
+  var paths;
+  switch (s.interpolate) {
+    case "basis": paths = this.curveBasisSegments(scenes); break;
+    case "cardinal": paths = this.curveCardinalSegments(scenes, s.tension); break;
+    case "monotone": paths = this.curveMonotoneSegments(scenes); break;
+  }
+
   for (var i = 0, n = scenes.length - 1; i < n; i++) {
     var s1 = scenes[i], s2 = scenes[i + 1];
 
@@ -4905,23 +5939,27 @@ pv.SvgScene.lineSegment = function(scenes) {
 
     /* interpolate */
     var d;
-    if (s1.interpolate == "linear") {
+    if ((s1.interpolate == "linear") && (s1.lineJoin == "miter")) {
       fill = stroke;
       stroke = pv.Color.transparent;
       d = this.pathJoin(scenes[i - 1], s1, s2, scenes[i + 2]);
+    } else if(paths) {
+      d = paths[i];
     } else {
       d = "M" + s1.left + "," + s1.top + this.pathSegment(s1, s2);
     }
 
     e = this.expect(e, "path", {
         "shape-rendering": s1.antialias ? null : "crispEdges",
+        "pointer-events": s1.events,
         "cursor": s1.cursor,
         "d": d,
         "fill": fill.color,
         "fill-opacity": fill.opacity || null,
         "stroke": stroke.color,
         "stroke-opacity": stroke.opacity || null,
-        "stroke-width": stroke.opacity ? s1.lineWidth / this.scale : null
+        "stroke-width": stroke.opacity ? s1.lineWidth / this.scale : null,
+        "stroke-linejoin": s1.lineJoin
       });
     e = this.append(e, scenes, i);
   }
@@ -4930,12 +5968,17 @@ pv.SvgScene.lineSegment = function(scenes) {
 
 /** @private Returns the path segment for the specified points. */
 pv.SvgScene.pathSegment = function(s1, s2) {
+  var l = 1; // sweep-flag
   switch (s1.interpolate) {
+    case "polar-reverse":
+      l = 0;
     case "polar": {
       var dx = s2.left - s1.left,
           dy = s2.top - s1.top,
-          r = Math.sqrt(dx * dx + dy * dy) / 2;
-      return "A" + r + "," + r + " 0 1,1 " + s2.left + "," + s2.top;
+          e = 1 - s1.eccentricity,
+          r = Math.sqrt(dx * dx + dy * dy) / (2 * e);
+      if ((e <= 0) || (e > 1)) break; // draw a straight line
+      return "A" + r + "," + r + " 0 0," + l + " " + s2.left + "," + s2.top;
     }
     case "step-before": return "V" + s2.top + "H" + s2.left;
     case "step-after": return "H" + s2.left + "V" + s2.top;
@@ -4987,9 +6030,9 @@ pv.SvgScene.pathJoin = function(s0, s1, s2, s3) {
   }
 
   return "M" + a.x + "," + a.y
-      + "L" + b.x + "," + b.y
-      + " " + c.x + "," + c.y
-      + " " + d.x + "," + d.y;
+       + "L" + b.x + "," + b.y
+       + " " + c.x + "," + c.y
+       + " " + d.x + "," + d.y;
 };
 pv.SvgScene.panel = function(scenes) {
   var g = scenes.$g, e = g && g.firstChild;
@@ -5013,14 +6056,9 @@ pv.SvgScene.panel = function(scenes) {
         g.setAttribute("fill", "none");
         g.setAttribute("stroke", "none");
         g.setAttribute("stroke-width", 1.5);
-        g.onclick
-            = g.onmousedown
-            = g.onmouseup
-            = g.onmousemove
-            = g.onmouseout
-            = g.onmouseover
-            = g.onmousewheel
-            = this.dispatch;
+        for (var j = 0; j < this.events.length; j++) {
+          g.addEventListener(this.events[j], this.dispatch, false);
+        }
         e = g.firstChild;
       }
       scenes.$g = g;
@@ -5084,9 +6122,10 @@ pv.SvgScene.panel = function(scenes) {
 
 pv.SvgScene.fill = function(e, scenes, i) {
   var s = scenes[i], fill = s.fillStyle;
-  if (fill.opacity) {
+  if (fill.opacity || s.events == "all") {
     e = this.expect(e, "rect", {
         "shape-rendering": s.antialias ? null : "crispEdges",
+        "pointer-events": s.events,
         "cursor": s.cursor,
         "x": s.left,
         "y": s.top,
@@ -5103,9 +6142,10 @@ pv.SvgScene.fill = function(e, scenes, i) {
 
 pv.SvgScene.stroke = function(e, scenes, i) {
   var s = scenes[i], stroke = s.strokeStyle;
-  if (stroke.opacity) {
+  if (stroke.opacity || s.events == "all") {
     e = this.expect(e, "rect", {
         "shape-rendering": s.antialias ? null : "crispEdges",
+        "pointer-events": s.events == "all" ? "stroke" : s.events,
         "cursor": s.cursor,
         "x": s.left,
         "y": s.top,
@@ -5132,6 +6172,7 @@ pv.SvgScene.rule = function(scenes) {
 
     e = this.expect(e, "line", {
         "shape-rendering": s.antialias ? null : "crispEdges",
+        "pointer-events": s.events,
         "cursor": s.cursor,
         "x1": s.left,
         "y1": s.top,
@@ -5196,10 +6237,12 @@ pv.SvgScene.wedge = function(scenes) {
 
     e = this.expect(e, "path", {
         "shape-rendering": s.antialias ? null : "crispEdges",
+        "pointer-events": s.events,
         "cursor": s.cursor,
         "transform": "translate(" + s.left + "," + s.top + ")",
         "d": p,
         "fill": fill.color,
+        "fill-rule": "evenodd",
         "fill-opacity": fill.opacity || null,
         "stroke": stroke.color,
         "stroke-opacity": stroke.opacity || null,
@@ -5378,7 +6421,7 @@ pv.Mark.prototype.propertyMethod = function(name, def, cast) {
         var defs = this.scene.defs;
         if (arguments.length) {
           defs[name] = {
-            id: (v == undefined) ? 0 : pv.id(),
+            id: (v == null) ? 0 : pv.id(),
             value: ((v != null) && cast) ? cast(v) : v
           };
           return this;
@@ -5424,7 +6467,9 @@ pv.Mark.prototype
     .property("cursor", String)
     .property("title", String)
     .property("reverse", Boolean)
-    .property("antialias", Boolean);
+    .property("antialias", Boolean)
+    .property("events", String)
+    .property("id", String);
 
 /**
  * The mark type; a lower camelCase name. The type name controls rendering
@@ -5444,6 +6489,13 @@ pv.Mark.prototype
  *
  * @type pv.Mark
  * @name pv.Mark.prototype.proto
+ */
+
+/**
+ * The mark anchor target, possibly undefined.
+ *
+ * @type pv.Mark
+ * @name pv.Mark.prototype.target
  */
 
 /**
@@ -5478,55 +6530,23 @@ pv.Mark.prototype.index = -1;
  * scale can be used to create scale-independent graphics. For example, to
  * define a dot that has a radius of 10 irrespective of any zooming, say:
  *
- * <pre>dot.radius(function() 10 / this.scale)</pre>
+ * <pre>dot.shapeRadius(function() 10 / this.scale)</pre>
  *
  * Note that the stroke width and font size are defined irrespective of scale
  * (i.e., in screen space) already. Also note that when a transform is applied
  * to a panel, the scale affects only the child marks, not the panel itself.
  *
  * @type number
- * @see pv.Panel.prototype.transform
+ * @see pv.Panel#transform
  */
 pv.Mark.prototype.scale = 1;
 
 /**
- * The scene graph. The scene graph is an array of objects; each object (or
- * "node") corresponds to an instance of this mark and an element in the data
- * array. The scene graph can be traversed to lookup previously-evaluated
+ * @private The scene graph. The scene graph is an array of objects; each object
+ * (or "node") corresponds to an instance of this mark and an element in the
+ * data array. The scene graph can be traversed to lookup previously-evaluated
  * properties.
  *
- * <p>For instance, consider a stacked area chart. The bottom property of the
- * area can be defined using the <i>cousin</i> instance, which is the current
- * area instance in the previous instantiation of the parent panel. In this
- * sample code,
- *
- * <pre>new pv.Panel()
- *     .width(150).height(150)
- *   .add(pv.Panel)
- *     .data([[1, 1.2, 1.7, 1.5, 1.7],
- *            [.5, 1, .8, 1.1, 1.3],
- *            [.2, .5, .8, .9, 1]])
- *   .add(pv.Area)
- *     .data(function(d) d)
- *     .bottom(function() {
- *         var c = this.cousin();
- *         return c ? (c.bottom + c.height) : 0;
- *       })
- *     .height(function(d) d * 40)
- *     .left(function() this.index * 35)
- *   .root.render();</pre>
- *
- * the bottom property is computed based on the upper edge of the corresponding
- * datum in the previous series. The area's parent panel is instantiated once
- * per series, so the cousin refers to the previous (below) area mark. (Note
- * that the position of the upper edge is not the same as the top property,
- * which refers to the top margin: the distance from the top edge of the panel
- * to the top edge of the mark.)
- *
- * @see #first
- * @see #last
- * @see #sibling
- * @see #cousin
  * @name pv.Mark.prototype.scene
  */
 
@@ -5623,6 +6643,26 @@ pv.Mark.prototype.scale = 1;
  */
 
 /**
+ * The events property; corresponds to the SVG pointer-events property,
+ * specifying how the mark should participate in mouse events. The default value
+ * is "painted". Supported values are:
+ *
+ * <p>"painted": The given mark may receive events when the mouse is over a
+ * "painted" area. The painted areas are the interior (i.e., fill) of the mark
+ * if a 'fillStyle' is specified, and the perimeter (i.e., stroke) of the mark
+ * if a 'strokeStyle' is specified.
+ *
+ * <p>"all": The given mark may receive events when the mouse is over either the
+ * interior (i.e., fill) or the perimeter (i.e., stroke) of the mark, regardless
+ * of the specified fillStyle and strokeStyle.
+ *
+ * <p>"none": The given mark may not receive events.
+ *
+ * @type string
+ * @name pv.Mark.prototype.events
+ */
+
+/**
  * The reverse property; a boolean determining whether marks are ordered from
  * front-to-back or back-to-front. SVG does not support explicit z-ordering;
  * shapes are rendered in the order they appear. Thus, by default, marks are
@@ -5632,6 +6672,15 @@ pv.Mark.prototype.scale = 1;
  *
  * @type boolean
  * @name pv.Mark.prototype.reverse
+ */
+
+/**
+ * The instance identifier, for correspondence across animated transitions. If
+ * no identifier is specified, correspondence is determined using the mark
+ * index. Identifiers are not global, but local to a given mark.
+ *
+ * @type String
+ * @name pv.Mark.prototype.id
  */
 
 /**
@@ -5646,7 +6695,8 @@ pv.Mark.prototype.scale = 1;
 pv.Mark.prototype.defaults = new pv.Mark()
     .data(function(d) { return [d]; })
     .visible(true)
-    .antialias(true);
+    .antialias(true)
+    .events("painted");
 
 /**
  * Sets the prototype of this mark to the specified mark. Any properties not
@@ -5661,6 +6711,7 @@ pv.Mark.prototype.defaults = new pv.Mark()
  */
 pv.Mark.prototype.extend = function(proto) {
   this.proto = proto;
+  this.target = proto.target;
   return this;
 };
 
@@ -5678,43 +6729,17 @@ pv.Mark.prototype.add = function(type) {
 };
 
 /**
- * Defines a local variable on this mark. Local variables are initialized once
- * per mark (i.e., per parent panel instance), and can be used to store local
- * state for the mark. Here are a few reasons you might want to use
- * <tt>def</tt>:
+ * Defines a custom property on this mark. Custom properties are currently
+ * fixed, in that they are initialized once per mark set (i.e., per parent panel
+ * instance). Custom properties can be used to store local state for the mark,
+ * such as data needed by other properties (e.g., a custom scale) or interaction
+ * state.
  *
- * <p>1. To store local state. For example, say you were visualizing employment
- * statistics, and your root panel had an array of occupations. In a child
- * panel, you might want to initialize a local scale, and reference it from a
- * property function:
- *
- * <pre>.def("y", function(d) pv.Scale.linear(0, pv.max(d.values)).range(0, h))
- * .height(function(d) this.y()(d))</pre>
- *
- * In this example, <tt>this.y()</tt> returns the defined local scale. We then
- * invoke the scale function, passing in the datum, to compute the height.  Note
- * that defs are similar to fixed properties: they are only evaluated once per
- * parent panel, and <tt>this.y()</tt> returns a function, rather than
- * automatically evaluating this function as a property.
- *
- * <p>2. To store temporary state for interaction. Say you have an array of
- * bars, and you want to color the bar differently if the mouse is over it. Use
- * <tt>def</tt> to define a local variable, and event handlers to override this
- * variable interactively:
- *
- * <pre>.def("i", -1)
- * .event("mouseover", function() this.i(this.index))
- * .event("mouseout", function() this.i(-1))
- * .fillStyle(function() this.i() == this.index ? "red" : "blue")</pre>
- *
- * Notice that <tt>this.i()</tt> can be used both to set the value of <i>i</i>
- * (when an argument is specified), and to get the value of <i>i</i> (when no
- * arguments are specified). In this way, it's like other property methods.
- *
- * <p>3. To specify fixed properties efficiently. Sometimes, the value of a
- * property may be locally a constant, but dependent on parent panel data which
- * is variable. In this scenario, you can use <tt>def</tt> to define a property;
- * it will only get computed once per mark, rather than once per datum.
+ * <p>WARNING We plan on changing this feature in a future release to define
+ * standard properties, as opposed to <i>fixed</i> properties that behave
+ * idiosyncratically within event handlers. Furthermore, we recommend storing
+ * state in an external data structure, rather than tying it to the
+ * visualization specification as with defs.
  *
  * @param {string} name the name of the local variable.
  * @param {function} [v] an optional initializer; may be a constant or a
@@ -5722,50 +6747,118 @@ pv.Mark.prototype.add = function(type) {
  */
 pv.Mark.prototype.def = function(name, v) {
   this.propertyMethod(name, true);
-  return this[name](v);
+  return this[name](arguments.length > 1 ? v : null);
 };
 
 /**
- * Returns an anchor with the specified name. While anchor names are typically
- * constants, the anchor name is a true property, which means you can specify a
- * function to compute the anchor name dynamically. See the
- * {@link pv.Anchor#name} property for details.
+ * Returns an anchor with the specified name. All marks support the five
+ * standard anchor names:<ul>
+ *
+ * <li>top
+ * <li>left
+ * <li>center
+ * <li>bottom
+ * <li>right
+ *
+ * </ul>In addition to positioning properties (left, right, top bottom), the
+ * anchors support text rendering properties (text-align, text-baseline). Text is
+ * rendered to appear inside the mark by default.
+ *
+ * <p>To facilitate stacking, anchors are defined in terms of their opposite
+ * edge. For example, the top anchor defines the bottom property, such that the
+ * mark extends upwards; the bottom anchor instead defines the top property,
+ * such that the mark extends downwards. See also {@link pv.Layout.Stack}.
+ *
+ * <p>While anchor names are typically constants, the anchor name is a true
+ * property, which means you can specify a function to compute the anchor name
+ * dynamically. See the {@link pv.Anchor#name} property for details.
  *
  * @param {string} name the anchor name; either a string or a property function.
  * @returns {pv.Anchor} the new anchor.
  */
 pv.Mark.prototype.anchor = function(name) {
-  var target = this;
+  if (!name) name = "center"; // default anchor name
   return new pv.Anchor(this)
     .name(name)
     .data(function() {
-        return target.scene.map(function(s) { return s.data; });
+        return this.scene.target.map(function(s) { return s.data; });
       })
     .visible(function() {
-        return target.instance().visible;
+        return this.scene.target[this.index].visible;
+      })
+    .id(function() {
+        return this.scene.target[this.index].id;
+      })
+    .left(function() {
+        var s = this.scene.target[this.index], w = s.width || 0;
+        switch (this.name()) {
+          case "bottom":
+          case "top":
+          case "center": return s.left + w / 2;
+          case "left": return null;
+        }
+        return s.left + w;
+      })
+    .top(function() {
+        var s = this.scene.target[this.index], h = s.height || 0;
+        switch (this.name()) {
+          case "left":
+          case "right":
+          case "center": return s.top + h / 2;
+          case "top": return null;
+        }
+        return s.top + h;
+      })
+    .right(function() {
+        var s = this.scene.target[this.index];
+        return this.name() == "left" ? s.right + (s.width || 0) : null;
+      })
+    .bottom(function() {
+        var s = this.scene.target[this.index];
+        return this.name() == "top" ? s.bottom + (s.height || 0) : null;
+      })
+    .textAlign(function() {
+        switch (this.name()) {
+          case "bottom":
+          case "top":
+          case "center": return "center";
+          case "right": return "right";
+        }
+        return "left";
+      })
+    .textBaseline(function() {
+        switch (this.name()) {
+          case "right":
+          case "left":
+          case "center": return "middle";
+          case "top": return "top";
+        }
+        return "bottom";
       });
 };
 
-/**
- * Returns the anchor target of this mark, if it is derived from an anchor;
- * otherwise returns null. For example, if a label is derived from a bar anchor,
- *
- * <pre>bar.anchor("top").add(pv.Label);</pre>
- *
- * then property functions on the label can refer to the bar via the
- * <tt>anchorTarget</tt> method. This method is also useful for mark types
- * defining properties on custom anchors.
- *
- * @returns {pv.Mark} the anchor target of this mark; possibly null.
- */
+/** @deprecated Replaced by {@link #target}. */
 pv.Mark.prototype.anchorTarget = function() {
-  return this.proto.anchorTarget();
+  return this.target;
 };
 
 /**
- * Returns the current instance of this mark in the scene graph. This is
- * typically equivalent to <tt>this.scene[this.index]</tt>, however if the scene
- * or index is unset, the default instance of the mark is returned. If no
+ * Alias for setting the left, right, top and bottom properties simultaneously.
+ *
+ * @see #left
+ * @see #right
+ * @see #top
+ * @see #bottom
+ * @returns {pv.Mark} this.
+ */
+pv.Mark.prototype.margin = function(n) {
+  return this.left(n).right(n).top(n).bottom(n);
+};
+
+/**
+ * @private Returns the current instance of this mark in the scene graph. This
+ * is typically equivalent to <tt>this.scene[this.index]</tt>, however if the
+ * scene or index is unset, the default instance of the mark is returned. If no
  * default is set, the default is the last instance. Similarly, if the scene or
  * index of the parent panel is unset, the default instance of this mark in the
  * last instance of the enclosing panel is returned, and so on.
@@ -5779,9 +6872,41 @@ pv.Mark.prototype.instance = function(defaultIndex) {
 };
 
 /**
- * Returns the first instance of this mark in the scene graph. This method can
- * only be called when the mark is bound to the scene graph (for example, from
- * an event handler, or within a property function).
+ * @private Find the instances of this mark that match source.
+ *
+ * @see pv.Anchor
+ */
+pv.Mark.prototype.instances = function(source) {
+  var mark = this, index = [], scene;
+
+  /* Mirrored descent. */
+  while (!(scene = mark.scene)) {
+    source = source.parent;
+    index.push({index: source.index, childIndex: mark.childIndex});
+    mark = mark.parent;
+  }
+  while (index.length) {
+    var i = index.pop();
+    scene = scene[i.index].children[i.childIndex];
+  }
+
+  /*
+   * When the anchor target is also an ancestor, as in the case of adding
+   * to a panel anchor, only generate one instance per panel. Also, set
+   * the margins to zero, since they are offset by the enclosing panel.
+   */
+  if (this.hasOwnProperty("index")) {
+    var s = pv.extend(scene[this.index]);
+    s.right = s.top = s.left = s.bottom = 0;
+    return [s];
+  }
+  return scene;
+};
+
+/**
+ * @private Returns the first instance of this mark in the scene graph. This
+ * method can only be called when the mark is bound to the scene graph (for
+ * example, from an event handler, or within a property function).
  *
  * @returns a node in the scene graph.
  */
@@ -5790,11 +6915,11 @@ pv.Mark.prototype.first = function() {
 };
 
 /**
- * Returns the last instance of this mark in the scene graph. This method can
- * only be called when the mark is bound to the scene graph (for example, from
- * an event handler, or within a property function). In addition, note that mark
- * instances are built sequentially, so the last instance of this mark may not
- * yet be constructed.
+ * @private Returns the last instance of this mark in the scene graph. This
+ * method can only be called when the mark is bound to the scene graph (for
+ * example, from an event handler, or within a property function). In addition,
+ * note that mark instances are built sequentially, so the last instance of this
+ * mark may not yet be constructed.
  *
  * @returns a node in the scene graph.
  */
@@ -5803,8 +6928,8 @@ pv.Mark.prototype.last = function() {
 };
 
 /**
- * Returns the previous instance of this mark in the scene graph, or null if
- * this is the first instance.
+ * @private Returns the previous instance of this mark in the scene graph, or
+ * null if this is the first instance.
  *
  * @returns a node in the scene graph, or null.
  */
@@ -5813,12 +6938,10 @@ pv.Mark.prototype.sibling = function() {
 };
 
 /**
- * Returns the current instance in the scene graph of this mark, in the previous
- * instance of the enclosing parent panel. May return null if this instance
- * could not be found. See the {@link pv.Layout.stack} function for an example
- * property function using cousin.
+ * @private Returns the current instance in the scene graph of this mark, in the
+ * previous instance of the enclosing parent panel. May return null if this
+ * instance could not be found.
  *
- * @see pv.Layout.stack
  * @returns a node in the scene graph, or null.
  */
 pv.Mark.prototype.cousin = function() {
@@ -5828,7 +6951,16 @@ pv.Mark.prototype.cousin = function() {
 
 /**
  * Renders this mark, including recursively rendering all child marks if this is
- * a panel.
+ * a panel. This method finds all instances of this mark and renders them. This
+ * method descends recursively to the level of the mark to be rendered, finding
+ * all visible instances of the mark. After the marks are rendered, the scene
+ * and index attributes are removed from the mark to restore them to a clean
+ * state.
+ *
+ * <p>If an enclosing panel has an index property set (as is the case inside in
+ * an event handler), then only instances of this mark inside the given instance
+ * of the panel will be rendered; otherwise, all visible instances of the mark
+ * will be rendered.
  */
 pv.Mark.prototype.render = function() {
   var parent = this.parent,
@@ -5846,18 +6978,7 @@ pv.Mark.prototype.render = function() {
     indexes.unshift(mark.childIndex);
   }
 
-  /**
-   * @private Finds all instances of this mark and renders them. This method
-   * descends recursively to the level of the mark to be rendered, finding all
-   * visible instances of the mark. After the marks are rendered, the scene and
-   * index attributes are removed from the mark to restore them to a clean
-   * state.
-   *
-   * <p>If an enclosing panel has an index property set (as is the case inside
-   * in an event handler), then only instances of this mark inside the given
-   * instance of the panel will be rendered; otherwise, all visible instances of
-   * the mark will be rendered.
-   */
+  /** @private */
   function render(mark, depth, scale) {
     mark.scale = scale;
     if (depth < indexes.length) {
@@ -5949,7 +7070,7 @@ pv.Mark.stack = [];
  * do not need to be queried during build.
  */
 pv.Mark.prototype.bind = function() {
-  var seen = {}, types = [[], [], [], []], data, visible;
+  var seen = {}, types = [[], [], [], []], data, required = [];
 
   /** Scans the proto chain for the specified mark. */
   function bind(mark) {
@@ -5961,7 +7082,7 @@ pv.Mark.prototype.bind = function() {
           seen[p.name] = p;
           switch (p.name) {
             case "data": data = p; break;
-            case "visible": visible = p; break;
+            case "visible": case "id": required.push(p); break;
             default: types[p.type].push(p); break;
           }
         }
@@ -5994,7 +7115,7 @@ pv.Mark.prototype.bind = function() {
     properties: seen,
     data: data,
     defs: defs,
-    required: [visible],
+    required: required,
     optional: pv.blend(types)
   };
 };
@@ -6023,7 +7144,7 @@ pv.Mark.prototype.bind = function() {
  * special. The <tt>data</tt> property is evaluated first; unlike the other
  * properties, the data stack is from the parent panel, rather than the current
  * mark, since the data is not defined until the data property is evaluated.
- * The <tt>visisble</tt> property is subsequently evaluated for each instance;
+ * The <tt>visible</tt> property is subsequently evaluated for each instance;
  * only if true will the {@link #buildInstance} method be called, evaluating
  * other properties and recursively building the scene graph.
  *
@@ -6045,6 +7166,9 @@ pv.Mark.prototype.build = function() {
       scene.parentIndex = this.parent.index;
     }
   }
+
+  /* Resolve anchor target. */
+  if (this.target) scene.target = this.target.instances(scene);
 
   /* Evaluate defs. */
   if (this.binds.defs.length) {
@@ -6149,9 +7273,13 @@ pv.Mark.prototype.buildImplied = function(s) {
   if (w == null) {
     w = width - (r = r || 0) - (l = l || 0);
   } else if (r == null) {
-    r = width - w - (l = l || 0);
+    if (l == null) {
+      l = r = (width - w) / 2;
+    } else {
+      r = width - w - l;
+    }
   } else if (l == null) {
-    l = width - w - (r = r || 0);
+    l = width - w - r;
   }
 
   /* Compute implied height, bottom and top. */
@@ -6159,9 +7287,13 @@ pv.Mark.prototype.buildImplied = function(s) {
   if (h == null) {
     h = height - (t = t || 0) - (b = b || 0);
   } else if (b == null) {
-    b = height - h - (t = t || 0);
+    if (t == null) {
+      b = t = (height - h) / 2;
+    } else {
+      b = height - h - t;
+    }
   } else if (t == null) {
-    t = height - h - (b = b || 0);
+    t = height - h - b;
   }
 
   s.left = l;
@@ -6187,19 +7319,24 @@ pv.Mark.prototype.buildImplied = function(s) {
  * @returns {pv.Vector} the mouse location.
  */
 pv.Mark.prototype.mouse = function() {
-  var x = pv.event.pageX,
-      y = pv.event.pageY,
-      t = pv.Transform.identity,
-      panel = (this instanceof pv.Panel) ? this : this.parent,
-      node = this.root.canvas();
+
+  /* Compute xy-coordinates relative to the panel. */
+  var x = pv.event.pageX || 0,
+      y = pv.event.pageY || 0,
+      n = this.root.canvas();
   do {
-    x -= node.offsetLeft;
-    y -= node.offsetTop;
-  } while (node = node.offsetParent);
-  do {
-    t = t.translate(panel.left(), panel.top()).times(panel.transform());
-  } while (panel = panel.parent);
+    x -= n.offsetLeft;
+    y -= n.offsetTop;
+  } while (n = n.offsetParent);
+
+  /* Compute the inverse transform of all enclosing panels. */
+  var t = pv.Transform.identity,
+      p = this.properties.transform ? this : this.parent,
+      pz = [];
+  do { pz.push(p); } while (p = p.parent);
+  while (p = pz.pop()) t = t.translate(p.left(), p.top()).times(p.transform());
   t = t.invert();
+
   return pv.vector(x * t.k + t.x, y * t.k + t.y);
 };
 
@@ -6252,7 +7389,7 @@ pv.Mark.prototype.mouse = function() {
  * @returns {pv.Mark} this.
  */
 pv.Mark.prototype.event = function(type, handler) {
-  this.$handlers[type] = handler;
+  this.$handlers[type] = pv.functor(handler);
   return this;
 };
 
@@ -6335,14 +7472,22 @@ pv.Mark.prototype.context = function(scene, index, f) {
 };
 
 /** @private Execute the event listener, then re-render. */
-pv.Mark.dispatch = function(e, scene, index) {
-  var m = scene.mark, p = scene.parent, l = m.$handlers[e.type];
-  if (!l) return p && pv.Mark.dispatch(e, p, scene.parentIndex);
+pv.Mark.dispatch = function(type, scene, index) {
+  var m = scene.mark, p = scene.parent, l = m.$handlers[type];
+  if (!l) return p && pv.Mark.dispatch(type, p, scene.parentIndex);
   m.context(scene, index, function() {
       m = l.apply(m, pv.Mark.stack);
       if (m && m.render) m.render();
-      e.preventDefault();
     });
+  return true;
+};
+
+pv.Mark.prototype.transition = function() {
+  return new pv.Transition(this);
+};
+
+pv.Mark.prototype.on = function(state) {
+  return this["$" + state] = new pv.Transient(this);
 };
 /**
  * Constructs a new mark anchor with default properties.
@@ -6363,7 +7508,22 @@ pv.Mark.dispatch = function(e, scene, index) {
  * the appropriate position properties (top and left), as well as text-rendering
  * properties for convenience (textAlign and textBaseline).
  *
+ * <p>Note that anchors do not <i>inherit</i> from their targets; the positional
+ * properties are copied from the scene graph, which guarantees that the anchors
+ * are positioned correctly, even if the positional properties are not defined
+ * deterministically. (In addition, it also improves performance by avoiding
+ * re-evaluating expensive properties.) If you want the anchor to inherit from
+ * the target, use {@link pv.Mark#extend} before adding. For example:
+ *
+ * <pre>bar.anchor("top").extend(bar).add(pv.Label);</pre>
+ *
+ * The anchor defines it's own positional properties, but other properties (such
+ * as the title property, say) can be inherited using the above idiom. Also note
+ * that you can override positional properties in the anchor for custom
+ * behavior.
+ *
  * @extends pv.Mark
+ * @param {pv.Mark} target the anchor target.
  */
 pv.Anchor = function(target) {
   pv.Mark.call(this);
@@ -6392,8 +7552,23 @@ pv.Anchor.prototype = pv.extend(pv.Mark)
  * @name pv.Anchor.prototype.name
  */
 
-pv.Anchor.prototype.anchorTarget = function() {
-  return this.target;
+/**
+ * Sets the prototype of this anchor to the specified mark. Any properties not
+ * defined on this mark may be inherited from the specified prototype mark, or
+ * its prototype, and so on. The prototype mark need not be the same type of
+ * mark as this mark. (Note that for inheritance to be useful, properties with
+ * the same name on different mark types should have equivalent meaning.)
+ *
+ * <p>This method differs slightly from the normal mark behavior in that the
+ * anchor's target is preserved.
+ *
+ * @param {pv.Mark} proto the new prototype.
+ * @returns {pv.Anchor} this anchor.
+ * @see pv.Mark#add
+ */
+pv.Anchor.prototype.extend = function(proto) {
+  this.proto = proto;
+  return this;
 };
 /**
  * Constructs a new area mark with default properties. Areas are not typically
@@ -6423,11 +7598,12 @@ pv.Area = function() {
 pv.Area.prototype = pv.extend(pv.Mark)
     .property("width", Number)
     .property("height", Number)
-    .property("lineWidth", String)
+    .property("lineWidth", Number)
     .property("strokeStyle", pv.color)
     .property("fillStyle", pv.color)
     .property("segmented", Boolean)
-    .property("interpolate", String);
+    .property("interpolate", String)
+    .property("tension", Number);
 
 pv.Area.prototype.type = "area";
 
@@ -6507,12 +7683,27 @@ pv.Area.prototype.type = "area";
  * How to interpolate between values. Linear interpolation ("linear") is the
  * default, producing a straight line between points. For piecewise constant
  * functions (i.e., step functions), either "step-before" or "step-after" can be
- * specified.
+ * specified. To draw open uniform b-splines, specify "basis". To draw cardinal
+ * splines, specify "cardinal"; see also {@link #tension}.
  *
  * <p>This property is <i>fixed</i>. See {@link pv.Mark}.
  *
  * @type string
  * @name pv.Area.prototype.interpolate
+ */
+
+/**
+ * The tension of cardinal splines; used in conjunction with
+ * interpolate("cardinal"). A value between 0 and 1 draws cardinal splines with
+ * the given tension. In some sense, the tension can be interpreted as the
+ * "length" of the tangent; a tension of 1 will yield all zero tangents (i.e.,
+ * linear interpolation), and a tension of 0 yields a Catmull-Rom spline. The
+ * default value is 0.7.
+ *
+ * <p>This property is <i>fixed</i>. See {@link pv.Mark}.
+ *
+ * @type number
+ * @name pv.Area.prototype.tension
  */
 
 /**
@@ -6525,94 +7716,8 @@ pv.Area.prototype.defaults = new pv.Area()
     .extend(pv.Mark.prototype.defaults)
     .lineWidth(1.5)
     .fillStyle(pv.Colors.category20().by(pv.parent))
-    .interpolate("linear");
-
-/**
- * Constructs a new area anchor with default properties. Areas support five
- * different anchors:<ul>
- *
- * <li>top
- * <li>left
- * <li>center
- * <li>bottom
- * <li>right
- *
- * </ul>In addition to positioning properties (left, right, top bottom), the
- * anchors support text rendering properties (text-align, text-baseline). Text is
- * rendered to appear inside the area polygon.
- *
- * <p>To facilitate stacking of areas, the anchors are defined in terms of their
- * opposite edge. For example, the top anchor defines the bottom property, such
- * that the area grows upwards; the bottom anchor instead defines the top
- * property, such that the area grows downwards. Of course, in general it is
- * more robust to use panels and the cousin accessor to define stacked area
- * marks; see {@link pv.Mark#scene} for an example.
- *
- * @param {string} name the anchor name; either a string or a property function.
- * @returns {pv.Anchor}
- */
-pv.Area.prototype.anchor = function(name) {
-  var target = this;
-  return pv.Mark.prototype.anchor.call(this, name)
-    .left(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "bottom":
-          case "top":
-          case "center": return s.left + s.width / 2;
-          case "right": return s.left + s.width;
-        }
-        return null;
-      })
-    .right(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "bottom":
-          case "top":
-          case "center": return s.right + s.width / 2;
-          case "left": return s.right + s.width;
-        }
-        return null;
-      })
-    .top(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "left":
-          case "right":
-          case "center": return s.top + s.height / 2;
-          case "bottom": return s.top + s.height;
-        }
-        return null;
-      })
-    .bottom(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "left":
-          case "right":
-          case "center": return s.bottom + s.height / 2;
-          case "top": return s.bottom + s.height;
-        }
-        return null;
-      })
-    .textAlign(function() {
-        switch (this.name()) {
-          case "bottom":
-          case "top":
-          case "center": return "center";
-          case "right": return "right";
-        }
-        return "left";
-      })
-    .textBaseline(function() {
-        switch (this.name()) {
-          case "right":
-          case "left":
-          case "center": return "middle";
-          case "top": return "top";
-        }
-        return "bottom";
-      });
-};
+    .interpolate("linear")
+    .tension(.7);
 
 /** @private Sets width and height to zero if null. */
 pv.Area.prototype.buildImplied = function(s) {
@@ -6624,10 +7729,12 @@ pv.Area.prototype.buildImplied = function(s) {
 /** @private Records which properties may be fixed. */
 pv.Area.fixed = {
   lineWidth: 1,
+  lineJoin: 1,
   strokeStyle: 1,
   fillStyle: 1,
   segmented: 1,
-  interpolate: 1
+  interpolate: 1,
+  tension: 1
 };
 
 /**
@@ -6693,6 +7800,43 @@ pv.Area.prototype.buildInstance = function(s) {
   }
 
   pv.Mark.prototype.buildInstance.call(this, s);
+};
+
+/**
+ * Constructs a new area anchor with default properties. Areas support five
+ * different anchors:<ul>
+ *
+ * <li>top
+ * <li>left
+ * <li>center
+ * <li>bottom
+ * <li>right
+ *
+ * </ul>In addition to positioning properties (left, right, top bottom), the
+ * anchors support text rendering properties (text-align, text-baseline). Text
+ * is rendered to appear inside the area. The area anchor also propagates the
+ * interpolate, eccentricity, and tension properties such that an anchored area
+ * or line will match positions between control points.
+ *
+ * <p>For consistency with the other mark types, the anchor positions are
+ * defined in terms of their opposite edge. For example, the top anchor defines
+ * the bottom property, such that an area added to the top anchor grows upward.
+ *
+ * @param {string} name the anchor name; either a string or a property function.
+ * @returns {pv.Anchor}
+ */
+pv.Area.prototype.anchor = function(name) {
+  var scene;
+  return pv.Mark.prototype.anchor.call(this, name)
+    .interpolate(function() {
+       return this.scene.target[this.index].interpolate;
+      })
+    .eccentricity(function() {
+       return this.scene.target[this.index].eccentricity;
+      })
+    .tension(function() {
+        return this.scene.target[this.index].tension;
+      });
 };
 /**
  * Constructs a new bar mark with default properties. Bars are not typically
@@ -6787,99 +7931,6 @@ pv.Bar.prototype.defaults = new pv.Bar()
     .extend(pv.Mark.prototype.defaults)
     .lineWidth(1.5)
     .fillStyle(pv.Colors.category20().by(pv.parent));
-
-/**
- * Constructs a new bar anchor with default properties. Bars support five
- * different anchors:<ul>
- *
- * <li>top
- * <li>left
- * <li>center
- * <li>bottom
- * <li>right
- *
- * </ul>In addition to positioning properties (left, right, top bottom), the
- * anchors support text rendering properties (text-align, text-baseline). Text
- * is rendered to appear inside the bar.
- *
- * <p>To facilitate stacking of bars, the anchors are defined in terms of their
- * opposite edge. For example, the top anchor defines the bottom property, such
- * that the bar grows upwards; the bottom anchor instead defines the top
- * property, such that the bar grows downwards. Of course, in general it is more
- * robust to use panels and the cousin accessor to define stacked bars; see
- * {@link pv.Mark#scene} for an example.
- *
- * <p>Bar anchors also "smartly" specify position properties based on whether
- * the derived mark type supports the width and height properties. If the
- * derived mark type does not support these properties (e.g., dots), the
- * position will be centered on the corresponding edge. Otherwise (e.g., bars),
- * the position will be in the opposite side.
- *
- * @param {string} name the anchor name; either a string or a property function.
- * @returns {pv.Anchor}
- */
-pv.Bar.prototype.anchor = function(name) {
-  var target = this;
-  return pv.Mark.prototype.anchor.call(this, name)
-    .left(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "bottom":
-          case "top":
-          case "center": return s.left + (this.properties.width ? 0 : s.width / 2);
-          case "right": return s.left + s.width;
-        }
-        return null;
-      })
-    .right(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "bottom":
-          case "top":
-          case "center": return s.right + (this.properties.width ? 0 : s.width / 2);
-          case "left": return s.right + s.width;
-        }
-        return null;
-      })
-    .top(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "left":
-          case "right":
-          case "center": return s.top + (this.properties.height ? 0 : s.height / 2);
-          case "bottom": return s.top + s.height;
-        }
-        return null;
-      })
-    .bottom(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "left":
-          case "right":
-          case "center": return s.bottom + (this.properties.height ? 0 : s.height / 2);
-          case "top": return s.bottom + s.height;
-        }
-        return null;
-      })
-    .textAlign(function() {
-        switch (this.name()) {
-          case "bottom":
-          case "top":
-          case "center": return "center";
-          case "right": return "right";
-        }
-        return "left";
-      })
-    .textBaseline(function() {
-        switch (this.name()) {
-          case "right":
-          case "left":
-          case "center": return "middle";
-          case "top": return "top";
-        }
-        return "bottom";
-      });
-};
 /**
  * Constructs a new dot mark with default properties. Dots are not typically
  * constructed directly, but by adding to a panel or an existing mark via
@@ -6901,10 +7952,10 @@ pv.Dot = function() {
 };
 
 pv.Dot.prototype = pv.extend(pv.Mark)
-    .property("size", Number)
-    .property("radius", Number)
     .property("shape", String)
-    .property("angle", Number)
+    .property("shapeAngle", Number)
+    .property("shapeRadius", Number)
+    .property("shapeSize", Number)
     .property("lineWidth", Number)
     .property("strokeStyle", pv.color)
     .property("fillStyle", pv.color);
@@ -6912,13 +7963,23 @@ pv.Dot.prototype = pv.extend(pv.Mark)
 pv.Dot.prototype.type = "dot";
 
 /**
- * The size of the dot, in square pixels. Square pixels are used such that the
- * area of the dot is linearly proportional to the value of the size property,
- * facilitating representative encodings.
+ * The size of the shape, in square pixels. Square pixels are used such that the
+ * area of the shape is linearly proportional to the value of the
+ * <tt>shapeSize</tt> property, facilitating representative encodings. This is
+ * an alternative to using {@link #shapeRadius}.
  *
- * @see #radius
+ * @see #shapeRadius
  * @type number
- * @name pv.Dot.prototype.size
+ * @name pv.Dot.prototype.shapeSize
+ */
+
+/**
+ * The radius of the shape, in pixels. This is an alternative to using
+ * {@link #shapeSize}.
+ *
+ * @see #shapeSize
+ * @type number
+ * @name pv.Dot.prototype.shapeRadius
  */
 
 /**
@@ -6928,8 +7989,9 @@ pv.Dot.prototype.type = "dot";
  * <li>triangle
  * <li>diamond
  * <li>square
- * <li>tick
  * <li>circle
+ * <li>tick
+ * <li>bar
  *
  * </ul>These shapes can be further changed using the {@link #angle} property;
  * for instance, a cross can be turned into a plus by rotating. Similarly, the
@@ -6946,11 +8008,11 @@ pv.Dot.prototype.type = "dot";
  */
 
 /**
- * The rotation angle, in radians. Used to rotate shapes, such as to turn a
- * cross into a plus.
+ * The shape rotation angle, in radians. Used to rotate shapes, such as to turn
+ * a cross into a plus.
  *
  * @type number
- * @name pv.Dot.prototype.angle
+ * @name pv.Dot.prototype.shapeAngle
  */
 
 /**
@@ -6983,13 +8045,12 @@ pv.Dot.prototype.type = "dot";
 
 /**
  * Default properties for dots. By default, there is no fill and the stroke
- * style is a categorical color. The default shape is "circle" with size 20.
+ * style is a categorical color. The default shape is "circle" with radius 4.5.
  *
  * @type pv.Dot
  */
 pv.Dot.prototype.defaults = new pv.Dot()
     .extend(pv.Mark.prototype.defaults)
-    .size(20)
     .shape("circle")
     .lineWidth(1.5)
     .strokeStyle(pv.Colors.category10().by(pv.parent));
@@ -7017,47 +8078,35 @@ pv.Dot.prototype.defaults = new pv.Dot()
  * @returns {pv.Anchor}
  */
 pv.Dot.prototype.anchor = function(name) {
-  var target = this;
+  var scene;
   return pv.Mark.prototype.anchor.call(this, name)
     .left(function() {
-        var s = target.instance();
+        var s = this.scene.target[this.index];
         switch (this.name()) {
           case "bottom":
           case "top":
           case "center": return s.left;
-          case "right": return s.left + s.radius;
+          case "left": return null;
         }
-        return null;
+        return s.left + s.shapeRadius;
       })
     .right(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "bottom":
-          case "top":
-          case "center": return s.right;
-          case "left": return s.right + s.radius;
-        }
-        return null;
+        var s = this.scene.target[this.index];
+        return this.name() == "left" ? s.right + s.shapeRadius : null;
       })
     .top(function() {
-        var s = target.instance();
+        var s = this.scene.target[this.index];
         switch (this.name()) {
           case "left":
           case "right":
           case "center": return s.top;
-          case "bottom": return s.top + s.radius;
+          case "top": return null;
         }
-        return null;
+        return s.top + s.shapeRadius;
       })
     .bottom(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "left":
-          case "right":
-          case "center": return s.bottom;
-          case "top": return s.bottom + s.radius;
-        }
-        return null;
+        var s = this.scene.target[this.index];
+        return this.name() == "top" ? s.bottom + s.shapeRadius : null;
       })
     .textAlign(function() {
         switch (this.name()) {
@@ -7081,8 +8130,17 @@ pv.Dot.prototype.anchor = function(name) {
 
 /** @private Sets radius based on size or vice versa. */
 pv.Dot.prototype.buildImplied = function(s) {
-  if (s.radius == null) s.radius = Math.sqrt(s.size);
-  else if (s.size == null) s.size = s.radius * s.radius;
+  var r = s.shapeRadius, z = s.shapeSize;
+  if (r == null) {
+    if (z == null) {
+      s.shapeSize = 20.25;
+      s.shapeRadius = 4.5;
+    } else {
+      s.shapeRadius = Math.sqrt(z);
+    }
+  } else if (z == null) {
+    s.shapeSize = r * r;
+  }
   pv.Mark.prototype.buildImplied.call(this, s);
 };
 /**
@@ -7232,6 +8290,7 @@ pv.Label.prototype.type = "label";
  */
 pv.Label.prototype.defaults = new pv.Label()
     .extend(pv.Mark.prototype.defaults)
+    .events("none")
     .text(pv.identity)
     .font("10px sans-serif")
     .textAngle(0)
@@ -7265,10 +8324,13 @@ pv.Line = function() {
 
 pv.Line.prototype = pv.extend(pv.Mark)
     .property("lineWidth", Number)
+    .property("lineJoin", String)
     .property("strokeStyle", pv.color)
     .property("fillStyle", pv.color)
     .property("segmented", Boolean)
-    .property("interpolate", String);
+    .property("interpolate", String)
+    .property("eccentricity", Number)
+    .property("tension", Number);
 
 pv.Line.prototype.type = "line";
 
@@ -7290,9 +8352,28 @@ pv.Line.prototype.type = "line";
  */
 
 /**
+ * The type of corners where two lines meet. Accepted values are "bevel",
+ * "round" and "miter". The default value is "miter".
+ *
+ * <p>For segmented lines, only "miter" joins and "linear" interpolation are
+ * currently supported. Any other value, including null, will disable joins,
+ * producing disjoint line segments. Note that the miter joins must be computed
+ * manually (at least in the current SVG renderer); since this calculation may
+ * be expensive and unnecessary for small lines, specifying null can improve
+ * performance significantly.
+ *
+ * <p>This property is <i>fixed</i>. See {@link pv.Mark}.
+ *
+ * @type string
+ * @name pv.Line.prototype.lineJoin
+ */
+
+/**
  * The line fill style; if non-null, the interior of the line is closed and
  * filled with the specified color. The default value of this property is a
  * null, meaning that lines are not filled by default.
+ *
+ * <p>This property is <i>fixed</i>. See {@link pv.Mark}.
  *
  * @type string
  * @name pv.Line.prototype.fillStyle
@@ -7314,12 +8395,39 @@ pv.Line.prototype.type = "line";
  * How to interpolate between values. Linear interpolation ("linear") is the
  * default, producing a straight line between points. For piecewise constant
  * functions (i.e., step functions), either "step-before" or "step-after" can be
- * specified. To draw a clockwise circular arc between points, specify "polar".
+ * specified. To draw a clockwise circular arc between points, specify "polar";
+ * to draw a counterclockwise circular arc between points, specify
+ * "polar-reverse". To draw open uniform b-splines, specify "basis". To draw
+ * cardinal splines, specify "cardinal"; see also {@link #tension}.
  *
  * <p>This property is <i>fixed</i>. See {@link pv.Mark}.
  *
  * @type string
  * @name pv.Line.prototype.interpolate
+ */
+
+/**
+ * The eccentricity of polar line segments; used in conjunction with
+ * interpolate("polar"). The default value of 0 means that line segments are
+ * drawn as circular arcs. A value of 1 draws a straight line. A value between 0
+ * and 1 draws an elliptical arc with the given eccentricity.
+ *
+ * @type number
+ * @name pv.Line.prototype.eccentricity
+ */
+
+/**
+ * The tension of cardinal splines; used in conjunction with
+ * interpolate("cardinal"). A value between 0 and 1 draws cardinal splines with
+ * the given tension. In some sense, the tension can be interpreted as the
+ * "length" of the tangent; a tension of 1 will yield all zero tangents (i.e.,
+ * linear interpolation), and a tension of 0 yields a Catmull-Rom spline. The
+ * default value is 0.7.
+ *
+ * <p>This property is <i>fixed</i>. See {@link pv.Mark}.
+ *
+ * @type number
+ * @name pv.Line.prototype.tension
  */
 
 /**
@@ -7330,13 +8438,61 @@ pv.Line.prototype.type = "line";
  */
 pv.Line.prototype.defaults = new pv.Line()
     .extend(pv.Mark.prototype.defaults)
+    .lineJoin("miter")
     .lineWidth(1.5)
     .strokeStyle(pv.Colors.category10().by(pv.parent))
-    .interpolate("linear");
+    .interpolate("linear")
+    .eccentricity(0)
+    .tension(.7);
 
 /** @private Reuse Area's implementation for segmented bind & build. */
 pv.Line.prototype.bind = pv.Area.prototype.bind;
 pv.Line.prototype.buildInstance = pv.Area.prototype.buildInstance;
+
+/**
+ * Constructs a new line anchor with default properties. Lines support five
+ * different anchors:<ul>
+ *
+ * <li>top
+ * <li>left
+ * <li>center
+ * <li>bottom
+ * <li>right
+ *
+ * </ul>In addition to positioning properties (left, right, top bottom), the
+ * anchors support text rendering properties (text-align, text-baseline). Text is
+ * rendered to appear outside the line. Note that this behavior is different
+ * from other mark anchors, which default to rendering text <i>inside</i> the
+ * mark.
+ *
+ * <p>For consistency with the other mark types, the anchor positions are
+ * defined in terms of their opposite edge. For example, the top anchor defines
+ * the bottom property, such that a bar added to the top anchor grows upward.
+ *
+ * @param {string} name the anchor name; either a string or a property function.
+ * @returns {pv.Anchor}
+ */
+pv.Line.prototype.anchor = function(name) {
+  return pv.Area.prototype.anchor.call(this, name)
+    .textAlign(function(d) {
+        switch (this.name()) {
+          case "left": return "right";
+          case "bottom":
+          case "top":
+          case "center": return "center";
+          case "right": return "left";
+        }
+      })
+    .textBaseline(function(d) {
+        switch (this.name()) {
+          case "right":
+          case "left":
+          case "center": return "middle";
+          case "top": return "bottom";
+          case "bottom": return "top";
+        }
+      });
+};
 /**
  * Constructs a new rule with default properties. Rules are not typically
  * constructed directly, but by adding to a panel or an existing mark via
@@ -7437,7 +8593,8 @@ pv.Rule.prototype.type = "rule";
 pv.Rule.prototype.defaults = new pv.Rule()
     .extend(pv.Mark.prototype.defaults)
     .lineWidth(1)
-    .strokeStyle("black");
+    .strokeStyle("black")
+    .antialias(false);
 
 /**
  * Constructs a new rule anchor with default properties. Rules support five
@@ -7462,27 +8619,7 @@ pv.Rule.prototype.defaults = new pv.Rule()
  * @param {string} name the anchor name; either a string or a property function.
  * @returns {pv.Anchor}
  */
-pv.Rule.prototype.anchor = function(name) {
-  return pv.Bar.prototype.anchor.call(this, name)
-    .textAlign(function(d) {
-        switch (this.name()) {
-          case "left": return "right";
-          case "bottom":
-          case "top":
-          case "center": return "center";
-          case "right": return "left";
-        }
-      })
-    .textBaseline(function(d) {
-        switch (this.name()) {
-          case "right":
-          case "left":
-          case "center": return "middle";
-          case "top": return "bottom";
-          case "bottom": return "top";
-        }
-      });
-};
+pv.Rule.prototype.anchor = pv.Line.prototype.anchor;
 
 /** @private Sets width or height based on orientation. */
 pv.Rule.prototype.buildImplied = function(s) {
@@ -7557,13 +8694,13 @@ pv.Panel = function() {
 };
 
 pv.Panel.prototype = pv.extend(pv.Bar)
-    .property("transform")
-    .property("overflow", String)
-    .property("canvas", function(c) {
-        return (typeof c == "string")
-            ? document.getElementById(c)
-            : c; // assume that c is the passed-in element
-      });
+  .property("transform")
+  .property("overflow", String)
+  .property("canvas", function(c) {
+    return (typeof c == "string")
+    ? document.getElementById(c)
+    : c; // assume that c is the passed-in element
+  });
 
 pv.Panel.prototype.type = "panel";
 
@@ -7589,7 +8726,7 @@ pv.Panel.prototype.type = "panel";
  *
  * @type string
  * @name pv.Panel.prototype.overflow
- * @see http://www.w3.org/TR/CSS2/visufx.html#overflow
+ * @see <a href="http://www.w3.org/TR/CSS2/visufx.html#overflow">CSS2</a>
  */
 
 /**
@@ -7600,7 +8737,7 @@ pv.Panel.prototype.type = "panel";
  *
  * @type pv.Transform
  * @name pv.Panel.prototype.transform
- * @see pv.Mark.prototype.scale
+ * @see pv.Mark#scale
  */
 
 /**
@@ -7610,33 +8747,22 @@ pv.Panel.prototype.type = "panel";
  * @type pv.Panel
  */
 pv.Panel.prototype.defaults = new pv.Panel()
-    .extend(pv.Bar.prototype.defaults)
-    .fillStyle(null) // override Bar default
-    .overflow("visible");
+  .extend(pv.Bar.prototype.defaults)
+  .fillStyle(null) // override Bar default
+  .overflow("visible");
 
 /**
- * Returns an anchor with the specified name. This method is overridden since
- * the behavior of Panel anchors is slightly different from normal anchors:
- * adding to an anchor adds to the anchor target's, rather than the anchor
- * target's parent. To avoid double margins, we override the anchor's proto so
- * that the margins are zero.
+ * Returns an anchor with the specified name. This method is overridden such
+ * that adding to a panel's anchor adds to the panel, rather than to the panel's
+ * parent.
  *
  * @param {string} name the anchor name; either a string or a property function.
  * @returns {pv.Anchor} the new anchor.
  */
 pv.Panel.prototype.anchor = function(name) {
-
-  /* A "view" of this panel whose margins appear to be zero. */
-  var target = pv.extend(this);
-  target.parent = this;
-  target.instance = function() {
-      var s = pv.extend(this.parent.instance());
-      s.right = s.top = s.left = s.bottom = 0;
-      return s;
-    };
-
-  return pv.Bar.prototype.anchor.call(target, name)
-      .data(function(d) { return [d]; });
+  var anchor = pv.Bar.prototype.anchor.call(this, name);
+  anchor.parent = this;
+  return anchor;
 };
 
 /**
@@ -7784,23 +8910,23 @@ pv.Panel.prototype.buildImplied = function(s) {
   pv.Mark.prototype.buildImplied.call(this, s);
 };
 /**
- * Constructs a new dot mark with default properties. Images are not typically
+ * Constructs a new image with default properties. Images are not typically
  * constructed directly, but by adding to a panel or an existing mark via
  * {@link pv.Mark#add}.
  *
- * @class Represents an image. Images share the same layout and style properties as
- * bars, in conjunction with an external image such as PNG or JPEG. The image is
- * specified via the {@link #url} property. The fill, if specified, appears
- * beneath the image, while the optional stroke appears above the image.
+ * @class Represents an image, either a static resource or a dynamically-
+ * generated pixel buffer. Images share the same layout and style properties as
+ * bars. The external image resource is specified via the {@link #url}
+ * property. The optional fill, if specified, appears beneath the image, while
+ * the optional stroke appears above the image.
  *
- * <p>TODO Restore support for dynamic images (such as heatmaps). These were
- * supported in the canvas implementation using the pixel buffer API; although
- * SVG does not support pixel manipulation, it is possible to embed a canvas
- * element in SVG using foreign objects.
- *
- * <p>TODO Allow different modes of image placement: "scale" -- scale and
- * preserve aspect ratio, "tile" -- repeat the image, "center" -- center the
- * image, "fill" -- scale without preserving aspect ratio.
+ * <p>Dynamic images such as heatmaps are supported using the {@link #image}
+ * psuedo-property. This function is passed the <i>x</i> and <i>y</i> index, in
+ * addition to the current data stack. The return value is a {@link pv.Color},
+ * or null for transparent. A string can also be returned, which will be parsed
+ * into a color; however, it is typically much faster to return an object with
+ * <tt>r</tt>, <tt>g</tt>, <tt>b</tt> and <tt>a</tt> attributes, to avoid the
+ * cost of parsing and object instantiation.
  *
  * <p>See {@link pv.Bar} for details on positioning properties.
  *
@@ -7811,7 +8937,9 @@ pv.Image = function() {
 };
 
 pv.Image.prototype = pv.extend(pv.Bar)
-    .property("url", String);
+    .property("url", String)
+    .property("imageWidth", Number)
+    .property("imageHeight", Number);
 
 pv.Image.prototype.type = "image";
 
@@ -7824,6 +8952,26 @@ pv.Image.prototype.type = "image";
  */
 
 /**
+ * The width of the image in pixels. For static images, this property is
+ * computed implicitly from the loaded image resources. For dynamic images, this
+ * property can be used to specify the width of the pixel buffer; otherwise, the
+ * value is derived from the <tt>width</tt> property.
+ *
+ * @type number
+ * @name pv.Image.prototype.imageWidth
+ */
+
+/**
+ * The height of the image in pixels. For static images, this property is
+ * computed implicitly from the loaded image resources. For dynamic images, this
+ * property can be used to specify the height of the pixel buffer; otherwise, the
+ * value is derived from the <tt>height</tt> property.
+ *
+ * @type number
+ * @name pv.Image.prototype.imageHeight
+ */
+
+/**
  * Default properties for images. By default, there is no stroke or fill style.
  *
  * @type pv.Image
@@ -7831,6 +8979,90 @@ pv.Image.prototype.type = "image";
 pv.Image.prototype.defaults = new pv.Image()
     .extend(pv.Bar.prototype.defaults)
     .fillStyle(null);
+
+/**
+ * Specifies the dynamic image function. By default, no image function is
+ * specified and the <tt>url</tt> property is used to load a static image
+ * resource. If an image function is specified, it will be invoked for each
+ * pixel in the image, based on the related <tt>imageWidth</tt> and
+ * <tt>imageHeight</tt> properties.
+ *
+ * <p>For example, given a two-dimensional array <tt>heatmap</tt>, containing
+ * numbers in the range [0, 1] in row-major order, a simple monochrome heatmap
+ * image can be specified as:
+ *
+ * <pre>vis.add(pv.Image)
+ *     .imageWidth(heatmap[0].length)
+ *     .imageHeight(heatmap.length)
+ *     .image(pv.ramp("white", "black").by(function(x, y) heatmap[y][x]));</pre>
+ *
+ * For fastest performance, use an ordinal scale which caches the fixed color
+ * palette, or return an object literal with <tt>r</tt>, <tt>g</tt>, <tt>b</tt>
+ * and <tt>a</tt> attributes. A {@link pv.Color} or string can also be returned,
+ * though this typically results in slower performance.
+ *
+ * @param {function} f the new sizing function.
+ * @returns {pv.Layout.Pack} this.
+ */
+pv.Image.prototype.image = function(f) {
+  /** @private */
+  this.$image = function() {
+      var c = f.apply(this, arguments);
+      return c == null ? pv.Color.transparent
+          : typeof c == "string" ? pv.color(c)
+          : c;
+    };
+  return this;
+};
+
+/** @private Scan the proto chain for an image function. */
+pv.Image.prototype.bind = function() {
+  pv.Bar.prototype.bind.call(this);
+  var binds = this.binds, mark = this;
+  do {
+    binds.image = mark.$image;
+  } while (!binds.image && (mark = mark.proto));
+};
+
+/** @private */
+pv.Image.prototype.buildImplied = function(s) {
+  pv.Bar.prototype.buildImplied.call(this, s);
+  if (!s.visible) return;
+
+  /* Compute the implied image dimensions. */
+  if (s.imageWidth == null) s.imageWidth = s.width;
+  if (s.imageHeight == null) s.imageHeight = s.height;
+
+  /* Compute the pixel values. */
+  if ((s.url == null) && this.binds.image) {
+
+    /* Cache the canvas element to reuse across renders. */
+    var canvas = this.$canvas || (this.$canvas = document.createElement("canvas")),
+        context = canvas.getContext("2d"),
+        w = s.imageWidth,
+        h = s.imageHeight,
+        stack = pv.Mark.stack,
+        data;
+
+    /* Evaluate the image function, storing into a CanvasPixelArray. */
+    canvas.width = w;
+    canvas.height = h;
+    data = (s.image = context.createImageData(w, h)).data;
+    stack.unshift(null, null);
+    for (var y = 0, p = 0; y < h; y++) {
+      stack[1] = y;
+      for (var x = 0; x < w; x++) {
+        stack[0] = x;
+        var color = this.binds.image.apply(this, stack);
+        data[p++] = color.r;
+        data[p++] = color.g;
+        data[p++] = color.b;
+        data[p++] = 255 * color.a;
+      }
+    }
+    stack.splice(0, 2);
+  }
+};
 /**
  * Constructs a new wedge with default properties. Wedges are not typically
  * constructed directly, but by adding to a panel or an existing mark via
@@ -7845,7 +9077,7 @@ pv.Image.prototype.defaults = new pv.Image()
  * convenient defaults for the construction of radial graphs.
  *
  * <p>The center point of the circle is positioned using the standard box model.
- * The wedge can be stroked and filled, similar to {link Bar}.
+ * The wedge can be stroked and filled, similar to {@link pv.Bar}.
  *
  * <p>See also the <a href="../../api/Wedge.html">Wedge guide</a>.
  *
@@ -7999,69 +9231,51 @@ pv.Wedge.prototype.midAngle = function() {
  * @returns {pv.Anchor}
  */
 pv.Wedge.prototype.anchor = function(name) {
+  function partial(s) { return s.innerRadius || s.angle < 2 * Math.PI; }
   function midRadius(s) { return (s.innerRadius + s.outerRadius) / 2; }
   function midAngle(s) { return (s.startAngle + s.endAngle) / 2; }
-  var target = this;
   return pv.Mark.prototype.anchor.call(this, name)
     .left(function() {
-        var s = target.instance();
-        switch (this.name()) {
+        var s = this.scene.target[this.index];
+        if (partial(s)) switch (this.name()) {
           case "outer": return s.left + s.outerRadius * Math.cos(midAngle(s));
           case "inner": return s.left + s.innerRadius * Math.cos(midAngle(s));
           case "start": return s.left + midRadius(s) * Math.cos(s.startAngle);
           case "center": return s.left + midRadius(s) * Math.cos(midAngle(s));
           case "end": return s.left + midRadius(s) * Math.cos(s.endAngle);
         }
-      })
-    .right(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "outer": return s.right + s.outerRadius * Math.cos(midAngle(s));
-          case "inner": return s.right + s.innerRadius * Math.cos(midAngle(s));
-          case "start": return s.right + midRadius(s) * Math.cos(s.startAngle);
-          case "center": return s.right + midRadius(s) * Math.cos(midAngle(s));
-          case "end": return s.right + midRadius(s) * Math.cos(s.endAngle);
-        }
+        return s.left;
       })
     .top(function() {
-        var s = target.instance();
-        switch (this.name()) {
+        var s = this.scene.target[this.index];
+        if (partial(s)) switch (this.name()) {
           case "outer": return s.top + s.outerRadius * Math.sin(midAngle(s));
           case "inner": return s.top + s.innerRadius * Math.sin(midAngle(s));
           case "start": return s.top + midRadius(s) * Math.sin(s.startAngle);
           case "center": return s.top + midRadius(s) * Math.sin(midAngle(s));
           case "end": return s.top + midRadius(s) * Math.sin(s.endAngle);
         }
-      })
-    .bottom(function() {
-        var s = target.instance();
-        switch (this.name()) {
-          case "outer": return s.bottom + s.outerRadius * Math.sin(midAngle(s));
-          case "inner": return s.bottom + s.innerRadius * Math.sin(midAngle(s));
-          case "start": return s.bottom + midRadius(s) * Math.sin(s.startAngle);
-          case "center": return s.bottom + midRadius(s) * Math.sin(midAngle(s));
-          case "end": return s.bottom + midRadius(s) * Math.sin(s.endAngle);
-        }
+        return s.top;
       })
     .textAlign(function() {
-        var s = target.instance();
-        switch (this.name()) {
+        var s = this.scene.target[this.index];
+        if (partial(s)) switch (this.name()) {
           case "outer": return pv.Wedge.upright(midAngle(s)) ? "right" : "left";
           case "inner": return pv.Wedge.upright(midAngle(s)) ? "left" : "right";
         }
         return "center";
       })
     .textBaseline(function() {
-        var s = target.instance();
-        switch (this.name()) {
+        var s = this.scene.target[this.index];
+        if (partial(s)) switch (this.name()) {
           case "start": return pv.Wedge.upright(s.startAngle) ? "top" : "bottom";
           case "end": return pv.Wedge.upright(s.endAngle) ? "bottom" : "top";
         }
         return "middle";
       })
     .textAngle(function() {
-        var s = target.instance(), a = 0;
-        switch (this.name()) {
+        var s = this.scene.target[this.index], a = 0;
+        if (partial(s)) switch (this.name()) {
           case "center":
           case "inner":
           case "outer": a = midAngle(s); break;
@@ -8084,7 +9298,7 @@ pv.Wedge.prototype.anchor = function(name) {
 pv.Wedge.upright = function(angle) {
   angle = angle % (2 * Math.PI);
   angle = (angle < 0) ? (2 * Math.PI + angle) : angle;
-  return (angle < Math.PI / 2) || (angle > 3 * Math.PI / 2);
+  return (angle < Math.PI / 2) || (angle >= 3 * Math.PI / 2);
 };
 
 /** @private Sets angle based on endAngle or vice versa. */
@@ -8093,96 +9307,479 @@ pv.Wedge.prototype.buildImplied = function(s) {
   else if (s.endAngle == null) s.endAngle = s.startAngle + s.angle;
   pv.Mark.prototype.buildImplied.call(this, s);
 };
+/*
+ * TERMS OF USE - EASING EQUATIONS
+ *
+ * Open source under the BSD License.
+ *
+ * Copyright 2001 Robert Penner
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ *
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * - Neither the name of the author nor the names of contributors may be used to
+ *   endorse or promote products derived from this software without specific
+ *   prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+pv.Ease = (function() {
+
+  function reverse(f) {
+    return function(t) {
+      return 1 - f(1 - t);
+    };
+  }
+
+  function reflect(f) {
+    return function(t) {
+      return .5 * (t < .5 ? f(2 * t) : (2 - f(2 - 2 * t)));
+    };
+  }
+
+  function poly(e) {
+    return function(t) {
+      return t < 0 ? 0 : t > 1 ? 1 : Math.pow(t, e);
+    }
+  }
+
+  function sin(t) {
+    return 1 - Math.cos(t * Math.PI / 2);
+  }
+
+  function exp(t) {
+    return t ? Math.pow(2, 10 * (t - 1)) - 0.001 : 0;
+  }
+
+  function circle(t) {
+    return -(Math.sqrt(1 - t * t) - 1);
+  }
+
+  function elastic(a, p) {
+    var s;
+    if (!p) p = 0.45;
+    if (!a || a < 1) { a = 1; s = p / 4; }
+    else s = p / (2 * Math.PI) * Math.asin(1 / a);
+    return function(t) {
+      return t <= 0 || t >= 1 ? t
+          : -(a * Math.pow(2, 10 * (--t)) * Math.sin((t - s) * (2 * Math.PI) / p));
+    };
+  }
+
+  function back(s) {
+    if (!s) s = 1.70158;
+    return function(t) {
+      return t * t * ((s + 1) * t - s);
+    };
+  }
+
+  function bounce(t) {
+    return t < 1 / 2.75 ? 7.5625 * t * t
+        : t < 2 / 2.75 ? 7.5625 * (t -= 1.5 / 2.75) * t + .75
+        : t < 2.5 / 2.75 ? 7.5625 * (t -= 2.25 / 2.75) * t + .9375
+        : 7.5625 * (t -= 2.625 / 2.75) * t + .984375;
+  }
+
+  var quad = poly(2),
+      cubic = poly(3),
+      elasticDefault = elastic(),
+      backDefault = back();
+
+  var eases = {
+    "linear": pv.identity,
+    "quad-in": quad,
+    "quad-out": reverse(quad),
+    "quad-in-out": reflect(quad),
+    "quad-out-in": reflect(reverse(quad)),
+    "cubic-in": cubic,
+    "cubic-out": reverse(cubic),
+    "cubic-in-out": reflect(cubic),
+    "cubic-out-in": reflect(reverse(cubic)),
+    "sin-in": sin,
+    "sin-out": reverse(sin),
+    "sin-in-out": reflect(sin),
+    "sin-out-in": reflect(reverse(sin)),
+    "exp-in": exp,
+    "exp-out": reverse(exp),
+    "exp-in-out": reflect(exp),
+    "exp-out-in": reflect(reverse(exp)),
+    "circle-in": circle,
+    "circle-out": reverse(circle),
+    "circle-in-out": reflect(circle),
+    "circle-out-in": reflect(reverse(circle)),
+    "elastic-in": elasticDefault,
+    "elastic-out": reverse(elasticDefault),
+    "elastic-in-out": reflect(elasticDefault),
+    "elastic-out-in": reflect(reverse(elasticDefault)),
+    "back-in": backDefault,
+    "back-out": reverse(backDefault),
+    "back-in-out": reflect(backDefault),
+    "back-out-in": reflect(reverse(backDefault)),
+    "bounce-in": bounce,
+    "bounce-out": reverse(bounce),
+    "bounce-in-out": reflect(bounce),
+    "bounce-out-in": reflect(reverse(bounce))
+  };
+
+  pv.ease = function(f) {
+    return eases[f];
+  };
+
+  return {
+    reverse: reverse,
+    reflect: reflect,
+    linear: function() { return pv.identity; },
+    sin: function() { return sin; },
+    exp: function() { return exp; },
+    circle: function() { return circle; },
+    elastic: elastic,
+    back: back,
+    bounce: bounce,
+    poly: poly
+  };
+})();
+pv.Transition = function(mark) {
+  var that = this,
+      ease = pv.ease("cubic-in-out"),
+      duration = 250,
+      timer;
+
+  var interpolated = {
+    top: 1,
+    left: 1,
+    right: 1,
+    bottom: 1,
+    width: 1,
+    height: 1,
+    innerRadius: 1,
+    outerRadius: 1,
+    radius: 1,
+    startAngle: 1,
+    endAngle: 1,
+    angle: 1,
+    fillStyle: 1,
+    strokeStyle: 1,
+    lineWidth: 1,
+    eccentricity: 1,
+    tension: 1,
+    textAngle: 1,
+    textStyle: 1,
+    textMargin: 1
+  };
+
+  var defaults = new pv.Transient();
+
+  var none = pv.Color.transparent;
+
+  /** @private */
+  function ids(marks) {
+    var map = {};
+    for (var i = 0; i < marks.length; i++) {
+      var mark = marks[i];
+      if (mark.id) map[mark.id] = mark;
+    }
+    return map;
+  }
+
+  /** @private */
+  function interpolateProperty(list, name, before, after) {
+    if (name in interpolated) {
+      var i = pv.Scale.interpolator(before[name], after[name]);
+      var f = function(t) { before[name] = i(t); }
+    } else {
+      var f = function(t) { if (t > .5) before[name] = after[name]; }
+    }
+    f.next = list.head;
+    list.head = f;
+  }
+
+  /** @private */
+  function interpolateInstance(list, before, after) {
+    for (var name in before) {
+      if (name == "children") continue; // not a property
+      if (before[name] == after[name]) continue; // unchanged
+      interpolateProperty(list, name, before, after);
+    }
+    if (before.children) {
+      for (var j = 0; j < before.children.length; j++) {
+        interpolate(list, before.children[j], after.children[j]);
+      }
+    }
+  }
+
+  /** @private */
+  function interpolate(list, before, after) {
+    var mark = before.mark, bi = ids(before), ai = ids(after);
+    for (var i = 0; i < before.length; i++) {
+      var b = before[i], a = b.id ? ai[b.id] : after[i];
+      b.index = i;
+      if (!b.visible) continue;
+      if (!(a && a.visible)) {
+        var o = override(before, i, mark.$exit, after);
+
+        /*
+         * After the transition finishes, we need to do a little cleanup to
+         * insure that the final state of the scenegraph is consistent with the
+         * "after" render. For instances that were removed, we need to remove
+         * them from the scenegraph; for instances that became invisible, we
+         * need to mark them invisible. See the cleanup method for details.
+         */
+        b.transition = a ? 2 : (after.push(o), 1);
+        a = o;
+      }
+      interpolateInstance(list, b, a);
+    }
+    for (var i = 0; i < after.length; i++) {
+      var a = after[i], b = a.id ? bi[a.id] : before[i];
+      if (!(b && b.visible) && a.visible) {
+        var o = override(after, i, mark.$enter, before);
+        if (!b) before.push(o);
+        else before[b.index] = o;
+        interpolateInstance(list, o, a);
+      }
+    }
+  }
+
+  /** @private */
+  function override(scene, index, proto, other) {
+    var s = pv.extend(scene[index]),
+        m = scene.mark,
+        r = m.root.scene,
+        p = (proto || defaults).$properties,
+        t;
+
+    /* Correct the target reference, if this is an anchor. */
+    if (other.target && (t = other.target[other.length])) {
+      scene = pv.extend(scene);
+      scene.target = pv.extend(other.target);
+      scene.target[index] = t;
+    }
+
+    /* Determine the set of properties to evaluate. */
+    var seen = {};
+    for (var i = 0; i < p.length; i++) seen[p[i].name] = 1;
+    p = m.binds.optional
+        .filter(function(p) { return !(p.name in seen); })
+        .concat(p);
+
+    /* Evaluate the properties and update any implied ones. */
+    m.context(scene, index, function() {
+      this.buildProperties(s, p);
+      this.buildImplied(s);
+    });
+
+    /* Restore the root scene. This should probably be done by context(). */
+    m.root.scene = r;
+    return s;
+  }
+
+  /** @private */
+  function cleanup(scene) {
+    for (var i = 0, j = 0; i < scene.length; i++) {
+      var s = scene[i];
+      if (s.transition != 1) {
+        scene[j++] = s;
+        if (s.transition == 2) s.visible = false;
+        if (s.children) s.children.forEach(cleanup);
+      }
+    }
+    scene.length = j;
+  }
+
+  that.ease = function(x) {
+    return arguments.length
+        ? (ease = typeof x == "function" ? x : pv.ease(x), that)
+        : ease;
+  };
+
+  that.duration = function(x) {
+    return arguments.length
+        ? (duration = Number(x), that)
+        : duration;
+  };
+
+  that.start = function() {
+    // TODO allow partial rendering
+    if (mark.parent) fail();
+
+    // TODO allow parallel and sequenced transitions
+    if (mark.$transition) mark.$transition.stop();
+    mark.$transition = that;
+
+    // TODO clearing the scene like this forces total re-build
+    var i = pv.Mark.prototype.index, before = mark.scene, after;
+    mark.scene = null;
+    mark.bind();
+    mark.build();
+    after = mark.scene;
+    mark.scene = before;
+    pv.Mark.prototype.index = i;
+
+    var start = Date.now(), list = {};
+    interpolate(list, before, after);
+    timer = setInterval(function() {
+      var t = Math.max(0, Math.min(1, (Date.now() - start) / duration)),
+          e = ease(t);
+      for (var i = list.head; i; i = i.next) i(e);
+      if (t == 1) {
+        cleanup(mark.scene);
+        that.stop();
+      }
+      pv.Scene.updateAll(before);
+    }, 24);
+  };
+
+  that.stop = function() {
+    clearInterval(timer);
+  };
+};
+pv.Transient = function(mark) {
+  pv.Mark.call(this);
+  this.fillStyle(null).strokeStyle(null).textStyle(null);
+  this.on = function(state) { return mark.on(state); };
+};
+
+pv.Transient.prototype = pv.extend(pv.Mark);
 /**
- * A weighted particle that can participate in a force simulation. There is no
- * explicit constructor corresponding to the class {@code pv.Particle}; this
- * class merely serves to document the attributes that are used on particles in
+ * Abstract; not implemented. There is no explicit constructor; this class
+ * merely serves to document the attributes that are used on particles in
  * physics simulations.
  *
- * @class pv.Particle
+ * @class A weighted particle that can participate in a force simulation.
+ *
+ * @name pv.Particle
  */
 
 /**
- * The next particle in the simulation.
+ * The next particle in the simulation. Particles form a singly-linked list.
  *
+ * @field
  * @type pv.Particle
- * @field pv.Particle.prototype.next
- */
-
-/**
- * If true, the particle's position and velocity are fixed and will not be
- * modified during the simulation. (This allows interactive drag and drop.)
- *
- * @type boolean
- * @field pv.Particle.prototype.fixed
+ * @name pv.Particle.prototype.next
  */
 
 /**
  * The <i>x</i>-position of the particle.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.x
+ * @name pv.Particle.prototype.x
  */
 
 /**
  * The <i>y</i>-position of the particle.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.y
+ * @name pv.Particle.prototype.y
  */
 
 /**
  * The <i>x</i>-velocity of the particle.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.vx
+ * @name pv.Particle.prototype.vx
  */
 
 /**
  * The <i>y</i>-velocity of the particle.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.vy
+ * @name pv.Particle.prototype.vy
  */
 
 /**
  * The <i>x</i>-position of the particle at -dt.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.px
+ * @name pv.Particle.prototype.px
  */
 
 /**
  * The <i>y</i>-position of the particle at -dt.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.py
+ * @name pv.Particle.prototype.py
  */
 
 /**
  * The <i>x</i>-force on the particle.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.fx
+ * @name pv.Particle.prototype.fx
  */
 
 /**
  * The <i>y</i>-force on the particle.
  *
+ * @field
  * @type number
- * @field pv.Particle.prototype.fy
+ * @name pv.Particle.prototype.fy
  */
 /**
  * Constructs a new empty simulation.
+ *
+ * @param {array} particles
+ * @returns {pv.Simulation} a new simulation for the specified particles.
+ * @see pv.Simulation
  */
 pv.simulation = function(particles) {
   return new pv.Simulation(particles);
 };
 
 /**
- * A particle simulation.
+ * Constructs a new simulation for the specified particles.
  *
- * @constructor Constructs a new empty simulation.
+ * @class Represents a particle simulation. Particles are massive points in
+ * two-dimensional space. Forces can be applied to these particles, causing them
+ * to move. Constraints can also be applied to restrict particle movement, for
+ * example, constraining particles to a fixed position, or simulating collision
+ * between circular particles with area.
+ *
+ * <p>The simulation uses <a
+ * href="http://en.wikipedia.org/wiki/Verlet_integration">Position Verlet</a>
+ * integration, due to the ease with which <a
+ * href="http://www.teknikus.dk/tj/gdc2001.htm">geometric constraints</a> can be
+ * implemented. For each time step, Verlet integration is performed, new forces
+ * are accumulated, and then constraints are applied.
+ *
+ * <p>The simulation makes two simplifying assumptions: all particles are
+ * equal-mass, and the time step of the simulation is fixed. It would be easy to
+ * incorporate variable-mass particles as a future enhancement. Variable time
+ * steps are also possible, but are likely to introduce instability in the
+ * simulation.
+ *
+ * <p>This class can be used directly to simulate particle interaction.
+ * Alternatively, for network diagrams, see {@link pv.Layout.Force}.
+ *
+ * @param {array} particles an array of {@link pv.Particle}s to simulate.
+ * @see pv.Layout.Force
+ * @see pv.Force
+ * @see pv.Constraint
  */
 pv.Simulation = function(particles) {
   for (var i = 0; i < particles.length; i++) this.particle(particles[i]);
@@ -8192,24 +9789,27 @@ pv.Simulation = function(particles) {
  * The particles in the simulation. Particles are stored as a linked list; this
  * field represents the first particle in the simulation.
  *
+ * @field
  * @type pv.Particle
- * @field pv.Simulation.prototype.particles
+ * @name pv.Simulation.prototype.particles
  */
 
 /**
  * The forces in the simulation. Forces are stored as a linked list; this field
  * represents the first force in the simulation.
  *
+ * @field
  * @type pv.Force
- * @field pv.Simulation.prototype.forces
+ * @name pv.Simulation.prototype.forces
  */
 
 /**
  * The constraints in the simulation. Constraints are stored as a linked list;
  * this field represents the first constraint in the simulation.
  *
+ * @field
  * @type pv.Constraint
- * @field pv.Simulation.prototype.constraints
+ * @name pv.Simulation.prototype.constraints
  */
 
 /**
@@ -8259,6 +9859,7 @@ pv.Simulation.prototype.constraint = function(c) {
  * @returns {pv.Simulation} this.
  */
 pv.Simulation.prototype.stabilize = function(n) {
+  var c;
   if (!arguments.length) n = 3; // TODO use cooling schedule
   for (var i = 0; i < n; i++) {
     var q = new pv.Quadtree(this.particles);
@@ -8288,7 +9889,6 @@ pv.Simulation.prototype.step = function() {
     var px = p.px, py = p.py;
     p.px = p.x;
     p.py = p.y;
-    if (p.fixed) continue;
     p.x += p.vx = ((p.x - px) + p.fx);
     p.y += p.vy = ((p.y - py) + p.fy);
   }
@@ -8298,20 +9898,22 @@ pv.Simulation.prototype.step = function() {
   for (c = this.constraints; c; c = c.next) c.apply(this.particles, q);
   for (p = this.particles; p; p = p.next) p.fx = p.fy = 0;
   for (f = this.forces; f; f = f.next) f.apply(this.particles, q);
-
-  /* Restore fixed positions, if necessary. */
-  for (p = this.particles; p; p = p.next) {
-    if (p.fixed) {
-      p.x = p.px;
-      p.y = p.py;
-    }
-  }
 };
 /**
- * A quadtree.
+ * Constructs a new quadtree for the specified array of particles.
  *
- * @constructor Constructs a new quadtree for the specified array of particles.
+ * @class Represents a quadtree: a two-dimensional recursive spatial
+ * subdivision. This particular implementation uses square partitions, dividing
+ * each square into four equally-sized squares. Each particle exists in a unique
+ * node; if multiple particles are in the same position, some particles may be
+ * stored on internal nodes rather than leaf nodes.
  *
+ * <p>This quadtree can be used to accelerate various spatial operations, such
+ * as the Barnes-Hut approximation for computing n-body forces, or collision
+ * detection.
+ *
+ * @see pv.Force.charge
+ * @see pv.Constraint.collision
  * @param {pv.Particle} particles the linked list of particles.
  */
 pv.Quadtree = function(particles) {
@@ -8337,11 +9939,12 @@ pv.Quadtree = function(particles) {
   this.yMax = y2;
 
   /**
-   * Recursively inserts the specified particle <i>p</i> at the node <i>n</i> or
-   * one of its descendants. The bounds are defined by [<i>x1</i>, <i>x2</i>]
-   * and [<i>y1</i>, <i>y2</i>].
+   * @ignore Recursively inserts the specified particle <i>p</i> at the node
+   * <i>n</i> or one of its descendants. The bounds are defined by [<i>x1</i>,
+   * <i>x2</i>] and [<i>y1</i>, <i>y2</i>].
    */
   function insert(n, p, x1, y1, x2, y2) {
+    if (isNaN(p.x) || isNaN(p.y)) return; // ignore invalid particles
     if (n.leaf) {
       if (n.p) {
         /*
@@ -8367,9 +9970,9 @@ pv.Quadtree = function(particles) {
   }
 
   /**
-   * Recursively inserts the specified particle <i>p</i> into a descendant of
-   * node <i>n</i>. The bounds are defined by [<i>x1</i>, <i>x2</i>] and
-   * [<i>y1</i>, <i>y2</i>].
+   * @ignore Recursively inserts the specified particle <i>p</i> into a
+   * descendant of node <i>n</i>. The bounds are defined by [<i>x1</i>,
+   * <i>x2</i>] and [<i>y1</i>, <i>y2</i>].
    */
   function insertChild(n, p, x1, y1, x2, y2) {
     /* Compute the split point, and the quadrant in which to insert p. */
@@ -8399,34 +10002,46 @@ pv.Quadtree = function(particles) {
 };
 
 /**
- * @type pv.Quadtree.Node
- * @field pv.Quadtree.prototype.root
- */
-
-/**
- * @type number
- * @field pv.Quadtree.prototype.xMin
- */
-
-/**
- * @type number
- * @field pv.Quadtree.prototype.xMax
- */
-
-/**
- * @type number
- * @field pv.Quadtree.prototype.yMin
- */
-
-/**
- * @type number
- * @field pv.Quadtree.prototype.yMax
- */
-
-/**
- * A node in a quadtree.
+ * The root node of the quadtree.
  *
- * @constructor Constructs a new node.
+ * @type pv.Quadtree.Node
+ * @name pv.Quadtree.prototype.root
+ */
+
+/**
+ * The minimum x-coordinate value of all contained particles.
+ *
+ * @type number
+ * @name pv.Quadtree.prototype.xMin
+ */
+
+/**
+ * The maximum x-coordinate value of all contained particles.
+ *
+ * @type number
+ * @name pv.Quadtree.prototype.xMax
+ */
+
+/**
+ * The minimum y-coordinate value of all contained particles.
+ *
+ * @type number
+ * @name pv.Quadtree.prototype.yMin
+ */
+
+/**
+ * The maximum y-coordinate value of all contained particles.
+ *
+ * @type number
+ * @name pv.Quadtree.prototype.yMax
+ */
+
+/**
+ * Constructs a new node.
+ *
+ * @class A node in a quadtree.
+ *
+ * @see pv.Quadtree
  */
 pv.Quadtree.Node = function() {
   /*
@@ -8435,7 +10050,6 @@ pv.Quadtree.Node = function() {
    * faster than creating a cache pool.
    */
   this.leaf = true;
-  this.next = null;
   this.c1 = null;
   this.c2 = null;
   this.c3 = null;
@@ -8450,49 +10064,82 @@ pv.Quadtree.Node = function() {
  * {@link #c3} or {@link #c4} is guaranteed to be non-null.
  *
  * @type boolean
- * @field pv.Quadtree.Node.prototype.leaf
- */
-
-/**
- * @type pv.Quadtree.Node
- * @field pv.Quadtree.Node.prototype.next
+ * @name pv.Quadtree.Node.prototype.leaf
  */
 
 /**
  * The particle associated with this node, if any.
  *
  * @type pv.Particle
- * @field pv.Quadtree.Node.prototype.p
+ * @name pv.Quadtree.Node.prototype.p
  */
 
 /**
  * The child node for the second quadrant, if any.
  *
  * @type pv.Quadtree.Node
- * @field pv.Quadtree.Node.prototype.c2
+ * @name pv.Quadtree.Node.prototype.c2
  */
 
 /**
  * The child node for the third quadrant, if any.
  *
  * @type pv.Quadtree.Node
- * @field pv.Quadtree.Node.prototype.c3
+ * @name pv.Quadtree.Node.prototype.c3
  */
 
 /**
  * The child node for the fourth quadrant, if any.
  *
  * @type pv.Quadtree.Node
- * @field pv.Quadtree.Node.prototype.c4
+ * @name pv.Quadtree.Node.prototype.c4
+ */
+/**
+ * Abstract; see an implementing class.
+ *
+ * @class Represents a force that acts on particles. Note that this interface
+ * does not specify how to bind a force to specific particles; in general,
+ * forces are applied globally to all particles. However, some forces may be
+ * applied to specific particles or between particles, such as spring forces,
+ * through additional specialization.
+ *
+ * @see pv.Simulation
+ * @see pv.Particle
+ * @see pv.Force.charge
+ * @see pv.Force.drag
+ * @see pv.Force.spring
  */
 pv.Force = {};
+
 /**
- * An n-body force, as defined by Coulomb's law or Newton's law of gravitation,
- * inversely proportional to the square of the distance between particles. Note
- * that the force is independent of the <i>mass</i> of the associated particles,
- * and that the particles do not have charges of varying magnitude; instead, the
- * attraction or repulsion of all particles is globally specified as the charge
- * {@link #constant}.
+ * Applies this force to the specified particles.
+ *
+ * @function
+ * @name pv.Force.prototype.apply
+ * @param {pv.Particle} particles particles to which to apply this force.
+ * @param {pv.Quadtree} q a quadtree for spatial acceleration.
+ */
+/**
+ * Constructs a new charge force, with an optional charge constant. The charge
+ * constant can be negative for repulsion (e.g., particles with electrical
+ * charge of equal sign), or positive for attraction (e.g., massive particles
+ * with mutual gravity). The default charge constant is -40.
+ *
+ * @class An n-body force, as defined by Coulomb's law or Newton's law of
+ * gravitation, inversely proportional to the square of the distance between
+ * particles. Note that the force is independent of the <i>mass</i> of the
+ * associated particles, and that the particles do not have charges of varying
+ * magnitude; instead, the attraction or repulsion of all particles is globally
+ * specified as the charge {@link #constant}.
+ *
+ * <p>This particular implementation uses the Barnes-Hut algorithm. For details,
+ * see <a
+ * href="http://www.nature.com/nature/journal/v324/n6096/abs/324446a0.html">"A
+ * hierarchical O(N log N) force-calculation algorithm"</a>, J. Barnes &amp;
+ * P. Hut, <i>Nature</i> 1986.
+ *
+ * @name pv.Force.charge
+ * @param {number} [k] the charge constant.
  */
 pv.Force.charge = function(k) {
   var min = 2, // minimum distance at which to observe forces
@@ -8504,6 +10151,18 @@ pv.Force.charge = function(k) {
 
   if (!arguments.length) k = -40; // default charge constant (repulsion)
 
+  /**
+   * Sets or gets the charge constant. If an argument is specified, it is the
+   * new charge constant. The charge constant can be negative for repulsion
+   * (e.g., particles with electrical charge of equal sign), or positive for
+   * attraction (e.g., massive particles with mutual gravity). The default
+   * charge constant is -40.
+   *
+   * @function
+   * @name pv.Force.charge.prototype.constant
+   * @param {number} x the charge constant.
+   * @returns {pv.Force.charge} this.
+   */
   force.constant = function(x) {
     if (arguments.length) {
       k = Number(x);
@@ -8512,6 +10171,21 @@ pv.Force.charge = function(k) {
     return k;
   };
 
+  /**
+   * Sets or gets the domain; specifies the minimum and maximum domain within
+   * which charge forces are applied. A minimum distance threshold avoids
+   * applying forces that are two strong (due to granularity of the simulation's
+   * numeric integration). A maximum distance threshold improves performance by
+   * skipping force calculations for particles that are far apart.
+   *
+   * <p>The default domain is [2, 500].
+   *
+   * @function
+   * @name pv.Force.charge.prototype.domain
+   * @param {number} a
+   * @param {number} b
+   * @returns {pv.Force.charge} this.
+   */
   force.domain = function(a, b) {
     if (arguments.length) {
       min = Number(a);
@@ -8523,6 +10197,17 @@ pv.Force.charge = function(k) {
     return [min, max];
   };
 
+  /**
+   * Sets or gets the Barnes-Hut approximation factor. The Barnes-Hut
+   * approximation criterion is the ratio of the size of the quadtree node to
+   * the distance from the point to the node's center of mass is beneath some
+   * threshold.
+   *
+   * @function
+   * @name pv.Force.charge.prototype.theta
+   * @param {number} x the new Barnes-Hut approximation factor.
+   * @returns {pv.Force.charge} this.
+   */
   force.theta = function(x) {
     if (arguments.length) {
       theta = Number(x);
@@ -8532,9 +10217,9 @@ pv.Force.charge = function(k) {
   };
 
   /**
-   * Recursively computes the center of charge for each node in the quadtree.
-   * This is equivalent to the center of mass, assuming that all particles have
-   * unit weight.
+   * @ignore Recursively computes the center of charge for each node in the
+   * quadtree. This is equivalent to the center of mass, assuming that all
+   * particles have unit weight.
    */
   function accumulate(n) {
     var cx = 0, cy = 0;
@@ -8561,10 +10246,10 @@ pv.Force.charge = function(k) {
   }
 
   /**
-   * Recursively computes forces on the given particle using the given quadtree
-   * node. The Barnes-Hut approximation criterion is if the ratio of the size of
-   * the quadtree node to the distance from the point to the node's center of
-   * mass is beneath some threshold.
+   * @ignore Recursively computes forces on the given particle using the given
+   * quadtree node. The Barnes-Hut approximation criterion is the ratio of the
+   * size of the quadtree node to the distance from the point to the node's
+   * center of mass is beneath some threshold.
    */
   function forces(n, p, x1, y1, x2, y2) {
     var dx = n.cx - p.x,
@@ -8598,6 +10283,17 @@ pv.Force.charge = function(k) {
     }
   }
 
+  /**
+   * Applies this force to the specified particles. The force is applied between
+   * all pairs of particles within the domain, using the specified quadtree to
+   * accelerate n-body force calculation using the Barnes-Hut approximation
+   * criterion.
+   *
+   * @function
+   * @name pv.Force.charge.prototype.apply
+   * @param {pv.Particle} particles particles to which to apply this force.
+   * @param {pv.Quadtree} q a quadtree for spatial acceleration.
+   */
   force.apply = function(particles, q) {
     accumulate(q.root);
     for (var p = particles; p; p = p.next) {
@@ -8607,25 +10303,78 @@ pv.Force.charge = function(k) {
 
   return force;
 };
+/**
+ * Constructs a new drag force with the specified constant.
+ *
+ * @class Implements a drag force, simulating friction. The drag force is
+ * applied in the opposite direction of the particle's velocity. Since Position
+ * Verlet integration does not track velocities explicitly, the error term with
+ * this estimate of velocity is fairly high, so the drag force may be
+ * inaccurate.
+ *
+ * @extends pv.Force
+ * @param {number} k the drag constant.
+ * @see #constant
+ */
 pv.Force.drag = function(k) {
   var force = {};
 
-  if (!arguments.length) k = .1;
+  if (!arguments.length) k = .1; // default drag constant
 
+  /**
+   * Sets or gets the drag constant, in the range [0,1]. The default drag
+   * constant is 0.1. The drag forces scales linearly with the particle's
+   * velocity based on the given drag constant.
+   *
+   * @function
+   * @name pv.Force.drag.prototype.constant
+   * @param {number} x the new drag constant.
+   * @returns {pv.Force.drag} this, or the current drag constant.
+   */
   force.constant = function(x) {
     if (arguments.length) { k = x; return force; }
     return k;
   };
 
+  /**
+   * Applies this force to the specified particles.
+   *
+   * @function
+   * @name pv.Force.drag.prototype.apply
+   * @param {pv.Particle} particles particles to which to apply this force.
+   */
   force.apply = function(particles) {
     if (k) for (var p = particles; p; p = p.next) {
-      p.fx = k * (p.fx - p.x + p.px);
-      p.fy = k * (p.fy - p.y + p.py);
+      p.fx -= k * p.vx;
+      p.fy -= k * p.vy;
     }
   };
 
   return force;
 };
+/**
+ * Constructs a new spring force with the specified constant. The links
+ * associated with this spring force must be specified before the spring force
+ * can be applied.
+ *
+ * @class Implements a spring force, per Hooke's law. The spring force can be
+ * configured with a tension constant, rest length, and damping factor. The
+ * tension and damping will automatically be normalized using the inverse square
+ * root of the maximum link degree of attached nodes; this makes springs weaker
+ * between nodes of high link degree.
+ *
+ * <p>Unlike other forces (such as charge and drag forces) which may be applied
+ * globally, spring forces are only applied between linked particles. Therefore,
+ * an array of links must be specified before this force can be applied; the
+ * links should be an array of {@link pv.Layout.Network.Link}s. See also
+ * {@link pv.Layout.Force} for an example of using spring and charge forces for
+ * network layout.
+ *
+ * @extends pv.Force
+ * @param {number} k the spring constant.
+ * @see #constant
+ * @see #links
+ */
 pv.Force.spring = function(k) {
   var d = .1, // default damping factor
       l = 20, // default rest length
@@ -8635,6 +10384,18 @@ pv.Force.spring = function(k) {
 
   if (!arguments.length) k = .1; // default spring constant (tension)
 
+  /**
+   * Sets or gets the links associated with this spring force. Unlike other
+   * forces (such as charge and drag forces) which may be applied globally,
+   * spring forces are only applied between linked particles. Therefore, an
+   * array of links must be specified before this force can be applied; the
+   * links should be an array of {@link pv.Layout.Network.Link}s.
+   *
+   * @function
+   * @name pv.Force.spring.prototype.links
+   * @param {array} x the new array of links.
+   * @returns {pv.Force.spring} this, or the current array of links.
+   */
   force.links = function(x) {
     if (arguments.length) {
       links = x;
@@ -8648,6 +10409,17 @@ pv.Force.spring = function(k) {
     return links;
   };
 
+  /**
+   * Sets or gets the spring constant. The default value is 0.1; greater values
+   * will result in stronger tension. The spring tension is automatically
+   * normalized using the inverse square root of the maximum link degree of
+   * attached nodes.
+   *
+   * @function
+   * @name pv.Force.spring.prototype.constant
+   * @param {number} x the new spring constant.
+   * @returns {pv.Force.spring} this, or the current spring constant.
+   */
   force.constant = function(x) {
     if (arguments.length) {
       k = Number(x);
@@ -8656,6 +10428,18 @@ pv.Force.spring = function(k) {
     return k;
   };
 
+  /**
+   * The spring damping factor, in the range [0,1]. Damping functions
+   * identically to drag forces, damping spring bounciness by applying a force
+   * in the opposite direction of attached nodes' velocities. The default value
+   * is 0.1. The spring damping is automatically normalized using the inverse
+   * square root of the maximum link degree of attached nodes.
+   *
+   * @function
+   * @name pv.Force.spring.prototype.damping
+   * @param {number} x the new spring damping factor.
+   * @returns {pv.Force.spring} this, or the current spring damping factor.
+   */
   force.damping = function(x) {
     if (arguments.length) {
       d = Number(x);
@@ -8664,6 +10448,14 @@ pv.Force.spring = function(k) {
     return d;
   };
 
+  /**
+   * The spring rest length. The default value is 20 pixels.
+   *
+   * @function
+   * @name pv.Force.spring.prototype.length
+   * @param {number} x the new spring rest length.
+   * @returns {pv.Force.spring} this, or the current spring rest length.
+   */
   force.length = function(x) {
     if (arguments.length) {
       l = Number(x);
@@ -8672,6 +10464,13 @@ pv.Force.spring = function(k) {
     return l;
   };
 
+  /**
+   * Applies this force to the specified particles.
+   *
+   * @function
+   * @name pv.Force.spring.prototype.apply
+   * @param {pv.Particle} particles particles to which to apply this force.
+   */
   force.apply = function(particles) {
     for (var i = 0; i < links.length; i++) {
       var a = links[i].sourceNode,
@@ -8694,7 +10493,51 @@ pv.Force.spring = function(k) {
 
   return force;
 };
+/**
+ * Abstract; see an implementing class.
+ *
+ * @class Represents a constraint that acts on particles. Note that this
+ * interface does not specify how to bind a constraint to specific particles; in
+ * general, constraints are applied globally to all particles. However, some
+ * constraints may be applied to specific particles or between particles, such
+ * as position constraints, through additional specialization.
+ *
+ * @see pv.Simulation
+ * @see pv.Particle
+ * @see pv.Constraint.bound
+ * @see pv.Constraint.collision
+ * @see pv.Constraint.position
+ */
 pv.Constraint = {};
+
+/**
+ * Applies this constraint to the specified particles.
+ *
+ * @function
+ * @name pv.Constraint.prototype.apply
+ * @param {pv.Particle} particles particles to which to apply this constraint.
+ * @param {pv.Quadtree} q a quadtree for spatial acceleration.
+ * @returns {pv.Constraint} this.
+ */
+/**
+ * Constructs a new collision constraint. The default search radius is 10, and
+ * the default repeat count is 1. A radius function must be specified to compute
+ * the radius of particles.
+ *
+ * @class Constraints circles to avoid overlap. Each particle is treated as a
+ * circle, with the radius of the particle computed using a specified function.
+ * For example, if the particle has an <tt>r</tt> attribute storing the radius,
+ * the radius <tt>function(d) d.r</tt> specifies a collision constraint using
+ * this radius. The radius function is passed each {@link pv.Particle} as the
+ * first argument.
+ *
+ * <p>To accelerate collision detection, this implementation uses a quadtree and
+ * a search radius. The search radius is computed as the maximum radius of all
+ * particles in the simulation.
+ *
+ * @see pv.Constraint
+ * @param {function} radius the radius function.
+ */
 pv.Constraint.collision = function(radius) {
   var n = 1, // number of times to repeat the constraint
       r1,
@@ -8704,8 +10547,20 @@ pv.Constraint.collision = function(radius) {
       py2,
       constraint = {};
 
-  if (!arguments.length) r = 10; // default search radius
+  if (!arguments.length) r1 = 10; // default search radius
 
+  /**
+   * Sets or gets the repeat count. If the repeat count is greater than 1, the
+   * constraint will be applied repeatedly; this is a form of the Gauss-Seidel
+   * method for constraints relaxation. Repeating the collision constraint makes
+   * the constraint have more of an effect when there is a potential for many
+   * co-occurring collisions.
+   *
+   * @function
+   * @name pv.Constraint.collision.prototype.repeat
+   * @param {number} x the number of times to repeat this constraint.
+   * @returns {pv.Constraint.collision} this.
+   */
   constraint.repeat = function(x) {
     if (arguments.length) {
       n = Number(x);
@@ -8749,6 +10604,14 @@ pv.Constraint.collision = function(radius) {
     }
   }
 
+  /**
+   * Applies this constraint to the specified particles.
+   *
+   * @function
+   * @name pv.Constraint.collision.prototype.apply
+   * @param {pv.Particle} particles particles to which to apply this constraint.
+   * @param {pv.Quadtree} q a quadtree for spatial acceleration.
+   */
   constraint.apply = function(particles, q) {
     var p, r, max = -Infinity;
     for (p = particles; p; p = p.next) {
@@ -8769,44 +10632,50 @@ pv.Constraint.collision = function(radius) {
 
   return constraint;
 };
-pv.Constraint.link = function(d) {
-  var constraint = {};
-
-  if (!arguments.length) d = 20; // default rest length
-
-  constraint.links = function(x) {
-    if (arguments.length) {
-      links = x;
-      return constraint;
-    }
-    return links;
-  };
-
-  constraint.apply = function(particles) {
-    for (var i = 0; i < links.length; i++) {
-      var a = links[i].sourceNode,
-          b = links[i].targetNode,
-          dx = a.x - b.x,
-          dy = a.y - b.y,
-          l = Math.sqrt(dx * dx + dy * dy),
-          k = (l - d) / l * .5;
-      dx *= k;
-      dy *= k;
-      a.x -= dx;
-      a.y -= dy;
-      b.x += dx;
-      b.y += dy;
-    }
-  };
-
-  return constraint;
-};
+/**
+ * Constructs a default position constraint using the <tt>fix</tt> attribute.
+ * An optional position function can be specified to determine how the fixed
+ * position per-particle is determined.
+ *
+ * @class Constraints particles to a fixed position. The fixed position per
+ * particle is determined using a given position function, which defaults to
+ * <tt>function(d) d.fix</tt>.
+ *
+ * <p>If the position function returns null, then no position constraint is
+ * applied to the given particle. Otherwise, the particle's position is set to
+ * the returned position, as expressed by a {@link pv.Vector}. (Note: the
+ * position does not need to be an instance of <tt>pv.Vector</tt>, but simply an
+ * object with <tt>x</tt> and <tt>y</tt> attributes.)
+ *
+ * <p>This constraint also supports a configurable alpha parameter, which
+ * defaults to 1. If the alpha parameter is in the range [0,1], then rather than
+ * setting the particle's new position directly to the position returned by the
+ * supplied position function, the particle's position is interpolated towards
+ * the fixed position. This results is a smooth (exponential) drift towards the
+ * fixed position, which can increase the stability of the physics simulation.
+ * In addition, the alpha parameter can be decayed over time, relaxing the
+ * position constraint, which helps to stabilize on an optimal solution.
+ *
+ * @param {function} [f] the position function.
+ */
 pv.Constraint.position = function(f) {
-  var a = .1, // default alpha
+  var a = 1, // default alpha
       constraint = {};
 
-  if (!arguments.length) f = pv.identity; // default position
+  if (!arguments.length) /** @ignore */ f = function(p) { return p.fix; };
 
+  /**
+   * Sets or gets the alpha parameter for position interpolation. If the alpha
+   * parameter is in the range [0,1], then rather than setting the particle's
+   * new position directly to the position returned by the supplied position
+   * function, the particle's position is interpolated towards the fixed
+   * position.
+   *
+   * @function
+   * @name pv.Constraint.position.prototype.alpha
+   * @param {number} x the new alpha parameter, in the range [0,1].
+   * @returns {pv.Constraint.position} this.
+   */
   constraint.alpha = function(x) {
     if (arguments.length) {
       a = Number(x);
@@ -8815,21 +10684,58 @@ pv.Constraint.position = function(f) {
     return a;
   };
 
+  /**
+   * Applies this constraint to the specified particles.
+   *
+   * @function
+   * @name pv.Constraint.position.prototype.apply
+   * @param {pv.Particle} particles particles to which to apply this constraint.
+   */
   constraint.apply = function(particles) {
     for (var p = particles; p; p = p.next) {
       var v = f(p);
-      p.x += (v.x - p.x) * a;
-      p.y += (v.y - p.y) * a;
+      if (v) {
+        p.x += (v.x - p.x) * a;
+        p.y += (v.y - p.y) * a;
+        p.fx = p.fy = p.vx = p.vy = 0;
+      }
     }
   };
 
   return constraint;
 };
+/**
+ * Constructs a new bound constraint. Before the constraint can be used, the
+ * {@link #x} and {@link #y} methods must be call to specify the bounds.
+ *
+ * @class Constrains particles to within fixed rectangular bounds. For example,
+ * this constraint can be used to constrain particles in a physics simulation
+ * within the bounds of an enclosing panel.
+ *
+ * <p>Note that the current implementation treats particles as points, with no
+ * area. If the particles are rendered as dots, be sure to include some
+ * additional padding to inset the bounds such that the edges of the dots do not
+ * get clipped by the panel bounds. If the particles have different radii, this
+ * constraint would need to be extended using a radius function, similar to
+ * {@link pv.Constraint.collision}.
+ *
+ * @see pv.Layout.Force
+ * @extends pv.Constraint
+ */
 pv.Constraint.bound = function() {
   var constraint = {},
       x,
       y;
 
+  /**
+   * Sets or gets the bounds on the x-coordinate.
+   *
+   * @function
+   * @name pv.Constraint.bound.prototype.x
+   * @param {number} min the minimum allowed x-coordinate.
+   * @param {number} max the maximum allowed x-coordinate.
+   * @returns {pv.Constraint.bound} this.
+   */
   constraint.x = function(min, max) {
     if (arguments.length) {
       x = {min: Math.min(min, max), max: Math.max(min, max)};
@@ -8838,6 +10744,15 @@ pv.Constraint.bound = function() {
     return x;
   };
 
+  /**
+   * Sets or gets the bounds on the y-coordinate.
+   *
+   * @function
+   * @name pv.Constraint.bound.prototype.y
+   * @param {number} min the minimum allowed y-coordinate.
+   * @param {number} max the maximum allowed y-coordinate.
+   * @returns {pv.Constraint.bound} this.
+   */
   constraint.y = function(min, max) {
     if (arguments.length) {
       y = {min: Math.min(min, max), max: Math.max(min, max)};
@@ -8846,6 +10761,13 @@ pv.Constraint.bound = function() {
     return y;
   };
 
+  /**
+   * Applies this constraint to the specified particles.
+   *
+   * @function
+   * @name pv.Constraint.bound.prototype.apply
+   * @param {pv.Particle} particles particles to which to apply this constraint.
+   */
   constraint.apply = function(particles) {
     if (x) for (var p = particles; p; p = p.next) {
       p.x = p.x < x.min ? x.min : (p.x > x.max ? x.max : p.x);
@@ -8858,40 +10780,144 @@ pv.Constraint.bound = function() {
   return constraint;
 };
 /**
- * @ignore
- * @class
+ * Constructs a new, empty layout with default properties. Layouts are not
+ * typically constructed directly; instead, a concrete subclass is added to an
+ * existing panel via {@link pv.Mark#add}.
+ *
+ * @class Represents an abstract layout, encapsulating a visualization technique
+ * such as a streamgraph or treemap. Layouts are themselves containers,
+ * extending from {@link pv.Panel}, and defining a set of mark prototypes as
+ * children. These mark prototypes provide default properties that together
+ * implement the given visualization technique.
+ *
+ * <p>Layouts do not initially contain any marks; any exported marks (such as a
+ * network layout's <tt>link</tt> and <tt>node</tt>) are intended to be used as
+ * prototypes. By adding a concrete mark, such as a {@link pv.Bar}, to the
+ * appropriate mark prototype, the mark is added to the layout and inherits the
+ * given properties. This approach allows further customization of the layout,
+ * either by choosing a different mark type to add, or more simply by overriding
+ * some of the layout's defined properties.
+ *
+ * <p>Each concrete layout, such as treemap or circle-packing, has different
+ * behavior and may export different mark prototypes, depending on what marks
+ * are typically needed to render the desired visualization. Therefore it is
+ * important to understand how each layout is structured, such that the provided
+ * mark prototypes are used appropriately.
+ *
+ * <p>In addition to the mark prototypes, layouts may define custom properties
+ * that affect the overall behavior of the layout. For example, a treemap layout
+ * might use a property to specify which layout algorithm to use. These
+ * properties are just like other mark properties, and can be defined as
+ * constants or as functions. As with panels, the data property can be used to
+ * replicate layouts, and properties can be defined to in terms of layout data.
+ *
+ * @extends pv.Panel
  */
 pv.Layout = function() {
-  pv.Mark.call(this);
+  pv.Panel.call(this);
 };
 
-pv.Layout.prototype = pv.extend(pv.Mark);
+pv.Layout.prototype = pv.extend(pv.Panel);
 
-/** @private Defines a local property with the specified name and cast. */
+/**
+ * @private Defines a local property with the specified name and cast. Note that
+ * although the property method is only defined locally, the cast function is
+ * global, which is necessary since properties are inherited!
+ *
+ * @param {string} name the property name.
+ * @param {function} [cast] the cast function for this property.
+ */
 pv.Layout.prototype.property = function(name, cast) {
-  this.propertyMethod(name, true, cast);
+  if (!this.hasOwnProperty("properties")) {
+    this.properties = pv.extend(this.properties);
+  }
+  this.properties[name] = true;
+  this.propertyMethod(name, false, pv.Mark.cast[name] = cast);
   return this;
 };
-
-/** @private Wrap the data property with an initialization hook. */
-pv.Layout.prototype.bind = function() {
-  pv.Mark.prototype.bind.call(this);
-  var binds = this.binds, data = binds.data, value = data.value;
-  binds.data = {
-    id: data.id,
-    type: data.type | 1,
-    value: data.type & 1
-        ? function() { var x = value.apply(this, arguments); this.init(x); return x; }
-        : function() { this.init(value); return value; }
-  };
-};
-
-/** @private Initialization hook after data and defs have been evaluated. */
-pv.Layout.prototype.init = function() {};
-/** @class Abstract layout for networks. */
+/**
+ * Constructs a new, empty network layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Represents an abstract layout for network diagrams. This class
+ * provides the basic structure for both node-link diagrams (such as
+ * force-directed graph layout) and space-filling network diagrams (such as
+ * sunbursts and treemaps). Note that "network" here is a general term that
+ * includes hierarchical structures; a tree is represented using links from
+ * child to parent.
+ *
+ * <p>Network layouts require the graph data structure to be defined using two
+ * properties:<ul>
+ *
+ * <li><tt>nodes</tt> - an array of objects representing nodes. Objects in this
+ * array must conform to the {@link pv.Layout.Network.Node} interface; which is
+ * to say, be careful to avoid naming collisions with automatic attributes such
+ * as <tt>index</tt> and <tt>linkDegree</tt>. If the nodes property is defined
+ * as an array of primitives, such as numbers or strings, these primitives are
+ * automatically wrapped in an object; the resulting object's <tt>nodeValue</tt>
+ * attribute points to the original primitive value.
+ *
+ * <p><li><tt>links</tt> - an array of objects representing links. Objects in
+ * this array must conform to the {@link pv.Layout.Network.Link} interface; at a
+ * minimum, either <tt>source</tt> and <tt>target</tt> indexes or
+ * <tt>sourceNode</tt> and <tt>targetNode</tt> references must be set. Note that
+ * if the links property is defined after the nodes property, the links can be
+ * defined in terms of <tt>this.nodes()</tt>.
+ *
+ * </ul>
+ *
+ * <p>Three standard mark prototypes are provided:<ul>
+ *
+ * <li><tt>node</tt> - for rendering nodes; typically a {@link pv.Dot}. The node
+ * mark is added directly to the layout, with the data property defined via the
+ * layout's <tt>nodes</tt> property. Properties such as <tt>strokeStyle</tt> and
+ * <tt>fillStyle</tt> can be overridden to compute properties from node data
+ * dynamically.
+ *
+ * <p><li><tt>link</tt> - for rendering links; typically a {@link pv.Line}. The
+ * link mark is added to a child panel, whose data property is defined as
+ * layout's <tt>links</tt> property. The link's data property is then a
+ * two-element array of the source node and target node. Thus, poperties such as
+ * <tt>strokeStyle</tt> and <tt>fillStyle</tt> can be overridden to compute
+ * properties from either the node data (the first argument) or the link data
+ * (the second argument; the parent panel data) dynamically.
+ *
+ * <p><li><tt>label</tt> - for rendering node labels; typically a
+ * {@link pv.Label}. The label mark is added directly to the layout, with the
+ * data property defined via the layout's <tt>nodes</tt> property. Properties
+ * such as <tt>strokeStyle</tt> and <tt>fillStyle</tt> can be overridden to
+ * compute properties from node data dynamically.
+ *
+ * </ul>Note that some network implementations may not support all three
+ * standard mark prototypes; for example, space-filling hierarchical layouts
+ * typically do not use a <tt>link</tt> prototype, as the parent-child links are
+ * implied by the structure of the space-filling <tt>node</tt> marks.  Check the
+ * specific network layout for implementation details.
+ *
+ * <p>Network layout properties, including <tt>nodes</tt> and <tt>links</tt>,
+ * are typically cached rather than re-evaluated with every call to render. This
+ * is a performance optimization, as network layout algorithms can be
+ * expensive. If the network structure changes, call {@link #reset} to clear the
+ * cache before rendering. Note that although the network layout properties are
+ * cached, child mark properties, such as the marks used to render the nodes and
+ * links, <i>are not</i>. Therefore, non-structural changes to the network
+ * layout, such as changing the color of a mark on mouseover, do not need to
+ * reset the layout.
+ *
+ * @see pv.Layout.Hierarchy
+ * @see pv.Layout.Force
+ * @see pv.Layout.Matrix
+ * @see pv.Layout.Arc
+ * @see pv.Layout.Rollup
+ * @extends pv.Layout
+ */
 pv.Layout.Network = function() {
   pv.Layout.call(this);
   var that = this;
+
+  /* @private Version tracking to cache layout state, improving performance. */
+  this.$id = pv.id();
 
   /**
    * The node prototype. This prototype is intended to be used with a Dot mark
@@ -8900,21 +10926,12 @@ pv.Layout.Network = function() {
    * @type pv.Mark
    * @name pv.Layout.Network.prototype.node
    */
-  this.node = new pv.Mark()
+  (this.node = new pv.Mark()
       .data(function() { return that.nodes(); })
       .strokeStyle("#1f77b4")
       .fillStyle("#fff")
       .left(function(n) { return n.x; })
-      .top(function(n) { return n.y; });
-
-  /** @private Propagate layout mark references to node children. */
-  this.node.add = function(type) {
-      var mark = that.parent.add(type).extend(this);
-      mark.link = that.link;
-      mark.node = that.node;
-      mark.label = that.label;
-      return mark;
-    };
+      .top(function(n) { return n.y; })).parent = this;
 
   /**
    * The link prototype, which renders edges between source nodes and target
@@ -8931,16 +10948,12 @@ pv.Layout.Network = function() {
       .lineWidth(function(d, p) { return p.linkValue * 1.5; })
       .strokeStyle("rgba(0,0,0,.2)");
 
-  /** @private Propagate layout mark references to link children. */
   this.link.add = function(type) {
-      var mark = that.parent.add(pv.Panel)
-          .data(function() { return that.links(); })
-          .add(type).extend(this);
-      mark.link = that.link;
-      mark.node = that.node;
-      mark.label = that.label;
-      return mark;
-    };
+    return that.add(pv.Panel)
+        .data(function() { return that.links(); })
+      .add(type)
+        .extend(this);
+  };
 
   /**
    * The node label prototype, which renders the node name adjacent to the node.
@@ -8951,22 +10964,127 @@ pv.Layout.Network = function() {
    * @type pv.Mark
    * @name pv.Layout.Network.prototype.label
    */
-  this.label = new pv.Mark()
+  (this.label = new pv.Mark()
       .extend(this.node)
       .textMargin(7)
       .textBaseline("middle")
       .text(function(n) { return n.nodeName || n.nodeValue; })
       .textAngle(function(n) {
-          var a = n.angle;
+          var a = n.midAngle;
           return pv.Wedge.upright(a) ? a : (a + Math.PI);
         })
       .textAlign(function(n) {
-          return pv.Wedge.upright(n.angle) ? "left" : "right";
-        });
-
-  /** @private Propagate layout mark references to label children. */
-  this.label.add = this.node.add;
+          return pv.Wedge.upright(n.midAngle) ? "left" : "right";
+        })).parent = this;
 };
+
+/**
+ * @class Represents a node in a network layout. There is no explicit
+ * constructor; this class merely serves to document the attributes that are
+ * used on nodes in network layouts. (Note that hierarchical nodes place
+ * additional requirements on node representation, vis {@link pv.Dom.Node}.)
+ *
+ * @see pv.Layout.Network
+ * @name pv.Layout.Network.Node
+ */
+
+/**
+ * The node index, zero-based. This attribute is populated automatically based
+ * on the index in the array returned by the <tt>nodes</tt> property.
+ *
+ * @type number
+ * @name pv.Layout.Network.Node.prototype.index
+ */
+
+/**
+ * The link degree; the sum of link values for all incoming and outgoing links.
+ * This attribute is populated automatically.
+ *
+ * @type number
+ * @name pv.Layout.Network.Node.prototype.linkDegree
+ */
+
+/**
+ * The node name; optional. If present, this attribute will be used to provide
+ * the text for node labels. If not present, the label text will fallback to the
+ * <tt>nodeValue</tt> attribute.
+ *
+ * @type string
+ * @name pv.Layout.Network.Node.prototype.nodeName
+ */
+
+/**
+ * The node value; optional. If present, and no <tt>nodeName</tt> attribute is
+ * present, the node value will be used as the label text. This attribute is
+ * also automatically populated if the nodes are specified as an array of
+ * primitives, such as strings or numbers.
+ *
+ * @type object
+ * @name pv.Layout.Network.Node.prototype.nodeValue
+ */
+
+/**
+ * @class Represents a link in a network layout. There is no explicit
+ * constructor; this class merely serves to document the attributes that are
+ * used on links in network layouts. For hierarchical layouts, this class is
+ * used to represent the parent-child links.
+ *
+ * @see pv.Layout.Network
+ * @name pv.Layout.Network.Link
+ */
+
+/**
+ * The link value, or weight; optional. If not specified (or not a number), the
+ * default value of 1 is used.
+ *
+ * @type number
+ * @name pv.Layout.Network.Link.prototype.linkValue
+ */
+
+/**
+ * The link's source node. If not set, this value will be derived from the
+ * <tt>source</tt> attribute index.
+ *
+ * @type pv.Layout.Network.Node
+ * @name pv.Layout.Network.Link.prototype.sourceNode
+ */
+
+/**
+ * The link's target node. If not set, this value will be derived from the
+ * <tt>target</tt> attribute index.
+ *
+ * @type pv.Layout.Network.Node
+ * @name pv.Layout.Network.Link.prototype.targetNode
+ */
+
+/**
+ * Alias for <tt>sourceNode</tt>, as expressed by the index of the source node.
+ * This attribute is not populated automatically, but may be used as a more
+ * convenient identification of the link's source, for example in a static JSON
+ * representation.
+ *
+ * @type number
+ * @name pv.Layout.Network.Link.prototype.source
+ */
+
+/**
+ * Alias for <tt>targetNode</tt>, as expressed by the index of the target node.
+ * This attribute is not populated automatically, but may be used as a more
+ * convenient identification of the link's target, for example in a static JSON
+ * representation.
+ *
+ * @type number
+ * @name pv.Layout.Network.Link.prototype.target
+ */
+
+/**
+ * Alias for <tt>linkValue</tt>. This attribute is not populated automatically,
+ * but may be used instead of the <tt>linkValue</tt> attribute when specifying
+ * links.
+ *
+ * @type number
+ * @name pv.Layout.Network.Link.prototype.value
+ */
 
 /** @private Transform nodes and links on cast. */
 pv.Layout.Network.prototype = pv.extend(pv.Layout)
@@ -8974,7 +11092,6 @@ pv.Layout.Network.prototype = pv.extend(pv.Layout)
         return v.map(function(d, i) {
             if (typeof d != "object") d = {nodeValue: d};
             d.index = i;
-            d.linkDegree = 0;
             return d;
           });
       })
@@ -8985,59 +11102,89 @@ pv.Layout.Network.prototype = pv.extend(pv.Layout)
           });
       });
 
-/** @private If the nodes property is changed, unlock the links too. */
-pv.Layout.Network.prototype.bind = function() {
-  pv.Layout.prototype.bind.call(this);
-  var binds = this.binds,
-      nodes = binds.properties.nodes,
-      links = binds.properties.links;
-  if (links && (nodes.id > links.id)) links.id = nodes.id;
+/**
+ * Resets the cache, such that changes to layout property definitions will be
+ * visible on subsequent render. Unlike normal marks (and normal layouts),
+ * properties associated with network layouts are not automatically re-evaluated
+ * on render; the properties are cached, and any expensive layout algorithms are
+ * only run after the layout is explicitly reset.
+ *
+ * @returns {pv.Layout.Network} this.
+ */
+pv.Layout.Network.prototype.reset = function() {
+  this.$id = pv.id();
+  return this;
 };
 
-/** @private Locks node and links after initialization. */
-pv.Layout.Network.prototype.init = function() {
-  var defs = this.scene.defs;
-  if (defs.nodes.id) return true;
-  defs.links.id = defs.nodes.id = pv.id();
+/** @private Skip evaluating properties if cached. */
+pv.Layout.Network.prototype.buildProperties = function(s, properties) {
+  if ((s.$id || 0) < this.$id) {
+    pv.Layout.prototype.buildProperties.call(this, s, properties);
+  }
+};
 
-  /* Compute link degrees; map source and target indexes to nodes. */
-  var nodes = this.nodes();
-  this.links().forEach(function(d) {
-      var s = d.sourceNode || (d.sourceNode = nodes[d.source]),
-          t = d.targetNode || (d.targetNode = nodes[d.target]),
-          v = d.linkValue;
-      s.linkDegree += v;
-      t.linkDegree += v;
+/** @private Compute link degrees; map source and target indexes to nodes. */
+pv.Layout.Network.prototype.buildImplied = function(s) {
+  pv.Layout.prototype.buildImplied.call(this, s);
+  if (s.$id >= this.$id) return true;
+  s.$id = this.$id;
+  s.nodes.forEach(function(d) {
+      d.linkDegree = 0;
+    });
+  s.links.forEach(function(d) {
+      var v = d.linkValue;
+      (d.sourceNode || (d.sourceNode = s.nodes[d.source])).linkDegree += v;
+      (d.targetNode || (d.targetNode = s.nodes[d.target])).linkDegree += v;
     });
 };
-/** @class Abstract layout for hierarchies. */
+/**
+ * Constructs a new, empty hierarchy layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Represents an abstract layout for hierarchy diagrams. This class is a
+ * specialization of {@link pv.Layout.Network}, providing the basic structure
+ * for both hierarchical node-link diagrams (such as Reingold-Tilford trees) and
+ * space-filling hierarchy diagrams (such as sunbursts and treemaps).
+ *
+ * <p>Unlike general network layouts, the <tt>links</tt> property need not be
+ * defined explicitly. Instead, the links are computed implicitly from the
+ * <tt>parentNode</tt> attribute of the node objects, as defined by the
+ * <tt>nodes</tt> property. This implementation is also available as
+ * {@link #links}, for reuse with non-hierarchical layouts; for example, to
+ * render a tree using force-directed layout.
+ *
+ * <p>Correspondingly, the <tt>nodes</tt> property is represented as a union of
+ * {@link pv.Layout.Network.Node} and {@link pv.Dom.Node}. To construct a node
+ * hierarchy from a simple JSON map, use the {@link pv.Dom} operator; this
+ * operator also provides an easy way to sort nodes before passing them to the
+ * layout.
+ *
+ * <p>For more details on how to use this layout, see
+ * {@link pv.Layout.Network}.
+ *
+ * @see pv.Layout.Cluster
+ * @see pv.Layout.Partition
+ * @see pv.Layout.Tree
+ * @see pv.Layout.Treemap
+ * @see pv.Layout.Indent
+ * @see pv.Layout.Pack
+ * @extends pv.Layout.Network
+ */
 pv.Layout.Hierarchy = function() {
   pv.Layout.Network.call(this);
+  this.link.strokeStyle("#ccc");
 };
 
 pv.Layout.Hierarchy.prototype = pv.extend(pv.Layout.Network);
 
-/** @private Alias the data property to nodes. */
-pv.Layout.Hierarchy.prototype.data = pv.Layout.Hierarchy.prototype.nodes;
-
-/** @private Register an implicit links property. */
-pv.Layout.Hierarchy.prototype.bind = function() {
-  pv.Layout.Network.prototype.bind.call(this);
-  var binds = this.binds;
-  if (!binds.properties.links) {
-    binds.defs.push({
-      name: "links",
-      id: pv.id(),
-      type: 1,
-      value: pv.Layout.Hierarchy.links
-    });
-  }
+/** @private Compute the implied links. (Links are null by default.) */
+pv.Layout.Hierarchy.prototype.buildImplied = function(s) {
+  if (!s.links) s.links = pv.Layout.Hierarchy.links.call(this);
+  pv.Layout.Network.prototype.buildImplied.call(this, s);
 };
 
-/**
- * The default links property; computes links using the <tt>parentNode</tt>
- * attribute.
- */
+/** The implied links; computes links using the <tt>parentNode</tt> attribute. */
 pv.Layout.Hierarchy.links = function() {
   return this.nodes()
       .filter(function(n) { return n.parentNode; })
@@ -9045,433 +11192,935 @@ pv.Layout.Hierarchy.links = function() {
           return {
               sourceNode: n,
               targetNode: n.parentNode,
-              linkDegree: 1
+              linkValue: 1
             };
       });
 };
+
+/** @private Provides standard node-link layout based on breadth & depth. */
+pv.Layout.Hierarchy.NodeLink = {
+
+  /** @private */
+  buildImplied: function(s) {
+    var nodes = s.nodes,
+        orient = s.orient,
+        horizontal = /^(top|bottom)$/.test(orient),
+        w = s.width,
+        h = s.height;
+
+    /* Compute default inner and outer radius. */
+    if (orient == "radial") {
+      var ir = s.innerRadius, or = s.outerRadius;
+      if (ir == null) ir = 0;
+      if (or == null) or = Math.min(w, h) / 2;
+    }
+
+    /** @private Returns the radius of the given node. */
+    function radius(n) {
+      return n.parentNode ? (n.depth * (or - ir) + ir) : 0;
+    }
+
+    /** @private Returns the angle of the given node. */
+    function midAngle(n) {
+      return (n.parentNode ? (n.breadth - .25) * 2 * Math.PI : 0);
+    }
+
+    /** @private */
+    function x(n) {
+      switch (orient) {
+        case "left": return n.depth * w;
+        case "right": return w - n.depth * w;
+        case "top": return n.breadth * w;
+        case "bottom": return w - n.breadth * w;
+        case "radial": return w / 2 + radius(n) * Math.cos(n.midAngle);
+      }
+    }
+
+    /** @private */
+    function y(n) {
+      switch (orient) {
+        case "left": return n.breadth * h;
+        case "right": return h - n.breadth * h;
+        case "top": return n.depth * h;
+        case "bottom": return h - n.depth * h;
+        case "radial": return h / 2 + radius(n) * Math.sin(n.midAngle);
+      }
+    }
+
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      n.midAngle = orient == "radial" ? midAngle(n)
+          : horizontal ? Math.PI / 2 : 0;
+      n.x = x(n);
+      n.y = y(n);
+      if (n.firstChild) n.midAngle += Math.PI;
+    }
+  }
+};
+
+/** @private Provides standard space-filling layout based on breadth & depth. */
+pv.Layout.Hierarchy.Fill = {
+
+  /** @private */
+  constructor: function() {
+    this.node
+        .strokeStyle("#fff")
+        .fillStyle("#ccc")
+        .width(function(n) { return n.dx; })
+        .height(function(n) { return n.dy; })
+        .innerRadius(function(n) { return n.innerRadius; })
+        .outerRadius(function(n) { return n.outerRadius; })
+        .startAngle(function(n) { return n.startAngle; })
+        .angle(function(n) { return n.angle; });
+
+    this.label
+        .textAlign("center")
+        .left(function(n) { return n.x + (n.dx / 2); })
+        .top(function(n) { return n.y + (n.dy / 2); });
+
+    /* Hide unsupported link. */
+    delete this.link;
+  },
+
+  /** @private */
+  buildImplied: function(s) {
+    var nodes = s.nodes,
+        orient = s.orient,
+        horizontal = /^(top|bottom)$/.test(orient),
+        w = s.width,
+        h = s.height,
+        depth = -nodes[0].minDepth;
+
+    /* Compute default inner and outer radius. */
+    if (orient == "radial") {
+      var ir = s.innerRadius, or = s.outerRadius;
+      if (ir == null) ir = 0;
+      if (ir) depth *= 2; // use full depth step for root
+      if (or == null) or = Math.min(w, h) / 2;
+    }
+
+    /** @private Scales the specified depth for a space-filling layout. */
+    function scale(d, depth) {
+      return (d + depth) / (1 + depth);
+    }
+
+    /** @private */
+    function x(n) {
+      switch (orient) {
+        case "left": return scale(n.minDepth, depth) * w;
+        case "right": return (1 - scale(n.maxDepth, depth)) * w;
+        case "top": return n.minBreadth * w;
+        case "bottom": return (1 - n.maxBreadth) * w;
+        case "radial": return w / 2;
+      }
+    }
+
+    /** @private */
+    function y(n) {
+      switch (orient) {
+        case "left": return n.minBreadth * h;
+        case "right": return (1 - n.maxBreadth) * h;
+        case "top": return scale(n.minDepth, depth) * h;
+        case "bottom": return (1 - scale(n.maxDepth, depth)) * h;
+        case "radial": return h / 2;
+      }
+    }
+
+    /** @private */
+    function dx(n) {
+      switch (orient) {
+        case "left":
+        case "right": return (n.maxDepth - n.minDepth) / (1 + depth) * w;
+        case "top":
+        case "bottom": return (n.maxBreadth - n.minBreadth) * w;
+        case "radial": return n.parentNode ? (n.innerRadius + n.outerRadius) * Math.cos(n.midAngle) : 0;
+      }
+    }
+
+    /** @private */
+    function dy(n) {
+      switch (orient) {
+        case "left":
+        case "right": return (n.maxBreadth - n.minBreadth) * h;
+        case "top":
+        case "bottom": return (n.maxDepth - n.minDepth) / (1 + depth) * h;
+        case "radial": return n.parentNode ? (n.innerRadius + n.outerRadius) * Math.sin(n.midAngle) : 0;
+      }
+    }
+
+    /** @private */
+    function innerRadius(n) {
+      return Math.max(0, scale(n.minDepth, depth / 2)) * (or - ir) + ir;
+    }
+
+    /** @private */
+    function outerRadius(n) {
+      return scale(n.maxDepth, depth / 2) * (or - ir) + ir;
+    }
+
+    /** @private */
+    function startAngle(n) {
+      return (n.parentNode ? n.minBreadth - .25 : 0) * 2 * Math.PI;
+    }
+
+    /** @private */
+    function angle(n) {
+      return (n.parentNode ? n.maxBreadth - n.minBreadth : 1) * 2 * Math.PI;
+    }
+
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      n.x = x(n);
+      n.y = y(n);
+      if (orient == "radial") {
+        n.innerRadius = innerRadius(n);
+        n.outerRadius = outerRadius(n);
+        n.startAngle = startAngle(n);
+        n.angle = angle(n);
+        n.midAngle = n.startAngle + n.angle / 2;
+      } else {
+        n.midAngle = horizontal ? -Math.PI / 2 : 0;
+      }
+      n.dx = dx(n);
+      n.dy = dy(n);
+    }
+  }
+};
 /**
- * Returns a new grid layout.
+ * Constructs a new, empty grid layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
  *
- * @class A grid layout with regularly-sized rows and columns. <img
- * src="../grid.png" width="160" height="160" align="right"> The number of rows
- * and columns are determined from the array, which should be in row-major
- * order. For example, the 2&times;3 array:
+ * @class Implements a grid layout with regularly-sized rows and columns. The
+ * number of rows and columns are determined from their respective
+ * properties. For example, the 2&times;3 array:
  *
  * <pre>1 2 3
  * 4 5 6</pre>
  *
- * should be represented as:
+ * can be represented using the <tt>rows</tt> property as:
  *
  * <pre>[[1, 2, 3], [4, 5, 6]]</pre>
  *
- * If your data is in column-major order, you can use {@link pv.transpose} to
- * transpose it.
+ * If your data is in column-major order, you can equivalently use the
+ * <tt>columns</tt> property. If the <tt>rows</tt> property is an array, it
+ * takes priority over the <tt>columns</tt> property. The data is implicitly
+ * transposed, as if the {@link pv.transpose} operator were applied.
  *
- * <p>This layout defines left, top, width, height and data properties. The data
- * property will be the associated element in the array. For example, if the
- * array is a two-dimensional array of values in the range [0,1], a simple
- * heatmap can be generated as:
+ * <p>This layout exports a single <tt>cell</tt> mark prototype, which is
+ * intended to be used with a bar, panel, layout, or subclass thereof. The data
+ * property of the cell prototype is defined as the elements in the array. For
+ * example, if the array is a two-dimensional array of values in the range
+ * [0,1], a simple heatmap can be generated as:
  *
- * <pre>.add(pv.Layout.Grid)
- *   .data(arrays)
- * .add(pv.Bar)
- *   .fillStyle(pv.ramp("white", "black"))</pre>
+ * <pre>vis.add(pv.Layout.Grid)
+ *     .rows(arrays)
+ *   .cell.add(pv.Bar)
+ *     .fillStyle(pv.ramp("white", "black"))</pre>
  *
- * By default, the grid fills the full width and height of the parent panel.
+ * The grid subdivides the full width and height of the parent panel into equal
+ * rectangles. Note, however, that for large, interactive, or animated heatmaps,
+ * you may see significantly better performance through dynamic {@link pv.Image}
+ * generation.
  *
- * @param {array[]} rows an array of arrays.
- * @returns {pv.Layout.grid} a grid layout.
+ * <p>For irregular grids using value-based spatial partitioning, see {@link
+ * pv.Layout.Treemap}.
+ *
+ * @extends pv.Layout
  */
 pv.Layout.Grid = function() {
   pv.Layout.call(this);
   var that = this;
 
-  /* Set the default data method before defining the cast. */
-  this.data(function(d) {
-      return pv.range(that.rows() * that.cols()).map(function() { return d; });
-    });
-
-  /* When the data property is set, implicitly change rows and cols. */
-  this.propertyMethod("data", false, function(v) {
-      that.rows(v.length).cols(v[0] ? v[0].length : 0);
-      return pv.blend(v);
-    });
-
-  this.rows(1)
-      .cols(1)
-      .width(function() { return this.parent.width() / this.cols(); })
-      .height(function() { return this.parent.height() / this.rows(); })
-      .left(function() { return this.width() * (this.index % this.cols()); })
-      .top(function() { return this.height() * Math.floor(this.index / this.cols()); });
+  /**
+   * The cell prototype. This prototype is intended to be used with a bar,
+   * panel, or layout (or subclass thereof) to render the grid cells.
+   *
+   * @type pv.Mark
+   * @name pv.Layout.Grid.prototype.cell
+   */
+  (this.cell = new pv.Mark()
+      .data(function() {
+          return that.scene[that.index].$grid;
+        })
+      .width(function() {
+          return that.width() / that.cols();
+        })
+      .height(function() {
+          return that.height() / that.rows();
+        })
+      .left(function() {
+          return this.width() * (this.index % that.cols());
+        })
+      .top(function() {
+          return this.height() * Math.floor(this.index / that.cols());
+        })).parent = this;
 };
 
 pv.Layout.Grid.prototype = pv.extend(pv.Layout)
-    .property("rows", Number)
-    .property("cols", Number);
+    .property("rows")
+    .property("cols");
 
 /**
- * Sets the number of rows. This method can be used to replicate the enclosing
- * panel data in the abscence of a data property. Note that if the data property
- * is specified, it takes priority over the rows property.
+ * Default properties for grid layouts. By default, there is one row and one
+ * column, and the data is the propagated to the child cell.
  *
- * @param {number} v the number of rows.
- * @function
- * @name pv.Layout.grid.prototype.rows
- * @returns {pv.Layout.grid} this.
+ * @type pv.Layout.Grid
+ */
+pv.Layout.Grid.prototype.defaults = new pv.Layout.Grid()
+    .extend(pv.Layout.prototype.defaults)
+    .rows(1)
+    .cols(1);
+
+/** @private */
+pv.Layout.Grid.prototype.buildImplied = function(s) {
+  pv.Layout.prototype.buildImplied.call(this, s);
+  var r = s.rows, c = s.cols;
+  if (typeof c == "object") r = pv.transpose(c);
+  if (typeof r == "object") {
+    s.$grid = pv.blend(r);
+    s.rows = r.length;
+    s.cols = r[0] ? r[0].length : 0;
+  } else {
+    s.$grid = pv.repeat([s.data], r * c);
+  }
+};
+
+/**
+ * The number of rows. This property can also be specified as the data in
+ * row-major order; in this case, the rows property is implicitly set to the
+ * length of the array, and the cols property is set to the length of the first
+ * element in the array.
+ *
+ * @type number
+ * @name pv.Layout.Grid.prototype.rows
  */
 
 /**
- * Sets the number of columns. This method can be used to replicate the
- * enclosing panel data in the abscence of a data property. Note that if the
- * data property is specified, it takes priority over the columns property.
+ * The number of columns. This property can also be specified as the data in
+ * column-major order; in this case, the cols property is implicitly set to the
+ * length of the array, and the rows property is set to the length of the first
+ * element in the array.
  *
- * @param {number} v the number of columns.
- * @function
- * @name pv.Layout.grid.prototype.cols
- * @returns {pv.Layout.grid} this.
- */
-
-/**
- * Sets the data. The data should be specified as an array of arrays; this array
- * will be blended such that child marks will see elements of the subarrays.
- * Setting the data associated with this grid implicitly sets the number of rows
- * and columns.
- *
- * @param {array[]} v the new data.
- * @function
- * @name pv.Layout.grid.prototype.data
- * @returns {pv.Layout.grid} this.
+ * @type number
+ * @name pv.Layout.Grid.prototype.cols
  */
 /**
- * Returns a new stack layout.
+ * Constructs a new, empty stack layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
  *
- * @class A layout for stacking marks vertically or horizontally. For example,
+ * @class Implements a layout for stacked visualizations, ranging from simple
+ * stacked bar charts to more elaborate "streamgraphs" composed of stacked
+ * areas. Stack layouts uses length as a visual encoding, as opposed to
+ * position, as the layers do not share an aligned axis.
+ *
+ * <p>Marks can be stacked vertically or horizontally. For example,
  *
  * <pre>vis.add(pv.Layout.Stack)
- *     .data([[1, 1.2, 1.7, 1.5, 1.7],
- *            [.5, 1, .8, 1.1, 1.3],
- *            [.2, .5, .8, .9, 1]])
- *   .add(pv.Area)
- *     .height(function(d) d * 40)
- *     .left(function() this.index * 35);</pre>
+ *     .layers([[1, 1.2, 1.7, 1.5, 1.7],
+ *              [.5, 1, .8, 1.1, 1.3],
+ *              [.2, .5, .8, .9, 1]])
+ *     .x(function() this.index * 35)
+ *     .y(function(d) d * 40)
+ *   .layer.add(pv.Area);</pre>
  *
- * specifies a vertically-stacked area chart.
+ * specifies a vertically-stacked area chart, using the default "bottom-left"
+ * orientation with "zero" offset. This visualization can be easily changed into
+ * a streamgraph using the "wiggle" offset, which attempts to minimize change in
+ * slope weighted by layer thickness. See the {@link #offset} property for more
+ * supported streamgraph algorithms.
  *
- * @returns {pv.Layout.Stack} a stack layout.
+ * <p>In the simplest case, the layer data can be specified as a two-dimensional
+ * array of numbers. The <tt>x</tt> and <tt>y</tt> psuedo-properties are used to
+ * define the thickness of each layer at the given position, respectively; in
+ * the above example of the "bottom-left" orientation, the <tt>x</tt> and
+ * <tt>y</tt> psuedo-properties are equivalent to the <tt>left</tt> and
+ * <tt>height</tt> properties that you might use if you implemented a stacked
+ * area by hand.
+ *
+ * <p>The advantage of using the stack layout is that the baseline, i.e., the
+ * <tt>bottom</tt> property is computed automatically using the specified offset
+ * algorithm. In addition, the order of layers can be computed using a built-in
+ * algorithm via the <tt>order</tt> property.
+ *
+ * <p>With the exception of the "expand" <tt>offset</tt>, the stack layout does
+ * not perform any automatic scaling of data; the values returned from
+ * <tt>x</tt> and <tt>y</tt> specify pixel sizes. To simplify scaling math, use
+ * this layout in conjunction with {@link pv.Scale.linear} or similar.
+ *
+ * <p>In other cases, the <tt>values</tt> psuedo-property can be used to define
+ * the data more flexibly. As with a typical panel &amp; area, the
+ * <tt>layers</tt> property corresponds to the data in the enclosing panel,
+ * while the <tt>values</tt> psuedo-property corresponds to the data for the
+ * area within the panel. For example, given an array of data values:
+ *
+ * <pre>var crimea = [
+ *  { date: "4/1854", wounds: 0, other: 110, disease: 110 },
+ *  { date: "5/1854", wounds: 0, other: 95, disease: 105 },
+ *  { date: "6/1854", wounds: 0, other: 40, disease: 95 },
+ *  ...</pre>
+ *
+ * and a corresponding array of series names:
+ *
+ * <pre>var causes = ["wounds", "other", "disease"];</pre>
+ *
+ * Separate layers can be defined for each cause like so:
+ *
+ * <pre>vis.add(pv.Layout.Stack)
+ *     .layers(causes)
+ *     .values(crimea)
+ *     .x(function(d) x(d.date))
+ *     .y(function(d, p) y(d[p]))
+ *   .layer.add(pv.Area)
+ *     ...</pre>
+ *
+ * As with the panel &amp; area case, the datum that is passed to the
+ * psuedo-properties <tt>x</tt> and <tt>y</tt> are the values (an element in
+ * <tt>crimea</tt>); the second argument is the layer data (a string in
+ * <tt>causes</tt>). Additional arguments specify the data of enclosing panels,
+ * if any.
+ *
+ * @extends pv.Layout
  */
 pv.Layout.Stack = function() {
   pv.Layout.call(this);
-  var that = this;
+  var that = this,
+      /** @ignore */ none = function() { return null; },
+      prop = {t: none, l: none, r: none, b: none, w: none, h: none},
+      values,
+      buildImplied = that.buildImplied;
+
+  /** @private Proxy the given property on the layer. */
+  function proxy(name) {
+    return function() {
+        return prop[name](this.parent.index, this.index);
+      };
+  }
+
+  /** @private Compute the layout! */
+  this.buildImplied = function(s) {
+    buildImplied.call(this, s);
+
+    var data = s.layers,
+        n = data.length,
+        m,
+        orient = s.orient,
+        horizontal = /^(top|bottom)\b/.test(orient),
+        h = this.parent[horizontal ? "height" : "width"](),
+        x = [],
+        y = [],
+        dy = [];
+
+    /*
+     * Iterate over the data, evaluating the values, x and y functions. The
+     * context in which the x and y psuedo-properties are evaluated is a
+     * pseudo-mark that is a grandchild of this layout.
+     */
+    var stack = pv.Mark.stack, o = {parent: {parent: this}};
+    stack.unshift(null);
+    values = [];
+    for (var i = 0; i < n; i++) {
+      dy[i] = [];
+      y[i] = [];
+      o.parent.index = i;
+      stack[0] = data[i];
+      values[i] = this.$values.apply(o.parent, stack);
+      if (!i) m = values[i].length;
+      stack.unshift(null);
+      for (var j = 0; j < m; j++) {
+        stack[0] = values[i][j];
+        o.index = j;
+        if (!i) x[j] = this.$x.apply(o, stack);
+        dy[i][j] = this.$y.apply(o, stack);
+      }
+      stack.shift();
+    }
+    stack.shift();
+
+    /* order */
+    var index;
+    switch (s.order) {
+      case "inside-out": {
+        var max = dy.map(function(v) { return pv.max.index(v); }),
+            map = pv.range(n).sort(function(a, b) { return max[a] - max[b]; }),
+            sums = dy.map(function(v) { return pv.sum(v); }),
+            top = 0,
+            bottom = 0,
+            tops = [],
+            bottoms = [];
+        for (var i = 0; i < n; i++) {
+          var j = map[i];
+          if (top < bottom) {
+            top += sums[j];
+            tops.push(j);
+          } else {
+            bottom += sums[j];
+            bottoms.push(j);
+          }
+        }
+        index = bottoms.reverse().concat(tops);
+        break;
+      }
+      case "reverse": index = pv.range(n - 1, -1, -1); break;
+      default: index = pv.range(n); break;
+    }
+
+    /* offset */
+    switch (s.offset) {
+      case "silohouette": {
+        for (var j = 0; j < m; j++) {
+          var o = 0;
+          for (var i = 0; i < n; i++) o += dy[i][j];
+          y[index[0]][j] = (h - o) / 2;
+        }
+        break;
+      }
+      case "wiggle": {
+        var o = 0;
+        for (var i = 0; i < n; i++) o += dy[i][0];
+        y[index[0]][0] = o = (h - o) / 2;
+        for (var j = 1; j < m; j++) {
+          var s1 = 0, s2 = 0, dx = x[j] - x[j - 1];
+          for (var i = 0; i < n; i++) s1 += dy[i][j];
+          for (var i = 0; i < n; i++) {
+            var s3 = (dy[index[i]][j] - dy[index[i]][j - 1]) / (2 * dx);
+            for (var k = 0; k < i; k++) {
+              s3 += (dy[index[k]][j] - dy[index[k]][j - 1]) / dx;
+            }
+            s2 += s3 * dy[index[i]][j];
+          }
+          y[index[0]][j] = o -= s1 ? s2 / s1 * dx : 0;
+        }
+        break;
+      }
+      case "expand": {
+        for (var j = 0; j < m; j++) {
+          y[index[0]][j] = 0;
+          var k = 0;
+          for (var i = 0; i < n; i++) k += dy[i][j];
+          if (k) {
+            k = h / k;
+            for (var i = 0; i < n; i++) dy[i][j] *= k;
+          } else {
+            k = h / n;
+            for (var i = 0; i < n; i++) dy[i][j] = k;
+          }
+        }
+        break;
+      }
+      default: {
+        for (var j = 0; j < m; j++) y[index[0]][j] = 0;
+        break;
+      }
+    }
+
+    /* Propagate the offset to the other series. */
+    for (var j = 0; j < m; j++) {
+      var o = y[index[0]][j];
+      for (var i = 1; i < n; i++) {
+        o += dy[index[i - 1]][j];
+        y[index[i]][j] = o;
+      }
+    }
+
+    /* Find the property definitions for dynamic substitution. */
+    var i = orient.indexOf("-"),
+        pdy = horizontal ? "h" : "w",
+        px = i < 0 ? (horizontal ? "l" : "b") : orient.charAt(i + 1),
+        py = orient.charAt(0);
+    for (var p in prop) prop[p] = none;
+    prop[px] = function(i, j) { return x[j]; };
+    prop[py] = function(i, j) { return y[i][j]; };
+    prop[pdy] = function(i, j) { return dy[i][j]; };
+  };
 
   /**
-   * Adds a mark of the specified type to a new panel, using this stack layout.
-   * Any positional properties defined on the returned mark will be evaluated
-   * immediately after the panel's data, allowing the layout to compute the
-   * implied offset.
+   * The layer prototype. This prototype is intended to be used with an area,
+   * bar or panel mark (or subclass thereof). Other mark types may be possible,
+   * though note that the stack layout is not currently designed to support
+   * radial stacked visualizations using wedges.
+   *
+   * <p>The layer is not a direct child of the stack layout; a hidden panel is
+   * used to replicate layers.
+   *
+   * @type pv.Mark
+   * @name pv.Layout.Stack.prototype.layer
    */
-  this.add = function(type) {
-      var mark = that.parent.add(pv.Panel)
-              .data(function() {
-                  var data = that.scene.$stack.data;
-                  that.prebuild(data, this.children[0]);
-                  return data;
-                })
-              .visible(function() { return that.scene[this.index].visible; })
-            .add(type)
-              .data(pv.identity),
-          bind = mark.bind;
-      mark.bind = function() { that.prebind(bind, this); };
-      return mark;
-    };
+  this.layer = new pv.Mark()
+      .data(function() { return values[this.parent.index]; })
+      .top(proxy("t"))
+      .left(proxy("l"))
+      .right(proxy("r"))
+      .bottom(proxy("b"))
+      .width(proxy("w"))
+      .height(proxy("h"));
+
+  this.layer.add = function(type) {
+    return that.add(pv.Panel)
+        .data(function() { return that.layers(); })
+      .add(type)
+        .extend(this);
+  };
 };
 
 pv.Layout.Stack.prototype = pv.extend(pv.Layout)
     .property("orient", String)
+    .property("offset", String)
     .property("order", String)
-    .property("offset", String);
+    .property("layers");
 
+/**
+ * Default properties for stack layouts. The default orientation is
+ * "bottom-left", the default offset is "zero", and the default layers is
+ * <tt>[[]]</tt>.
+ *
+ * @type pv.Layout.Stack
+ */
 pv.Layout.Stack.prototype.defaults = new pv.Layout.Stack()
     .extend(pv.Layout.prototype.defaults)
-    .orient("bottom")
-    .order("unsorted")
-    .offset("zero");
+    .orient("bottom-left")
+    .offset("zero")
+    .layers([[]]);
 
-/** @private Capture the panel data on initialization. */
-pv.Layout.Stack.prototype.init = function(data) {
-  this.scene.$stack = {data: data};
-};
-
-/**
- * @private Before the child is bound, capture the original positional property
- * definitions so that the layout can use these properties to compute the
- * offset.
- */
-pv.Layout.Stack.prototype.prebind = function(bind, child) {
-  var o = child.binds ? child.binds.$stack : {};
-  bind.call(child);
-
-  /** @private The positional properties for dynamic substitution. */
-  var positionals = {
-    "left": 1,
-    "right": 1,
-    "top": 1,
-    "bottom": 1,
-    "width": 1,
-    "height": 1
-  };
-
-  /** @private Returns a constant property function for the specified value. */
-  function constant(x) {
-    return function() { return x; };
-  }
-
-  /* Override the positional properties with dynamics. */
-  var properties = child.binds.properties;
-  for (var name in positionals) {
-    var p = properties[name];
-    if (!p.original) { // ignore our dynamic binds
-      var v = p.type & 1 ? p.value : constant(p.value),
-          d = o[name] = child.propertyValue(name, v);
-      d.type = 3;
-      d.original = v;
-    }
-  }
-
-  /* Rebind the dynamic properties. */
-  bind.call(child);
-  child.binds.$stack = o;
-};
+/** @private */
+pv.Layout.Stack.prototype.$x
+    = /** @private */ pv.Layout.Stack.prototype.$y
+    = function() { return 0; };
 
 /**
- * @private Before the child is built, reassign the positional properties to the
- * appropriate dynamic function, so as to lookup the computed offset.
- */
-pv.Layout.Stack.prototype.prebuild = function(data, child) {
-  var orient = this.orient(),
-      horizontal = /^(top|bottom)$/.test(orient),
-      n = data.length,
-      m = data[0].length,
-      h = this.parent[horizontal ? "height" : "width"](),
-      x = [],
-      y = [],
-      dy = [],
-      z = [],
-      parent = child.parent,
-      properties = child.binds.$stack;
-
-  /* Find the property definitions for dynamic substitution. */
-  var pdy = properties[horizontal ? "height" : "width"],
-      px = horizontal
-          ? properties.left || properties.right
-          : properties.top || properties.bottom,
-      py = properties[orient],
-      fy = pdy.original,
-      fx = px.original;
-
-  /* Iterate over the data, evaluating the x and dy functions. */
-  var stack = pv.Mark.stack;
-  stack.unshift(null);
-  for (var i = 0; i < n; i++) {
-    dy[i] = [];
-    y[i] = [];
-    z[i] = this.scene[i].visible;
-    parent.index = i;
-    for (var j = 0; j < m; j++) {
-      stack[0] = data[i][j];
-      pv.Mark.prototype.index = child.index = j;
-      if (!i) x[j] = fx.apply(child, stack);
-      dy[i][j] = z[i] ? fy.apply(child, stack) : 0;
-    }
-  }
-  delete parent.index;
-  delete child.index;
-  stack.shift();
-
-  /* order */
-  var index;
-  switch (this.order()) {
-    case "inside-out": {
-      var max = dy.map(function(v) { return pv.max.index(v); }),
-          map = pv.range(n).sort(function(a, b) { return max[a] - max[b]; }),
-          sums = dy.map(function(v) { return pv.sum(v); }),
-          top = 0,
-          bottom = 0,
-          tops = [],
-          bottoms = [];
-      for (var i = 0; i < n; i++) {
-        var j = map[i];
-        if (top < bottom) {
-          top += sums[j];
-          tops.push(j);
-        } else {
-          bottom += sums[j];
-          bottoms.push(j);
-        }
-      }
-      index = bottoms.reverse().concat(tops);
-      break;
-    }
-    default: index = pv.range(n); break;
-  }
-
-  /* offset */
-  switch (this.offset()) {
-    case "silohouette": {
-      for (var j = 0; j < m; j++) {
-        var o = 0;
-        for (var i = 0; i < n; i++) o += dy[i][j];
-        y[index[0]][j] = (h - o) / 2;
-      }
-      break;
-    }
-    case "wiggle": {
-      var o = 0;
-      for (var i = 0; i < n; i++) o += dy[i][0];
-      y[index[0]][0] = o = (h - o) / 2;
-      for (var j = 1; j < m; j++) {
-        var s1 = 0, s2 = 0, dx = x[j] - x[j - 1];
-        for (var i = 0; i < n; i++) s1 += dy[i][j];
-        for (var i = 0; i < n; i++) {
-          var s3 = (dy[index[i]][j] - dy[index[i]][j - 1]) / (2 * dx);
-          for (var k = 0; k < i; k++) {
-            s3 += (dy[index[k]][j] - dy[index[k]][j - 1]) / dx;
-          }
-          s2 += s3 * dy[index[i]][j];
-        }
-        y[index[0]][j] = o -= s1 ? s2 / s1 * dx : 0;
-      }
-      break;
-    }
-    case "expand": {
-      var nz = pv.sum(z);
-      for (var j = 0; j < m; j++) {
-        y[index[0]][j] = 0;
-        var k = 0;
-        for (var i = 0; i < n; i++) k += dy[i][j];
-        if (k) {
-          k = h / k;
-          for (var i = 0; i < n; i++) dy[i][j] *= k;
-        } else {
-          k = h / nz;
-          for (var i = 0; i < n; i++) dy[i][j] = z[i] ? k : 0;
-        }
-      }
-      break;
-    }
-    default: {
-      for (var j = 0; j < m; j++) y[index[0]][j] = 0;
-      break;
-    }
-  }
-
-  /* Propagate the offset to the other series. */
-  for (var j = 0; j < m; j++) {
-    var o = y[index[0]][j];
-    for (var i = 1; i < n; i++) {
-      o += dy[index[i - 1]][j];
-      y[index[i]][j] = o;
-    }
-  }
-
-  /* Substitute the dynamic properties so the child can build. */
-  px.value = function() { return x[this.index]; };
-  py.value = function() { return y[this.parent.index][this.index]; };
-  pdy.value = function() { return dy[this.parent.index][this.index]; };
-  return data;
-};
-// TODO add `by` function for determining size (and children?)
-
-/**
- * Returns a new treemap tree layout.
+ * The x psuedo-property; determines the position of the value within the layer.
+ * This typically corresponds to the independent variable. For example, with the
+ * default "bottom-left" orientation, this function defines the "left" property.
  *
- * @class A tree layout in the form of an treemap. <img
- * src="../treemap.png" width="160" height="160" align="right"> Treemaps
- * are a form of space-filling layout that represents nodes as boxes, with child
+ * @param {function} f the x function.
+ * @returns {pv.Layout.Stack} this.
+ */
+pv.Layout.Stack.prototype.x = function(f) {
+  /** @private */ this.$x = pv.functor(f);
+  return this;
+};
+
+/**
+ * The y psuedo-property; determines the thickness of the layer at the given
+ * value.  This typically corresponds to the dependent variable. For example,
+ * with the default "bottom-left" orientation, this function defines the
+ * "height" property.
+ *
+ * @param {function} f the y function.
+ * @returns {pv.Layout.Stack} this.
+ */
+pv.Layout.Stack.prototype.y = function(f) {
+  /** @private */ this.$y = pv.functor(f);
+  return this;
+};
+
+/** @private The default value function; identity. */
+pv.Layout.Stack.prototype.$values = pv.identity;
+
+/**
+ * The values function; determines the values for a given layer. The default
+ * value is the identity function, which assumes that the layers property is
+ * specified as a two-dimensional (i.e., nested) array.
+ *
+ * @param {function} f the values function.
+ * @returns {pv.Layout.Stack} this.
+ */
+pv.Layout.Stack.prototype.values = function(f) {
+  this.$values = pv.functor(f);
+  return this;
+};
+
+/**
+ * The layer data in row-major order. The value of this property is typically a
+ * two-dimensional (i.e., nested) array, but any array can be used, provided the
+ * values psuedo-property is defined accordingly.
+ *
+ * @type array[]
+ * @name pv.Layout.Stack.prototype.layers
+ */
+
+/**
+ * The layer orientation. The following values are supported:<ul>
+ *
+ * <li>bottom-left == bottom
+ * <li>bottom-right
+ * <li>top-left == top
+ * <li>top-right
+ * <li>left-top
+ * <li>left-bottom == left
+ * <li>right-top
+ * <li>right-bottom == right
+ *
+ * </ul>. The default value is "bottom-left", which means that the layers will
+ * be built from the bottom-up, and the values within layers will be laid out
+ * from left-to-right.
+ *
+ * <p>Note that with non-zero baselines, some orientations may give similar
+ * results. For example, offset("silohouette") centers the layers, resulting in
+ * a streamgraph. Thus, the orientations "bottom-left" and "top-left" will
+ * produce similar results, differing only in the layer order.
+ *
+ * @type string
+ * @name pv.Layout.Stack.prototype.orient
+ */
+
+/**
+ * The layer order. The following values are supported:<ul>
+ *
+ * <li><i>null</i> - use given layer order.
+ * <li>inside-out - sort by maximum value, with balanced order.
+ * <li>reverse - use reverse of given layer order.
+ *
+ * </ul>For details on the inside-out order algorithm, refer to "Stacked Graphs
+ * -- Geometry &amp; Aesthetics" by L. Byron and M. Wattenberg, IEEE TVCG
+ * November/December 2008.
+ *
+ * @type string
+ * @name pv.Layout.Stack.prototype.order
+ */
+
+/**
+ * The layer offset; the y-position of the bottom of the lowest layer. The
+ * following values are supported:<ul>
+ *
+ * <li>zero - use a zero baseline, i.e., the y-axis.
+ * <li>silohouette - center the stream, i.e., ThemeRiver.
+ * <li>wiggle - minimize weighted change in slope.
+ * <li>expand - expand layers to fill the enclosing layout dimensions.
+ *
+ * </ul>For details on these offset algorithms, refer to "Stacked Graphs --
+ * Geometry &amp; Aesthetics" by L. Byron and M. Wattenberg, IEEE TVCG
+ * November/December 2008.
+ *
+ * @type string
+ * @name pv.Layout.Stack.prototype.offset
+ */
+/**
+ * Constructs a new, empty treemap layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a space-filling rectangular layout, with the hierarchy
+ * represented via containment. Treemaps represent nodes as boxes, with child
  * nodes placed within parent boxes. The size of each box is proportional to the
- * size of the node in the tree.
+ * size of the node in the tree. This particular algorithm is taken from Bruls,
+ * D.M., C. Huizing, and J.J. van Wijk, <a
+ * href="http://www.win.tue.nl/~vanwijk/stm.pdf">"Squarified Treemaps"</a> in
+ * <i>Data Visualization 2000, Proceedings of the Joint Eurographics and IEEE
+ * TCVG Sumposium on Visualization</i>, 2000, pp. 33-42.
  *
- * <p>This particular algorithm is taken from Bruls, D.M., C. Huizing, and
- * J.J. van Wijk, <a href="http://www.win.tue.nl/~vanwijk/stm.pdf">"Squarified
- * Treemaps"</a> in <i>Data Visualization 2000, Proceedings of the Joint
- * Eurographics and IEEE TCVG Sumposium on Visualization</i>, 2000,
- * pp. 33-42.
+ * <p>The meaning of the exported mark prototypes changes slightly in the
+ * space-filling implementation:<ul>
  *
- * <p>This tree layout is intended to be extended (see {@link pv.Mark#extend})
- * by a {@link pv.Bar}. The data property returns an array of nodes for use by
- * other property functions. The following node attributes are supported:
+ * <li><tt>node</tt> - for rendering nodes; typically a {@link pv.Bar}. The node
+ * data is populated with <tt>dx</tt> and <tt>dy</tt> attributes, in addition to
+ * the standard <tt>x</tt> and <tt>y</tt> position attributes.
  *
- * <ul>
- * <li><tt>left</tt> - the cell left position.
- * <li><tt>top</tt> - the cell top position.
- * <li><tt>width</tt> - the cell width.
- * <li><tt>height</tt> - the cell height.
- * <li><tt>depth</tt> - the node depth (tier; the root is 0).
- * <li><tt>keys</tt> - an array of string keys for the node.
- * <li><tt>size</tt> - the aggregate node size.
- * <li><tt>children</tt> - child nodes, if any.
- * <li><tt>data</tt> - the associated tree element, for leaf nodes.
- * </ul>
+ * <p><li><tt>leaf</tt> - for rendering leaf nodes only, with no fill or stroke
+ * style by default; typically a {@link pv.Panel} or another layout!
  *
- * To produce a default treemap layout, say:
+ * <p><li><tt>link</tt> - unsupported; undefined. Links are encoded implicitly
+ * in the arrangement of the space-filling nodes.
  *
- * <pre>.add(pv.Bar)
- *   .extend(pv.Layout.treemap(tree))</pre>
+ * <p><li><tt>label</tt> - for rendering node labels; typically a
+ * {@link pv.Label}.
  *
- * To display internal nodes, and color by depth, say:
+ * </ul>For more details on how to use this layout, see
+ * {@link pv.Layout.Hierarchy}.
  *
- * <pre>.add(pv.Bar)
- *   .extend(pv.Layout.treemap(tree).inset(10))
- *   .fillStyle(pv.Colors.category19().by(function(n) n.depth))</pre>
- *
- * The format of the <tt>tree</tt> argument is a hierarchical object whose leaf
- * nodes are numbers corresponding to their size. For an example, and
- * information on how to convert tabular data into such a tree, see
- * {@link pv.Tree}. If the leaf nodes are not numbers, a {@link #size} function
- * can be specified to override how the tree is interpreted. This size function
- * can also be used to transform the data.
- *
- * <p>By default, the treemap fills the full width and height of the parent
- * panel, and only leaf nodes are rendered. If an {@link #inset} is specified,
- * internal nodes will be rendered, each inset from their parent by the
- * specified margins. Rounding can be enabled using {@link #round}. Finally, an
- * optional root key can be specified using {@link #root} for convenience.
- *
- * @param tree a tree (an object) whose leaf attributes have sizes.
- * @returns {pv.Layout.treemap} a tree layout.
+ * @extends pv.Layout.Hierarchy
  */
-pv.Layout.treemap = function(tree) {
-  var keys = [], round, inset, sizeof = Number;
+pv.Layout.Treemap = function() {
+  pv.Layout.Hierarchy.call(this);
+
+  this.node
+      .strokeStyle("#fff")
+      .fillStyle("rgba(31, 119, 180, .25)")
+      .width(function(n) { return n.dx; })
+      .height(function(n) { return n.dy; });
+
+  this.label
+      .visible(function(n) { return !n.firstChild; })
+      .left(function(n) { return n.x + (n.dx / 2); })
+      .top(function(n) { return n.y + (n.dy / 2); })
+      .textAlign("center")
+      .textAngle(function(n) { return n.dx > n.dy ? 0 : -Math.PI / 2; });
+
+  (this.leaf = new pv.Mark()
+      .extend(this.node)
+      .fillStyle(null)
+      .strokeStyle(null)
+      .visible(function(n) { return !n.firstChild; })).parent = this;
+
+  /* Hide unsupported link. */
+  delete this.link;
+};
+
+pv.Layout.Treemap.prototype = pv.extend(pv.Layout.Hierarchy)
+    .property("round", Boolean)
+    .property("paddingLeft", Number)
+    .property("paddingRight", Number)
+    .property("paddingTop", Number)
+    .property("paddingBottom", Number)
+    .property("mode", String)
+    .property("order", String);
+
+/**
+ * Default propertiess for treemap layouts. The default mode is "squarify" and
+ * the default order is "ascending".
+ *
+ * @type pv.Layout.Treemap
+ */
+pv.Layout.Treemap.prototype.defaults = new pv.Layout.Treemap()
+    .extend(pv.Layout.Hierarchy.prototype.defaults)
+    .mode("squarify") // squarify, slice-and-dice, slice, dice
+    .order("ascending"); // ascending, descending, reverse, null
+
+/**
+ * Whether node sizes should be rounded to integer values. This has a similar
+ * effect to setting <tt>antialias(false)</tt> for node values, but allows the
+ * treemap algorithm to accumulate error related to pixel rounding.
+ *
+ * @type boolean
+ * @name pv.Layout.Treemap.prototype.round
+ */
+
+/**
+ * The left inset between parent add child in pixels. Defaults to 0.
+ *
+ * @type number
+ * @name pv.Layout.Treemap.prototype.paddingLeft
+ * @see #padding
+ */
+
+/**
+ * The right inset between parent add child in pixels. Defaults to 0.
+ *
+ * @type number
+ * @name pv.Layout.Treemap.prototype.paddingRight
+ * @see #padding
+ */
+
+/**
+ * The top inset between parent and child in pixels. Defaults to 0.
+ *
+ * @type number
+ * @name pv.Layout.Treemap.prototype.paddingTop
+ * @see #padding
+ */
+
+/**
+ * The bottom inset between parent and child in pixels. Defaults to 0.
+ *
+ * @type number
+ * @name pv.Layout.Treemap.prototype.paddingBottom
+ * @see #padding
+ */
+
+/**
+ * The treemap algorithm. The default value is "squarify". The "slice-and-dice"
+ * algorithm may also be used, which alternates between horizontal and vertical
+ * slices for different depths. In addition, the "slice" and "dice" algorithms
+ * may be specified explicitly to control whether horizontal or vertical slices
+ * are used, which may be useful for nested treemap layouts.
+ *
+ * @type string
+ * @name pv.Layout.Treemap.prototype.mode
+ * @see <a
+ * href="ftp://ftp.cs.umd.edu/pub/hcil/Reports-Abstracts-Bibliography/2001-06html/2001-06.pdf"
+ * >"Ordered Treemap Layouts"</a> by B. Shneiderman &amp; M. Wattenberg, IEEE
+ * InfoVis 2001.
+ */
+
+/**
+ * The sibling node order. A <tt>null</tt> value means to use the sibling order
+ * specified by the nodes property as-is; "reverse" will reverse the given
+ * order. The default value "ascending" will sort siblings in ascending order of
+ * size, while "descending" will do the reverse. For sorting based on data
+ * attributes other than size, use the default <tt>null</tt> for the order
+ * property, and sort the nodes beforehand using the {@link pv.Dom} operator.
+ *
+ * @type string
+ * @name pv.Layout.Treemap.prototype.order
+ */
+
+/**
+ * Alias for setting the left, right, top and bottom padding properties
+ * simultaneously.
+ *
+ * @see #paddingLeft
+ * @see #paddingRight
+ * @see #paddingTop
+ * @see #paddingBottom
+ * @returns {pv.Layout.Treemap} this.
+ */
+pv.Layout.Treemap.prototype.padding = function(n) {
+  return this.paddingLeft(n).paddingRight(n).paddingTop(n).paddingBottom(n);
+};
+
+/** @private The default size function. */
+pv.Layout.Treemap.prototype.$size = function(d) {
+  return Number(d.nodeValue);
+};
+
+/**
+ * Specifies the sizing function. By default, the size function uses the
+ * <tt>nodeValue</tt> attribute of nodes as a numeric value: <tt>function(d)
+ * Number(d.nodeValue)</tt>.
+ *
+ * <p>The sizing function is invoked for each leaf node in the tree, per the
+ * <tt>nodes</tt> property. For example, if the tree data structure represents a
+ * file system, with files as leaf nodes, and each file has a <tt>bytes</tt>
+ * attribute, you can specify a size function as:
+ *
+ * <pre>    .size(function(d) d.bytes)</pre>
+ *
+ * @param {function} f the new sizing function.
+ * @returns {pv.Layout.Treemap} this.
+ */
+pv.Layout.Treemap.prototype.size = function(f) {
+  this.$size = pv.functor(f);
+  return this;
+};
+
+/** @private */
+pv.Layout.Treemap.prototype.buildImplied = function(s) {
+  if (pv.Layout.Hierarchy.prototype.buildImplied.call(this, s)) return;
+
+  var that = this,
+      nodes = s.nodes,
+      root = nodes[0],
+      stack = pv.Mark.stack,
+      left = s.paddingLeft,
+      right = s.paddingRight,
+      top = s.paddingTop,
+      bottom = s.paddingBottom,
+      /** @ignore */ size = function(n) { return n.size; },
+      round = s.round ? Math.round : Number,
+      mode = s.mode;
 
   /** @private */
-  function rnd(i) {
-    return round ? Math.round(i) : i;
-  }
-
-  /** @private */
-  function accumulate(map) {
-    var node = {size: 0, children: [], keys: keys.slice()};
-    for (var key in map) {
-      var child = map[key], size = sizeof(child);
-      keys.push(key);
-      if (isNaN(size)) {
-        child = accumulate(child);
+  function slice(row, sum, horizontal, x, y, w, h) {
+    for (var i = 0, d = 0; i < row.length; i++) {
+      var n = row[i];
+      if (horizontal) {
+        n.x = x + d;
+        n.y = y;
+        d += n.dx = round(w * n.size / sum);
+        n.dy = h;
       } else {
-        child = {size: size, data: child, keys: keys.slice()};
+        n.x = x;
+        n.y = y + d;
+        n.dx = w;
+        d += n.dy = round(h * n.size / sum);
       }
-      node.children.push(child);
-      node.size += child.size;
-      keys.pop();
     }
-    node.children.sort(function(a, b) { return a.size - b.size; });
-    return node;
-  }
-
-  /** @private */
-  function scale(node, k) {
-    node.size *= k;
-    if (node.children) {
-      for (var i = 0; i < node.children.length; i++) {
-        scale(node.children[i], k);
+    if (n) { // correct on-axis rounding error
+      if (horizontal) {
+        n.dx += w - d;
+      } else {
+        n.dy += h - d;
       }
     }
   }
@@ -9491,52 +12140,53 @@ pv.Layout.treemap = function(tree) {
   }
 
   /** @private */
-  function squarify(node) {
-    var row = [], mink = Infinity;
-    var x = node.left + (inset ? inset.left : 0),
-        y = node.top + (inset ? inset.top : 0),
-        w = node.width - (inset ? inset.left + inset.right : 0),
-        h = node.height - (inset ? inset.top + inset.bottom : 0),
-        l = Math.min(w, h);
+  function layout(n, i) {
+    var x = n.x + left,
+        y = n.y + top,
+        w = n.dx - left - right,
+        h = n.dy - top - bottom;
 
-    scale(node, w * h / node.size);
-
-    function position(row) {
-      var s = pv.sum(row, function(node) { return node.size; }),
-          hh = (l == 0) ? 0 : rnd(s / l);
-
-      for (var i = 0, d = 0; i < row.length; i++) {
-        var n = row[i], nw = rnd(n.size / hh);
-        if (w == l) {
-          n.left = x + d;
-          n.top = y;
-          n.width = nw;
-          n.height = hh;
-        } else {
-          n.left = x;
-          n.top = y + d;
-          n.width = hh;
-          n.height = nw;
-        }
-        d += nw;
-      }
-
-      if (w == l) {
-        if (n) n.width += w - d; // correct rounding error
-        y += hh;
-        h -= hh;
-      } else {
-        if (n) n.height += h - d; // correct rounding error
-        x += hh;
-        w -= hh;
-      }
-      l = Math.min(w, h);
+    /* Assume squarify by default. */
+    if (mode != "squarify") {
+      slice(n.childNodes, n.size,
+          mode == "slice" ? true
+          : mode == "dice" ? false
+          : i & 1, x, y, w, h);
+      return;
     }
 
-    var children = node.children.slice(); // copy
-    while (children.length > 0) {
+    var row = [],
+        mink = Infinity,
+        l = Math.min(w, h),
+        k = w * h / n.size;
+
+    /* Abort if the size is nonpositive. */
+    if (n.size <= 0) return;
+
+    /* Scale the sizes to fill the current subregion. */
+    n.visitBefore(function(n) { n.size *= k; });
+
+    /** @private Position the specified nodes along one dimension. */
+    function position(row) {
+      var horizontal = w == l,
+          sum = pv.sum(row, size),
+          r = l ? round(sum / l) : 0;
+      slice(row, sum, horizontal, x, y, horizontal ? w : r, horizontal ? r : h);
+      if (horizontal) {
+        y += r;
+        h -= r;
+      } else {
+        x += r;
+        w -= r;
+      }
+      l = Math.min(w, h);
+      return horizontal;
+    }
+
+    var children = n.childNodes.slice(); // copy
+    while (children.length) {
       var child = children[children.length - 1];
-      if (child.size <= 0) {
+      if (!child.size) {
         children.pop();
         continue;
       }
@@ -9554,153 +12204,68 @@ pv.Layout.treemap = function(tree) {
       }
     }
 
-    if (row.length > 0) {
-      position(row);
-    }
-
-    /* correct rounding error */
-    if (w == l) {
-      for (var i = 0; i < row.length; i++) {
-        row[i].width += w;
-      }
-    } else {
-      for (var i = 0; i < row.length; i++) {
-        row[i].height += h;
-      }
+    /* correct off-axis rounding error */
+    if (position(row)) for (var i = 0; i < row.length; i++) {
+      row[i].dy += h;
+    } else for (var i = 0; i < row.length; i++) {
+      row[i].dx += w;
     }
   }
 
-  /** @private */
-  function layout(node) {
-    if (node.children) {
-      squarify(node);
-      for (var i = 0; i < node.children.length; i++) {
-        var child = node.children[i];
-        child.depth = node.depth + 1;
-        layout(child);
-      }
+  /* Recursively compute the node depth and size. */
+  stack.unshift(null);
+  root.visitAfter(function(n, i) {
+      n.depth = i;
+      n.x = n.y = n.dx = n.dy = 0;
+      n.size = n.firstChild
+          ? pv.sum(n.childNodes, function(n) { return n.size; })
+          : that.$size.apply(that, (stack[0] = n, stack));
+    });
+  stack.shift();
+
+  /* Sort. */
+  switch (s.order) {
+    case "ascending": {
+      root.sort(function(a, b) { return a.size - b.size; });
+      break;
     }
+    case "descending": {
+      root.sort(function(a, b) { return b.size - a.size; });
+      break;
+    }
+    case "reverse": root.reverse(); break;
   }
 
-  /** @private */
-  function flatten(node, array) {
-    if (node.children) {
-      for (var i = 0; i < node.children.length; i++) {
-        flatten(node.children[i], array);
-      }
-    }
-    if (inset || !node.children) {
-      array.push(node)
-    }
-    return array;
-  }
-
-  /** @private */
-  function data() {
-    var root = accumulate(tree);
-    root.left = 0;
-    root.top = 0;
-    root.width = this.parent.width();
-    root.height = this.parent.height();
-    root.depth = 0;
-    layout(root);
-    return flatten(root, []).reverse();
-  }
-
-  var mark = new pv.Mark()
-      .data(data)
-      .left(function(n) { return n.left; })
-      .top(function(n) { return n.top; })
-      .width(function(n) { return n.width; })
-      .height(function(n) { return n.height; });
-
-  /**
-   * Enables or disables rounding. When rounding is enabled, the left, top,
-   * width and height properties will be rounded to integer pixel values. The
-   * rounding algorithm uses error accumulation to ensure an exact fit.
-   *
-   * @param {boolean} v whether rounding should be enabled.
-   * @function
-   * @name pv.Layout.treemap.prototype.round
-   * @returns {pv.Layout.treemap} this.
-   */
-  mark.round = function(v) {
-    round = v;
-    return this;
-  };
-
-  /**
-   * Specifies the margins to inset child nodes from their parents; as a side
-   * effect, this also enables the display of internal nodes, which are hidden
-   * by default. If only a single argument is specified, this value is used to
-   * inset all four sides.
-   *
-   * @param {number} top the top margin.
-   * @param {number} [right] the right margin.
-   * @param {number} [bottom] the bottom margin.
-   * @param {number} [left] the left margin.
-   * @function
-   * @name pv.Layout.treemap.prototype.inset
-   * @returns {pv.Layout.treemap} this.
-   */
-  mark.inset = function(top, right, bottom, left) {
-    if (arguments.length) {
-      if (arguments.length == 1) right = bottom = left = top;
-      inset = {top:top, right:right, bottom:bottom, left:left};
-      return this;
-    }
-    return inset;
-  };
-
-  /**
-   * Specifies the root key; optional. The root key is prepended to the
-   * <tt>keys</tt> attribute for all generated nodes. This method is provided
-   * for convenience and does not affect layout.
-   *
-   * @param {string} v the root key.
-   * @function
-   * @name pv.Layout.treemap.prototype.root
-   * @returns {pv.Layout.treemap} this.
-   */
-  mark.root = function(v) {
-    keys = [v];
-    return this;
-  };
-
-  /**
-   * Specifies the sizing function. By default, the sizing function is
-   * <tt>Number</tt>. The sizing function is invoked for each node in the tree
-   * (passed to the constructor): the sizing function must return
-   * <tt>undefined</tt> or <tt>NaN</tt> for internal nodes, and a number for
-   * leaf nodes. The aggregate sizes of internal nodes will be automatically
-   * computed by the layout.
-   *
-   * <p>For example, if the tree data structure represents a file system, with
-   * files as leaf nodes, and each file has a <tt>bytes</tt> attribute, you can
-   * specify a size function as:
-   *
-   * <pre>.size(function(d) d.bytes)</pre>
-   *
-   * This function will return <tt>undefined</tt> for internal nodes (since
-   * these do not have a <tt>bytes</tt> attribute), and a number for leaf nodes.
-   *
-   * <p>Note that the built-in <tt>Math.sqrt</tt> and <tt>Math.log</tt> methods
-   * can be used as sizing functions. These function similarly to
-   * <tt>Number</tt>, except perform a root and log scale, respectively.
-   *
-   * @param {function} f the new sizing function.
-   * @function
-   * @name pv.Layout.treemap.prototype.size
-   * @returns {pv.Layout.treemap} this.
-   */
-  mark.size = function(f) {
-    sizeof = f;
-    return this;
-  };
-
-  return mark;
+  /* Recursively compute the layout. */
+  root.x = 0;
+  root.y = 0;
+  root.dx = s.width;
+  root.dy = s.height;
+  root.visitBefore(layout);
 };
-/** @see http://citeseer.ist.psu.edu/buchheim02improving.html */
+/**
+ * Constructs a new, empty tree layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a node-link tree diagram using the Reingold-Tilford "tidy"
+ * tree layout algorithm. The specific algorithm used by this layout is based on
+ * <a href="http://citeseer.ist.psu.edu/buchheim02improving.html">"Improving
+ * Walker's Algorithm to Run in Linear Time"</A> by C. Buchheim, M. J&uuml;nger
+ * &amp; S. Leipert, Graph Drawing 2002. This layout supports both cartesian and
+ * radial orientations orientations for node-link diagrams.
+ *
+ * <p>The tree layout supports a "group" property, which if true causes siblings
+ * to be positioned closer together than unrelated nodes at the same depth. The
+ * layout can be configured using the <tt>depth</tt> and <tt>breadth</tt>
+ * properties, which control the increments in pixel space between nodes in both
+ * dimensions, similar to the indent layout.
+ *
+ * <p>For more details on how to use this layout, see
+ * {@link pv.Layout.Hierarchy}.
+ *
+ * @extends pv.Layout.Hierarchy
+ */
 pv.Layout.Tree = function() {
   pv.Layout.Hierarchy.call(this);
 };
@@ -9711,6 +12276,13 @@ pv.Layout.Tree.prototype = pv.extend(pv.Layout.Hierarchy)
     .property("depth", Number)
     .property("orient", String);
 
+/**
+ * Default properties for tree layouts. The default orientation is "top", the
+ * default group parameter is 1, and the default breadth and depth offsets are
+ * 15 and 60 respectively.
+ *
+ * @type pv.Layout.Tree
+ */
 pv.Layout.Tree.prototype.defaults = new pv.Layout.Tree()
     .extend(pv.Layout.Hierarchy.prototype.defaults)
     .group(1)
@@ -9718,15 +12290,17 @@ pv.Layout.Tree.prototype.defaults = new pv.Layout.Tree()
     .depth(60)
     .orient("top");
 
-pv.Layout.Tree.prototype.init = function() {
-  if (pv.Layout.Hierarchy.prototype.init.call(this)) return;
-  var nodes = this.nodes(),
-      orient = this.orient(),
-      depth = this.depth(),
-      breadth = this.breadth(),
-      group = this.group(),
-      w = this.parent.width(),
-      h = this.parent.height();
+/** @private */
+pv.Layout.Tree.prototype.buildImplied = function(s) {
+  if (pv.Layout.Hierarchy.prototype.buildImplied.call(this, s)) return;
+
+  var nodes = s.nodes,
+      orient = s.orient,
+      depth = s.depth,
+      breadth = s.breadth,
+      group = s.group,
+      w = s.width,
+      h = s.height;
 
   /** @private */
   function firstWalk(v) {
@@ -9867,10 +12441,8 @@ pv.Layout.Tree.prototype.init = function() {
   secondWalk(root, -root.prelim, 0);
 
   /** @private Returns the angle of the given node. */
-  function angle(n) {
-    return (orient == "radial")
-        ? n.breadth / depth
-        : (n.firstChild ? Math.PI : 0);
+  function midAngle(n) {
+    return (orient == "radial") ? n.breadth / depth : 0;
   }
 
   /** @private */
@@ -9880,7 +12452,7 @@ pv.Layout.Tree.prototype.init = function() {
       case "right": return w - n.depth;
       case "top":
       case "bottom": return n.breadth + w / 2;
-      case "radial": return w / 2 + n.depth * Math.cos(angle(n));
+      case "radial": return w / 2 + n.depth * Math.cos(midAngle(n));
     }
   }
 
@@ -9891,7 +12463,7 @@ pv.Layout.Tree.prototype.init = function() {
       case "right": return n.breadth + h / 2;
       case "top": return n.depth;
       case "bottom": return h - n.depth;
-      case "radial": return h / 2 + n.depth * Math.sin(angle(n));
+      case "radial": return h / 2 + n.depth * Math.sin(midAngle(n));
     }
   }
 
@@ -9899,9 +12471,10 @@ pv.Layout.Tree.prototype.init = function() {
   root.visitAfter(function(v) {
       v.breadth *= breadth;
       v.depth *= depth;
-      v.angle = angle(v);
+      v.midAngle = midAngle(v);
       v.x = x(v);
       v.y = y(v);
+      if (v.firstChild) v.midAngle += Math.PI;
       delete v.breadth;
       delete v.depth;
       delete v.ancestor;
@@ -9910,13 +12483,28 @@ pv.Layout.Tree.prototype.init = function() {
       delete v.change;
       delete v.shift;
       delete v.number;
+      delete v.thread;
     });
 };
 
 /**
- * The orientation. The default orientation is "left", which means that the root
- * node is placed on the left edge, leaf nodes appear on the right edge, and
- * internal nodes are in-between. The following orientations are supported:<ul>
+ * The offset between siblings nodes; defaults to 15.
+ *
+ * @type number
+ * @name pv.Layout.Tree.prototype.breadth
+ */
+
+/**
+ * The offset between parent and child nodes; defaults to 60.
+ *
+ * @type number
+ * @name pv.Layout.Tree.prototype.depth
+ */
+
+/**
+ * The orientation. The default orientation is "top", which means that the root
+ * node is placed on the top edge, leaf nodes appear at the bottom, and internal
+ * nodes are in-between. The following orientations are supported:<ul>
  *
  * <li>left - left-to-right.
  * <li>right - right-to-left.
@@ -9924,10 +12512,8 @@ pv.Layout.Tree.prototype.init = function() {
  * <li>bottom - bottom-to-top.
  * <li>radial - radially, with the root at the center.</ul>
  *
- * @param {string} v the new orientation.
- * @function
+ * @type string
  * @name pv.Layout.Tree.prototype.orient
- * @returns {pv.Layout.Tree} this, or the current orientation.
  */
 
 /**
@@ -9936,30 +12522,76 @@ pv.Layout.Tree.prototype.init = function() {
  * separated by one breadth offset. Setting this to false (or 0) causes
  * non-siblings to be adjacent.
  *
- * @param {number} x the new group spacing.
- * @function
+ * @type number
  * @name pv.Layout.Tree.prototype.group
- * @returns {pv.Layout.Tree} this, or the current group spacing.
+ */
+/**
+ * Constructs a new, empty indent layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a hierarchical layout using the indent algorithm. This
+ * layout implements a node-link diagram where the nodes are presented in
+ * preorder traversal, and nodes are indented based on their depth from the
+ * root. This technique is used ubiquitously by operating systems to represent
+ * file directories; although it requires much vertical space, indented trees
+ * allow efficient <i>interactive</i> exploration of trees to find a specific
+ * node. In addition they allow rapid scanning of node labels, and multivariate
+ * data such as file sizes can be displayed adjacent to the hierarchy.
+ *
+ * <p>The indent layout can be configured using the <tt>depth</tt> and
+ * <tt>breadth</tt> properties, which control the increments in pixel space for
+ * each indent and row in the layout. This layout does not support multiple
+ * orientations; the root node is rendered in the top-left, while
+ * <tt>breadth</tt> is a vertical offset from the top, and <tt>depth</tt> is a
+ * horizontal offset from the left.
+ *
+ * <p>For more details on how to use this layout, see
+ * {@link pv.Layout.Hierarchy}.
+ *
+ * @extends pv.Layout.Hierarchy
  */
 pv.Layout.Indent = function() {
   pv.Layout.Hierarchy.call(this);
-  this.link.interpolate("step-after").strokeStyle("#ccc");
+  this.link.interpolate("step-after");
 };
 
 pv.Layout.Indent.prototype = pv.extend(pv.Layout.Hierarchy)
     .property("depth", Number)
     .property("breadth", Number);
 
+/**
+ * The horizontal offset between different levels of the tree; defaults to 15.
+ *
+ * @type number
+ * @name pv.Layout.Indent.prototype.depth
+ */
+
+/**
+ * The vertical offset between nodes; defaults to 15.
+ *
+ * @type number
+ * @name pv.Layout.Indent.prototype.breadth
+ */
+
+/**
+ * Default properties for indent layouts. By default the depth and breadth
+ * offsets are 15 pixels.
+ *
+ * @type pv.Layout.Indent
+ */
 pv.Layout.Indent.prototype.defaults = new pv.Layout.Indent()
     .extend(pv.Layout.Hierarchy.prototype.defaults)
     .depth(15)
     .breadth(15);
 
-pv.Layout.Indent.prototype.init = function() {
-  if (pv.Layout.Hierarchy.prototype.init.call(this)) return;
-  var nodes = this.nodes(),
-      bspace = this.breadth(),
-      dspace = this.depth(),
+/** @private */
+pv.Layout.Indent.prototype.buildImplied = function(s) {
+  if (pv.Layout.Hierarchy.prototype.buildImplied.call(this, s)) return;
+
+  var nodes = s.nodes,
+      bspace = s.breadth,
+      dspace = s.depth,
       ax = 0,
       ay = 0;
 
@@ -9967,7 +12599,7 @@ pv.Layout.Indent.prototype.init = function() {
   function position(n, breadth, depth) {
     n.x = ax + depth++ * dspace;
     n.y = ay + breadth++ * bspace;
-    n.angle = 0;
+    n.midAngle = 0;
     for (var c = n.firstChild; c; c = c.nextSibling) {
       breadth = position(c, breadth, depth);
     }
@@ -9976,29 +12608,94 @@ pv.Layout.Indent.prototype.init = function() {
 
   position(nodes[0], 1, 1);
 };
+/**
+ * Constructs a new, empty circle-packing layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a hierarchical layout using circle-packing. The meaning of
+ * the exported mark prototypes changes slightly in the space-filling
+ * implementation:<ul>
+ *
+ * <li><tt>node</tt> - for rendering nodes; typically a {@link pv.Dot}.
+ *
+ * <p><li><tt>link</tt> - unsupported; undefined. Links are encoded implicitly
+ * in the arrangement of the space-filling nodes.
+ *
+ * <p><li><tt>label</tt> - for rendering node labels; typically a
+ * {@link pv.Label}.
+ *
+ * </ul>The pack layout support dynamic sizing for leaf nodes, if a
+ * {@link #size} psuedo-property is specified. The default size function returns
+ * 1, causing all leaf nodes to be sized equally, and all internal nodes to be
+ * sized by the number of leaf nodes they have as descendants.
+ *
+ * <p>The size function can be used in conjunction with the order property,
+ * which allows the nodes to the sorted by the computed size. Note: for sorting
+ * based on other data attributes, simply use the default <tt>null</tt> for the
+ * order property, and sort the nodes beforehand using the {@link pv.Dom}
+ * operator.
+ *
+ * <p>For more details on how to use this layout, see
+ * {@link pv.Layout.Hierarchy}.
+ *
+ * @extends pv.Layout.Hierarchy
+ * @see <a href="http://portal.acm.org/citation.cfm?id=1124772.1124851"
+ * >"Visualization of large hierarchical data by circle packing"</a> by W. Wang,
+ * H. Wang, G. Dai, and H. Wang, ACM CHI 2006.
+ */
 pv.Layout.Pack = function() {
   pv.Layout.Hierarchy.call(this);
 
-  var node = this.node
-      .radius(function(n) { return n.radius; })
+  this.node
+      .shapeRadius(function(n) { return n.radius; })
       .strokeStyle("rgb(31, 119, 180)")
       .fillStyle("rgba(31, 119, 180, .25)");
 
-  /** @private Adding to this layout implicitly adds to this node. */
-  this.add = function(type) { return this.parent.add(type).extend(node); };
+  this.label
+      .textAlign("center");
 
-  /* Now hide references to inherited marks. */
-  delete this.node;
-  delete this.label;
+  /* Hide unsupported link. */
   delete this.link;
 };
 
 pv.Layout.Pack.prototype = pv.extend(pv.Layout.Hierarchy)
-    .property("spacing", Number);
+    .property("spacing", Number)
+    .property("order", String); // ascending, descending, reverse, null
 
+/**
+ * Default properties for circle-packing layouts. The default spacing parameter
+ * is 1 and the default order is "ascending".
+ *
+ * @type pv.Layout.Pack
+ */
 pv.Layout.Pack.prototype.defaults = new pv.Layout.Pack()
     .extend(pv.Layout.Hierarchy.prototype.defaults)
-    .spacing(1);
+    .spacing(1)
+    .order("ascending");
+
+/**
+ * The spacing parameter; defaults to 1, which provides a little bit of padding
+ * between sibling nodes and the enclosing circle. Larger values increase the
+ * spacing, by making the sibling nodes smaller; a value of zero makes the leaf
+ * nodes as large as possible, with no padding on enclosing circles.
+ *
+ * @type number
+ * @name pv.Layout.Pack.prototype.spacing
+ */
+
+/**
+ * The sibling node order. The default order is <tt>null</tt>, which means to
+ * use the sibling order specified by the nodes property as-is. A value of
+ * "ascending" will sort siblings in ascending order of size, while "descending"
+ * will do the reverse. For sorting based on data attributes other than size,
+ * use the default <tt>null</tt> for the order property, and sort the nodes
+ * beforehand using the {@link pv.Dom} operator.
+ *
+ * @see pv.Dom.Node#sort
+ * @type string
+ * @name pv.Layout.Pack.prototype.order
+ */
 
 /** @private The default size function. */
 pv.Layout.Pack.prototype.$radius = function() { return 1; };
@@ -10015,7 +12712,10 @@ pv.Layout.Pack.prototype.$radius = function() { return 1; };
  * files as leaf nodes, and each file has a <tt>bytes</tt> attribute, you can
  * specify a size function as:
  *
- * <pre>.size(function(d) d.bytes)</pre>
+ * <pre>    .size(function(d) d.bytes)</pre>
+ *
+ * As with other properties, a size function may specify additional arguments to
+ * access the data associated with the layout and any enclosing panels.
  *
  * @param {function} f the new sizing function.
  * @returns {pv.Layout.Pack} this.
@@ -10028,9 +12728,12 @@ pv.Layout.Pack.prototype.size = function(f) {
 };
 
 /** @private */
-pv.Layout.Pack.prototype.init = function() {
-  if (pv.Layout.Hierarchy.prototype.init.call(this)) return;
-  var that = this, spacing;
+pv.Layout.Pack.prototype.buildImplied = function(s) {
+  if (pv.Layout.Hierarchy.prototype.buildImplied.call(this, s)) return;
+
+  var that = this,
+      nodes = s.nodes,
+      root = nodes[0];
 
   /** @private Compute the radii of the leaf nodes. */
   function radii(nodes) {
@@ -10039,8 +12742,7 @@ pv.Layout.Pack.prototype.init = function() {
     for (var i = 0, n = nodes.length; i < n; i++) {
       var c = nodes[i];
       if (!c.firstChild) {
-        stack[0] = c.nodeValue;
-        c.radius = that.$radius.apply(that, stack);
+        c.radius = that.$radius.apply(that, (stack[0] = c, stack));
       }
     }
     stack.shift();
@@ -10054,7 +12756,20 @@ pv.Layout.Pack.prototype.init = function() {
       c.n = c.p = c;
       nodes.push(c);
     }
-    nodes.sort(function(a, b) { return a.radius - b.radius; });
+
+    /* Sort. */
+    switch (s.order) {
+      case "ascending": {
+        nodes.sort(function(a, b) { return a.radius - b.radius; });
+        break;
+      }
+      case "descending": {
+        nodes.sort(function(a, b) { return b.radius - a.radius; });
+        break;
+      }
+      case "reverse": nodes.reverse(); break;
+    }
+
     return packCircle(nodes);
   }
 
@@ -10172,7 +12887,7 @@ pv.Layout.Pack.prototype.init = function() {
       n.y -= cy;
       cr = Math.max(cr, n.radius + Math.sqrt(n.x * n.x + n.y * n.y));
     }
-    return cr + spacing;
+    return cr + s.spacing;
   }
 
   /** @private */
@@ -10204,56 +12919,290 @@ pv.Layout.Pack.prototype.init = function() {
     n.radius *= k;
   }
 
-  var nodes = this.nodes();
-  spacing = this.spacing();
   radii(nodes);
 
-  var root = nodes[0];
+  /* Recursively compute the layout. */
   root.x = 0;
   root.y = 0;
   root.radius = packTree(root);
 
-  var w = this.parent.width(),
-      h = this.parent.height(),
+  var w = this.width(),
+      h = this.height(),
       k = 1 / Math.max(2 * root.radius / w, 2 * root.radius / h);
   transform(root, w / 2, h / 2, k);
 };
+/**
+ * Constructs a new, empty force-directed layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements force-directed network layout as a node-link diagram. This
+ * layout uses the Fruchterman-Reingold algorithm, which applies an attractive
+ * spring force between neighboring nodes, and a repulsive electrical charge
+ * force between all nodes. An additional drag force improves stability of the
+ * simulation. See {@link pv.Force.spring}, {@link pv.Force.drag} and {@link
+ * pv.Force.charge} for more details; note that the n-body charge force is
+ * approximated using the Barnes-Hut algorithm.
+ *
+ * <p>This layout is implemented on top of {@link pv.Simulation}, which can be
+ * used directly for more control over simulation parameters. The simulation
+ * uses Position Verlet integration, which does not compute velocities
+ * explicitly, but allows for easy geometric constraints, such as bounding the
+ * nodes within the layout panel. Many of the configuration properties supported
+ * by this layout are simply passed through to the underlying forces and
+ * constraints of the simulation.
+ *
+ * <p>Force layouts are typically interactive. The gradual movement of the nodes
+ * as they stabilize to a local stress minimum can help reveal the structure of
+ * the network, as can {@link pv.Behavior.drag}, which allows the user to pick
+ * up nodes and reposition them while the physics simulation continues. This
+ * layout can also be used with pan &amp; zoom behaviors for interaction.
+ *
+ * <p>To facilitate interaction, this layout by default automatically re-renders
+ * using a <tt>setInterval</tt> every 42 milliseconds. This can be disabled via
+ * the <tt>iterations</tt> property, which if non-null specifies the number of
+ * simulation iterations to run before the force-directed layout is finalized.
+ * Be careful not to use too high an iteration count, as this can lead to an
+ * annoying delay on page load.
+ *
+ * <p>As with other network layouts, the network data can be updated
+ * dynamically, provided the property cache is reset. See
+ * {@link pv.Layout.Network} for details. New nodes are initialized with random
+ * positions near the center. Alternatively, positions can be specified manually
+ * by setting the <tt>x</tt> and <tt>y</tt> attributes on nodes.
+ *
+ * @extends pv.Layout.Network
+ * @see <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.13.8444&rep=rep1&type=pdf"
+ * >"Graph Drawing by Force-directed Placement"</a> by T. Fruchterman &amp;
+ * E. Reingold, Software--Practice &amp; Experience, November 1991.
+ */
 pv.Layout.Force = function() {
   pv.Layout.Network.call(this);
 
   /* Force-directed graphs can be messy, so reduce the link width. */
   this.link.lineWidth(function(d, p) { return Math.sqrt(p.linkValue) * 1.5; });
+  this.label.textAlign("center");
 };
 
 pv.Layout.Force.prototype = pv.extend(pv.Layout.Network)
     .property("bound", Boolean)
-    .property("iterations", Number);
+    .property("iterations", Number)
+    .property("dragConstant", Number)
+    .property("chargeConstant", Number)
+    .property("chargeMinDistance", Number)
+    .property("chargeMaxDistance", Number)
+    .property("chargeTheta", Number)
+    .property("springConstant", Number)
+    .property("springDamping", Number)
+    .property("springLength", Number);
+
+/**
+ * The bound parameter; true if nodes should be constrained within the layout
+ * panel. Bounding is disabled by default. Currently the layout does not observe
+ * the radius of the nodes; strictly speaking, only the center of the node is
+ * constrained to be within the panel, with an additional 6-pixel offset for
+ * padding. A future enhancement could extend the bound constraint to observe
+ * the node's radius, which would also support bounding for variable-size nodes.
+ *
+ * <p>Note that if this layout is used in conjunction with pan &amp; zoom
+ * behaviors, those behaviors should have their bound parameter set to the same
+ * value.
+ *
+ * @type boolean
+ * @name pv.Layout.Force.prototype.bound
+ */
+
+/**
+ * The number of simulation iterations to run, or null if this layout is
+ * interactive. Force-directed layouts are interactive by default, using a
+ * <tt>setInterval</tt> to advance the physics simulation and re-render
+ * automatically.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.iterations
+ */
+
+/**
+ * The drag constant, in the range [0,1]. A value of 0 means no drag (a
+ * perfectly frictionless environment), while a value of 1 means friction
+ * immediately cancels all momentum. The default value is 0.1, which provides a
+ * minimum amount of drag that helps stabilize bouncy springs; lower values may
+ * result in excessive bounciness, while higher values cause the simulation to
+ * take longer to converge.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.dragConstant
+ * @see pv.Force.drag#constant
+ */
+
+/**
+ * The charge constant, which should be a negative number. The default value is
+ * -40; more negative values will result in a stronger repulsive force, which
+ * may lead to faster convergence at the risk of instability. Too strong
+ * repulsive charge forces can cause comparatively weak springs to be stretched
+ * well beyond their rest length, emphasizing global structure over local
+ * structure. A nonnegative value will break the Fruchterman-Reingold algorithm,
+ * and is for entertainment purposes only.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.chargeConstant
+ * @see pv.Force.charge#constant
+ */
+
+/**
+ * The minimum distance at which charge forces are applied. The default minimum
+ * distance of 2 avoids applying forces that are two strong; because the physics
+ * simulation is run at discrete time intervals, it is possible for two same-
+ * charged particles to become very close or even a singularity! Since the
+ * charge force is inversely proportional to the square of the distance, very
+ * small distances can break the simulation.
+ *
+ * <p>In rare cases, two particles can become stuck on top of each other, as a
+ * minimum distance threshold will prevent the charge force from repelling them.
+ * However, this occurs very rarely because other forces and momentum typically
+ * cause the particles to become separated again, at which point the repulsive
+ * charge force kicks in.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.chargeMinDistance
+ * @see pv.Force.charge#domain
+ */
+
+/**
+ * The maximum distance at which charge forces are applied. This improves
+ * performance by ignoring weak charge forces at great distances. Note that this
+ * parameter is partly redundant, as the Barnes-Hut algorithm for n-body forces
+ * already improves performance for far-away particles through approximation.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.chargeMaxDistance
+ * @see pv.Force.charge#domain
+ */
+
+/**
+ * The Barnes-Hut approximation factor. The Barnes-Hut approximation criterion
+ * is the ratio of the size of the quadtree node to the distance from the point
+ * to the node's center of mass is beneath some threshold. The default value is
+ * 0.9.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.chargeTheta
+ * @see pv.Force.charge#theta
+ */
+
+/**
+ * The spring constant, which should be a positive number. The default value is
+ * 0.1; greater values will result in a stronger attractive force, which may
+ * lead to faster convergence at the risk of instability. Too strong spring
+ * forces can cause comparatively weak charge forces to be ignored, emphasizing
+ * local structure over global structure. A nonpositive value will break the
+ * Fruchterman-Reingold algorithm, and is for entertainment purposes only.
+ *
+ * <p>The spring tension is automatically normalized using the inverse square
+ * root of the maximum link degree of attached nodes.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.springConstant
+ * @see pv.Force.spring#constant
+ */
+
+/**
+ * The spring damping factor, in the range [0,1]. Damping functions identically
+ * to drag forces, damping spring bounciness by applying a force in the opposite
+ * direction of attached nodes' velocities. The default value is 0.3.
+ *
+ * <p>The spring damping is automatically normalized using the inverse square
+ * root of the maximum link degree of attached nodes.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.springDamping
+ * @see pv.Force.spring#damping
+ */
+
+/**
+ * The spring rest length. The default value is 20 pixels. Larger values may be
+ * appropriate if the layout panel is larger, or if the nodes are rendered
+ * larger than the default dot size of 20.
+ *
+ * @type number
+ * @name pv.Layout.Force.prototype.springLength
+ * @see pv.Force.spring#length
+ */
+
+/**
+ * Default properties for force-directed layouts. The default drag constant is
+ * 0.1, the default charge constant is -40 (with a domain of [2, 500] and theta
+ * of 0.9), and the default spring constant is 0.1 (with a damping of 0.3 and a
+ * rest length of 20).
+ *
+ * @type pv.Layout.Force
+ */
+pv.Layout.Force.prototype.defaults = new pv.Layout.Force()
+    .extend(pv.Layout.Network.prototype.defaults)
+    .dragConstant(.1)
+    .chargeConstant(-40)
+    .chargeMinDistance(2)
+    .chargeMaxDistance(500)
+    .chargeTheta(.9)
+    .springConstant(.1)
+    .springDamping(.3)
+    .springLength(20);
 
 /** @private Initialize the physics simulation. */
-pv.Layout.Force.prototype.init = function() {
-  if (pv.Layout.Network.prototype.init.call(this)) return;
-  var nodes = this.nodes(), links = this.links();
+pv.Layout.Force.prototype.buildImplied = function(s) {
 
-  /* Initialize positions using a random walk from the center. */
-  var w = this.parent.width(),
-      h = this.parent.height(),
-      x = w / 2,
-      y = h / 2;
-  for (var i = 0; i < nodes.length; i++) {
-    var n = nodes[i], angle = Math.random() * 2 * Math.PI;
-    n.x = x += 10 * (w / h) * Math.cos(angle);
-    n.y = y += 10 * (h / w) * Math.sin(angle);
+  /* Any cached interactive layouts need to be rebound for the timer. */
+  if (pv.Layout.Network.prototype.buildImplied.call(this, s)) {
+    var f = s.$force;
+    if (f) {
+      f.next = this.binds.$force;
+      this.binds.$force = f;
+    }
+    return;
+  }
+
+  var that = this,
+      nodes = s.nodes,
+      links = s.links,
+      k = s.iterations,
+      w = s.width,
+      h = s.height;
+
+  /* Initialize positions randomly near the center. */
+  for (var i = 0, n; i < nodes.length; i++) {
+    n = nodes[i];
+    if (isNaN(n.x)) n.x = w / 2 + 40 * Math.random() - 20;
+    if (isNaN(n.y)) n.y = h / 2 + 40 * Math.random() - 20;
   }
 
   /* Initialize the simulation. */
   var sim = pv.simulation(nodes);
-  sim.force(pv.Force.drag());
-  sim.force(pv.Force.charge());
-  sim.force(pv.Force.spring().links(links));
+
+  /* Drag force. */
+  sim.force(pv.Force.drag(s.dragConstant));
+
+  /* Charge (repelling) force. */
+  sim.force(pv.Force.charge(s.chargeConstant)
+      .domain(s.chargeMinDistance, s.chargeMaxDistance)
+      .theta(s.chargeTheta));
+
+  /* Spring (attracting) force. */
+  sim.force(pv.Force.spring(s.springConstant)
+      .damping(s.springDamping)
+      .length(s.springLength)
+      .links(links));
+
+  /* Position constraint (for interactive dragging). */
+  sim.constraint(pv.Constraint.position());
 
   /* Optionally add bound constraint. TODO: better padding. */
-  if (this.bound()) {
+  if (s.bound) {
     sim.constraint(pv.Constraint.bound().x(6, w - 6).y(6, h - 6));
+  }
+
+  /** @private Returns the speed of the given node, to determine cooling. */
+  function speed(n) {
+    return n.fix ? 1 : n.vx * n.vx + n.vy * n.vy;
   }
 
   /*
@@ -10264,588 +13213,498 @@ pv.Layout.Force.prototype.init = function() {
    * is fixed for interactivity, treat this as a high speed and resume
    * simulation.
    */
-  var n = this.iterations();
-  if (n == null) {
-    function speed(n) { return n.fixed ? 1 : n.vx * n.vx + n.vy * n.vy; }
+  if (k == null) {
+    sim.step(); // compute initial previous velocities
     sim.step(); // compute initial velocities
-    var v = 1, min = 1e-4 * (links.length + 1), parent = this.parent;
-    setInterval(function() {
-        if (v > min) {
-          var then = Date.now();
-          do { sim.step(); } while (Date.now() - then < 20);
-          parent.render();
+
+    /* Add the simulation state to the bound list. */
+    var force = s.$force = this.binds.$force = {
+      next: this.binds.$force,
+      nodes: nodes,
+      min: 1e-4 * (links.length + 1),
+      sim: sim
+    };
+
+    /* Start the timer, if not already started. */
+    if (!this.$timer) this.$timer = setInterval(function() {
+      var render = false;
+      for (var f = that.binds.$force; f; f = f.next) {
+        if (pv.max(f.nodes, speed) > f.min) {
+          f.sim.step();
+          render = true;
         }
-        v = pv.max(nodes, speed);
-      }, 42);
-  } else for (var i = 0; i < n; i++) {
+      }
+      if (render) that.render();
+    }, 42);
+  } else for (var i = 0; i < k; i++) {
     sim.step();
   }
-}
+};
+/**
+ * Constructs a new, empty cluster layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a hierarchical layout using the cluster (or dendrogram)
+ * algorithm. This layout provides both node-link and space-filling
+ * implementations of cluster diagrams. In many ways it is similar to
+ * {@link pv.Layout.Partition}, except that leaf nodes are positioned at maximum
+ * depth, and the depth of internal nodes is based on their distance from their
+ * deepest descendant, rather than their distance from the root.
+ *
+ * <p>The cluster layout supports a "group" property, which if true causes
+ * siblings to be positioned closer together than unrelated nodes at the same
+ * depth. Unlike the partition layout, this layout does not support dynamic
+ * sizing for leaf nodes; all leaf nodes are the same size.
+ *
+ * <p>For more details on how to use this layout, see
+ * {@link pv.Layout.Hierarchy}.
+ *
+ * @see pv.Layout.Cluster.Fill
+ * @extends pv.Layout.Hierarchy
+ */
 pv.Layout.Cluster = function() {
   pv.Layout.Hierarchy.call(this);
-  var interpolate, init = this.init;
+  var interpolate, // cached interpolate
+      buildImplied = this.buildImplied;
 
   /** @private Cache layout state to optimize properties. */
-  this.init = function() {
-    var orient = this.orient();
+  this.buildImplied = function(s) {
+    buildImplied.call(this, s);
     interpolate
-        = /^(top|bottom)$/.test(orient) ? "step-before"
-        : /^(left|right)$/.test(orient) ? "step-after"
+        = /^(top|bottom)$/.test(s.orient) ? "step-before"
+        : /^(left|right)$/.test(s.orient) ? "step-after"
         : "linear";
-    init.call(this);
   };
 
-  this.link
-      .strokeStyle("#ccc")
-      .interpolate(function() { return interpolate; });
+  this.link.interpolate(function() { return interpolate; });
 };
 
 pv.Layout.Cluster.prototype = pv.extend(pv.Layout.Hierarchy)
     .property("group", Number)
-    .property("orient", String);
+    .property("orient", String)
+    .property("innerRadius", Number)
+    .property("outerRadius", Number);
 
+/**
+ * The group parameter; defaults to 0, disabling grouping of siblings. If this
+ * parameter is set to a positive number (or true, which is equivalent to 1),
+ * then additional space will be allotted between sibling groups. In other
+ * words, siblings (nodes that share the same parent) will be positioned more
+ * closely than nodes at the same depth that do not share a parent.
+ *
+ * @type number
+ * @name pv.Layout.Cluster.prototype.group
+ */
+
+/**
+ * The orientation. The default orientation is "top", which means that the root
+ * node is placed on the top edge, leaf nodes appear on the bottom edge, and
+ * internal nodes are in-between. The following orientations are supported:<ul>
+ *
+ * <li>left - left-to-right.
+ * <li>right - right-to-left.
+ * <li>top - top-to-bottom.
+ * <li>bottom - bottom-to-top.
+ * <li>radial - radially, with the root at the center.</ul>
+ *
+ * @type string
+ * @name pv.Layout.Cluster.prototype.orient
+ */
+
+/**
+ * The inner radius; defaults to 0. This property applies only to radial
+ * orientations, and can be used to compress the layout radially. Note that for
+ * the node-link implementation, the root node is always at the center,
+ * regardless of the value of this property; this property only affects internal
+ * and leaf nodes. For the space-filling implementation, a non-zero value of
+ * this property will result in the root node represented as a ring rather than
+ * a circle.
+ *
+ * @type number
+ * @name pv.Layout.Cluster.prototype.innerRadius
+ */
+
+/**
+ * The outer radius; defaults to fill the containing panel, based on the height
+ * and width of the layout. If the layout has no height and width specified, it
+ * will extend to fill the enclosing panel.
+ *
+ * @type number
+ * @name pv.Layout.Cluster.prototype.outerRadius
+ */
+
+/**
+ * Defaults for cluster layouts. The default group parameter is 0 and the
+ * default orientation is "top".
+ *
+ * @type pv.Layout.Cluster
+ */
 pv.Layout.Cluster.prototype.defaults = new pv.Layout.Cluster()
     .extend(pv.Layout.Hierarchy.prototype.defaults)
     .group(0)
     .orient("top");
 
-pv.Layout.Cluster.prototype.init = function() {
-  if (pv.Layout.Hierarchy.prototype.init.call(this)) return;
-  var nodes = this.nodes(),
-      orient = this.orient(),
-      g = this.group(),
-      w = this.parent.width(),
-      h = this.parent.height(),
-      r = Math.min(w, h) / 2;
+/** @private */
+pv.Layout.Cluster.prototype.buildImplied = function(s) {
+  if (pv.Layout.Hierarchy.prototype.buildImplied.call(this, s)) return;
 
-  /** @private Compute the maximum depth of descendants for each node. */
-  function depth(n) {
-    var d = 0;
-    for (var c = n.firstChild; c; c = c.nextSibling) {
-      d = Math.max(d, 1 + depth(c));
-    }
-    return n.depth = d;
-  }
+  var root = s.nodes[0],
+      group = s.group,
+      breadth,
+      depth,
+      leafCount = 0,
+      leafIndex = .5 - group / 2;
 
-  /* Compute the initial depth of each node. */
-  var root = nodes[0], ds = 1 / depth(root);
-
-  /* Count the number of leaf nodes. */
-  var leafCount = 0, p;
-  root.visitAfter(function(n) {
-      if (!n.firstChild) {
-        if (g && (p != n.parentNode)) {
-          p = n.parentNode;
-          leafCount += g;
-        }
-        leafCount++;
-      }
-    });
-
-  /* Compute the unit breadth and depth of each node. */
-  var leafIndex = .5 - g / 2, step = 1 / leafCount, p = undefined;
+  /* Count the leaf nodes and compute the depth of descendants. */
+  var p = undefined;
   root.visitAfter(function(n) {
       if (n.firstChild) {
-        var b = 0;
-        for (var c = n.firstChild; c; c = c.nextSibling) b += c.breadth;
-        b /= n.childNodes.length;
+        n.depth = 1 + pv.max(n.childNodes, function(n) { return n.depth; });
       } else {
-        if (g && (p != n.parentNode)) {
+        if (group && (p != n.parentNode)) {
           p = n.parentNode;
-          leafIndex += g;
+          leafCount += group;
         }
-        b = step * leafIndex++;
+        leafCount++;
+        n.depth = 0;
       }
-      n.breadth = b;
-      n.depth = 1 - n.depth / root.depth;
+    });
+  breadth = 1 / leafCount;
+  depth = 1 / root.depth;
+
+  /* Compute the unit breadth and depth of each node. */
+  var p = undefined;
+  root.visitAfter(function(n) {
+      if (n.firstChild) {
+        n.breadth = pv.mean(n.childNodes, function(n) { return n.breadth; });
+      } else {
+        if (group && (p != n.parentNode)) {
+          p = n.parentNode;
+          leafIndex += group;
+        }
+        n.breadth = breadth * leafIndex++;
+      }
+      n.depth = 1 - n.depth * depth;
     });
 
   /* Compute breadth and depth ranges for space-filling layouts. */
   root.visitAfter(function(n) {
-      n.minBreadth = n.firstChild ? n.firstChild.minBreadth : (n.breadth - step / 2);
-      n.maxBreadth = n.firstChild ? n.lastChild.maxBreadth : (n.breadth + step / 2);
+      n.minBreadth = n.firstChild
+          ? n.firstChild.minBreadth
+          : (n.breadth - breadth / 2);
+      n.maxBreadth = n.firstChild
+          ? n.lastChild.maxBreadth
+          : (n.breadth + breadth / 2);
     });
   root.visitBefore(function(n) {
-      n.minDepth = n.parentNode ? n.parentNode.maxDepth : 0;
-      n.maxDepth = n.parentNode ? (n.depth + root.depth) : (n.minDepth + 2 * root.depth);
+      n.minDepth = n.parentNode
+          ? n.parentNode.maxDepth
+          : 0;
+      n.maxDepth = n.parentNode
+          ? (n.depth + root.depth)
+          : (n.minDepth + 2 * root.depth);
     });
-  root.minDepth = -ds;
+  root.minDepth = -depth;
 
-  /** @private Returns the radius of the given node. */
-  function radius(n) {
-    return n.parentNode ? (n.depth * r) : 0;
-  }
-
-  /** @private Returns the angle of the given node. */
-  function angle(n) {
-    return (orient == "radial")
-        ? (n.parentNode ? (n.breadth - .25) * 2 * Math.PI : 0)
-        : (n.firstChild ? Math.PI : 0);
-  }
-
-  /** @private */
-  function x(n) {
-    switch (orient) {
-      case "left": return n.depth * w;
-      case "right": return w - n.depth * w;
-      case "top": return n.breadth * w;
-      case "bottom": return w - n.breadth * w;
-      case "radial": return w / 2 + radius(n) * Math.cos(angle(n));
-    }
-  }
-
-  /** @private */
-  function y(n) {
-    switch (orient) {
-      case "left": return n.breadth * h;
-      case "right": return h - n.breadth * h;
-      case "top": return n.depth * h;
-      case "bottom": return h - n.depth * h;
-      case "radial": return h / 2 + radius(n) * Math.sin(angle(n));
-    }
-  }
-
-  for (var i = 0; i < nodes.length; i++) {
-    var n = nodes[i];
-    n.x = x(n);
-    n.y = y(n);
-    n.angle = angle(n);
-  }
+  pv.Layout.Hierarchy.NodeLink.buildImplied.call(this, s);
 };
 
-/** A variant of cluster layout that is space-filling. */
+/**
+ * Constructs a new, empty space-filling cluster layout. Layouts are not
+ * typically constructed directly; instead, they are added to an existing panel
+ * via {@link pv.Mark#add}.
+ *
+ * @class A variant of cluster layout that is space-filling. The meaning of the
+ * exported mark prototypes changes slightly in the space-filling
+ * implementation:<ul>
+ *
+ * <li><tt>node</tt> - for rendering nodes; typically a {@link pv.Bar} for
+ * non-radial orientations, and a {@link pv.Wedge} for radial orientations.
+ *
+ * <p><li><tt>link</tt> - unsupported; undefined. Links are encoded implicitly
+ * in the arrangement of the space-filling nodes.
+ *
+ * <p><li><tt>label</tt> - for rendering node labels; typically a
+ * {@link pv.Label}.
+ *
+ * </ul>For more details on how to use this layout, see
+ * {@link pv.Layout.Cluster}.
+ *
+ * @extends pv.Layout.Cluster
+ */
 pv.Layout.Cluster.Fill = function() {
   pv.Layout.Cluster.call(this);
-
-  var node = this.node
-      .strokeStyle("#fff")
-      .fillStyle("#ccc")
-      .width(function(n) { return n.width; })
-      .height(function(n) { return n.height; })
-      .innerRadius(function(n) { return n.innerRadius; })
-      .outerRadius(function(n) { return n.outerRadius; })
-      .startAngle(function(n) { return n.startAngle; })
-      .endAngle(function(n) { return n.endAngle; });
-
-  /** @private Adding to this layout implicitly adds to this node. */
-  this.add = function(type) { return this.parent.add(type).extend(node); };
-
-  /* Now hide references to inherited marks. */
-  delete this.node;
-  delete this.label;
-  delete this.link;
+  pv.Layout.Hierarchy.Fill.constructor.call(this);
 };
 
 pv.Layout.Cluster.Fill.prototype = pv.extend(pv.Layout.Cluster);
 
-pv.Layout.Cluster.Fill.prototype.init = function() {
-  if (pv.Layout.Cluster.prototype.init.call(this)) return;
-  var nodes = this.nodes(),
-      orient = this.orient(),
-      group = this.group(),
-      w = this.parent.width(),
-      h = this.parent.height(),
-      r = Math.min(w, h) / 2,
-      ds = -nodes[0].minDepth;
-
-  /** @private Scales the specified depth for a space-filling layout. */
-  function scale(d, ds) {
-    return (d + ds) / (1 + ds);
-  }
-
-  /** @private */
-  function x(n) {
-    switch (orient) {
-      case "left": return scale(n.minDepth, ds) * w;
-      case "right": return (1 - scale(n.maxDepth, ds)) * w;
-      case "top": return n.minBreadth * w;
-      case "bottom": return (1 - n.maxBreadth) * w;
-      case "radial": return w / 2;
-    }
-  }
-
-  /** @private */
-  function y(n) {
-    switch (orient) {
-      case "left": return n.minBreadth * h;
-      case "right": return (1 - n.maxBreadth) * h;
-      case "top": return scale(n.minDepth, ds) * h;
-      case "bottom": return (1 - scale(n.maxDepth, ds)) * h;
-      case "radial": return h / 2;
-    }
-  }
-
-  /** @private */
-  function width(n) {
-    switch (orient) {
-      case "left":
-      case "right": return (n.maxDepth - n.minDepth) / (1 + ds) * w;
-      case "top":
-      case "bottom": return (n.maxBreadth - n.minBreadth) * w;
-    }
-  }
-
-  /** @private */
-  function height(n) {
-    switch (orient) {
-      case "left":
-      case "right": return (n.maxBreadth - n.minBreadth) * h;
-      case "top":
-      case "bottom": return (n.maxDepth - n.minDepth) / (1 + ds) * h;
-    }
-  }
-
-  /** @private */
-  function innerRadius(n) {
-    return Math.max(0, scale(n.minDepth, ds / 2)) * r;
-  }
-
-  /** @private */
-  function outerRadius(n) {
-    return scale(n.maxDepth, ds / 2) * r;
-  }
-
-  /** @private */
-  function startAngle(n) {
-    return (n.parentNode ? n.minBreadth - .25 : 0) * 2 * Math.PI;
-  }
-
-  /** @private */
-  function endAngle(n) {
-    return (n.parentNode ? n.maxBreadth - .25 : 1) * 2 * Math.PI;
-  }
-
-  for (var i = 0; i < nodes.length; i++) {
-    var n = nodes[i];
-    n.x = x(n);
-    n.y = y(n);
-    n.width = width(n);
-    n.height = height(n);
-    n.innerRadius = innerRadius(n);
-    n.outerRadius = outerRadius(n);
-    n.startAngle = startAngle(n);
-    n.endAngle = endAngle(n);
-  }
+/** @private */
+pv.Layout.Cluster.Fill.prototype.buildImplied = function(s) {
+  if (pv.Layout.Cluster.prototype.buildImplied.call(this, s)) return;
+  pv.Layout.Hierarchy.Fill.buildImplied.call(this, s);
 };
-pv.Layout.partition = function(map) {
-  var nodes, // cached pv.dom(map).nodes()
-      sort, // optional sort function
-      sizeof = function(n) { return 1; }, // default size function
-      orient = "top", // default orientation
-      w, // cached parent panel width
-      h, // cached parent panel height
-      r, // cached Math.min(w, h) / 2
-      ds; // cached depth step (inverse depth of tree)
-
-  /** @private */
-  function size(n) {
-    return n.size = n.firstChild
-        ? pv.sum(n.childNodes, size)
-        : sizeof(n.nodeValue);
-  }
-
-  /** @private Compute the maximum depth of descendants for each node. */
-  function depth(n) {
-    return n.firstChild ? (1 + pv.max(n.childNodes, depth)) : 0;
-  }
-
-  /** @private */
-  function data() {
-    /* Cache the parent panel dimensions to avoid repeated lookup. */
-    w = this.parent.width();
-    h = this.parent.height();
-    r = Math.min(w, h) / 2;
-
-    /* If the layout was previously computed, use that. */
-    if (nodes) return nodes;
-    nodes = pv.dom(map).nodes();
-
-    /* Sort the tree and compute the initial depth of each node. */
-    var root = nodes[0];
-    size(root);
-    if (sort) root.sort(sort);
-    ds = 1 / depth(root);
-
-    /* Compute the unit breadth and depth of each node. */
-    root.minBreadth = 0;
-    root.breadth = .5;
-    root.maxBreadth = 1;
-    root.visitBefore(function(n) {
-        var b = n.minBreadth, s = n.maxBreadth - b;
-        for (var c = n.firstChild; c; c = c.nextSibling) {
-          c.minBreadth = b;
-          c.maxBreadth = b += (c.size / n.size) * s;
-          c.breadth = (b + c.minBreadth) / 2;
-        }
-      });
-    root.visitAfter(function(n, i) {
-        n.minDepth = (i - 1) * ds;
-        n.maxDepth = n.depth = i * ds;
-      });
-
-    return nodes;
-  }
-
-  /** @private The layout, on which all public methods are registered. */
-  var layout = {};
-
-  /**
-   * Sets or gets the orientation. The default orientation is "left", which
-   * means that the root node is placed on the left edge, leaf nodes appear on
-   * the right edge, and internal nodes are in-between. The following
-   * orientations are supported:<ul>
-   *
-   * <li>left - left-to-right.
-   * <li>right - right-to-left.
-   * <li>top - top-to-bottom.
-   * <li>bottom - bottom-to-top.
-   * <li>radial - radially, with the root at the center.</ul>
-   *
-   * @param {string} v the new orientation.
-   * @function
-   * @name pv.Layout.partition.prototype.orient
-   * @returns {pv.Layout.partition} this, or the current orientation.
-   */
-  layout.orient = function(v) {
-    if (arguments.length) {
-      orient = v;
-      return this;
-    }
-    return orient;
-  };
-
-  /**
-   * Sets or gets the sort function. The sort function is applied to the tree
-   * before the layout is computed; it is a comparator function which takes two
-   * arguments and returns a negative number, a positive number, or zero as
-   * appropriate. For example, to sort on the node names:
-   *
-   * <pre>  .sort(function(a, b) pv.naturalOrder(a.nodeName, b.nodeName))</pre>
-   *
-   * @param {funtion} f the new sort function.
-   * @function
-   * @name pv.Layout.partition.prototype.sort
-   * @returns {pv.Layout.partition} this, or the current sort function.
-   * @see pv.naturalOrder
-   * @see pv.Dom.Node.prototype.sort
-   */
-  layout.sort = function(f) {
-    if (arguments.length) {
-      sort = f;
-      return this;
-    }
-    return sort;
-  };
-
-  /**
-   * Returns the nodes associated with this layout.
-   *
-   * @function
-   * @name pv.Layout.partition.prototype.nodes
-   * @returns {array}
-   */
-  layout.nodes = data;
-
-  /**
-   * Returns the links associated with this layout. Each link is represented as
-   * a two-element array; the first element is the child node, and the second
-   * element is the parent node.
-   *
-   * @function
-   * @name pv.Layout.partition.prototype.links
-   * @returns {array}
-   */
-  layout.links = function() {
-    return data.call(this)
-        .filter(function(n) { return n.parentNode; })
-        .map(function(n) { return [n, n.parentNode]; });
-  };
-
-  /**
-   * Sets or gets the sizing function. By default, the size of all leaf nodes is
-   * constant. The aggregate sizes of internal (non-leaf) nodes is computed
-   * automatically by the layout.
-   *
-   * <p>For example, if the tree data structure represents a file system, with
-   * files as leaf nodes, and each file has a <tt>bytes</tt> attribute, you can
-   * specify a size function as:
-   *
-   * <pre>.size(function(d) d.bytes)</pre>
-   *
-   * <p>Note that the built-in <tt>Number</tt>, <tt>Math.sqrt</tt> and
-   * <tt>Math.log</tt> methods can be used as sizing functions, provided the
-   * node values are numbers.
-   *
-   * @param {function} f the new sizing function.
-   * @function
-   * @name pv.Layout.partition.prototype.size
-   * @returns {pv.Layout.partition} this.
-   */
-  layout.size = function(f) {
-    if (arguments.length) {
-      sizeof = f;
-      return this;
-    }
-    return sizeof;
-  };
-
-  /** @private Returns the radius of the given node. */
-  function radius(n) {
-    return n.parentNode ? (n.depth * r) : 0;
-  }
-
-  /** @private Returns the angle of the given node. */
-  function angle(n) {
-    return n.parentNode ? (n.breadth - .25) * 2 * Math.PI : 0;
-  }
-
-  /** @private Scales the specified depth for a space-filling layout. */
-  function scale(d, ds) {
-    return (d + ds) / (1 + ds);
-  }
-
-  /**
-   * The node prototype. This prototype is intended to be used with a Dot mark
-   * in conjunction with the link prototype.
-   *
-   * @type pv.Mark
-   * @name pv.Layout.partition.prototype.node
-   */
-  layout.node = new pv.Mark()
-      .data(data)
-      .strokeStyle("#1f77b4")
-      .fillStyle("#fff")
-      .left(function(n) {
-          switch (orient) {
-            case "left": return n.depth * w;
-            case "right": return w - n.depth * w;
-            case "top": return n.breadth * w;
-            case "bottom": return w - n.breadth * w;
-            case "radial": return w / 2 + radius(n) * Math.cos(angle(n));
-          }
-        })
-      .top(function(n) {
-          switch (orient) {
-            case "left": return n.breadth * h;
-            case "right": return h - n.breadth * h;
-            case "top": return n.depth * h;
-            case "bottom": return h - n.depth * h;
-            case "radial": return h / 2 + radius(n) * Math.sin(angle(n));
-          }
-        });
-
-  /**
-   * The link prototype, which renders edges between child nodes and their
-   * parents. This prototype is intended to be used with a Line mark in
-   * conjunction with the node prototype.
-   *
-   * @type pv.Mark
-   * @name pv.Layout.partition.prototype.link
-   */
-  layout.link = new pv.Mark()
-      .extend(layout.node)
-      .data(pv.identity)
-      .strokeStyle("#ccc")
-      .fillStyle(null);
-
-  /**
-   * The node label prototype, which renders the node name adjacent to the node.
-   * This prototype is provided as an alternative to using the anchor on the
-   * node or fill mark; it is primarily intended to be used with radial
-   * node-link layouts, since it provides a convenient mechanism to set the text
-   * angle.
-   *
-   * @type pv.Mark
-   * @name pv.Layout.partition.prototype.label
-   */
-  layout.label = new pv.Mark()
-      .extend(layout.node)
-      .textMargin(7)
-      .textBaseline("middle")
-      .text(function(n) { return n.parentNode ? n.nodeName : "root"; })
-      .textAngle(function(n) {
-          if (orient != "radial") return 0;
-          var a = angle(n);
-          return pv.Wedge.upright(a) ? a : (a + Math.PI);
-        })
-      .textAlign(function(n) {
-          if (orient != "radial") return n.firstChild ? "right" : "left";
-          return pv.Wedge.upright(angle(n)) ? "left" : "right";
-        });
-
-  /**
-   * The fill prototype, used for a space-filling partition. In Cartesian
-   * coordinates (i.e., if the orientation is not "radial"), a Bar mark is
-   * typically used to fill the space; in polar coordinates ("radial"
-   * orientation), a Wedge mark is used instead.
-   *
-   * @type pv.Mark
-   * @name pv.Layout.partition.prototype.bar
-   */
-  layout.fill = new pv.Mark()
-      .data(data)
-      .strokeStyle("#fff")
-      .fillStyle("#ccc")
-      .left(function(n) {
-          switch (orient) {
-            case "left": return scale(n.minDepth, ds) * w;
-            case "right": return (1 - scale(n.maxDepth, ds)) * w;
-            case "top": return n.minBreadth * w;
-            case "bottom": return (1 - n.maxBreadth) * w;
-            case "radial": return w / 2;
-          }
-        })
-      .top(function(n) {
-          switch (orient) {
-            case "left": return n.minBreadth * h;
-            case "right": return (1 - n.maxBreadth) * h;
-            case "top": return scale(n.minDepth, ds) * h;
-            case "bottom": return (1 - scale(n.maxDepth, ds)) * h;
-            case "radial": return h / 2;
-          }
-        })
-      .width(function(n) {
-          switch (orient) {
-            case "left":
-            case "right": return (n.maxDepth - n.minDepth) / (1 + ds) * w;
-            case "top":
-            case "bottom": return (n.maxBreadth - n.minBreadth) * w;
-          }
-        })
-      .height(function(n) {
-          switch (orient) {
-            case "left":
-            case "right": return (n.maxBreadth - n.minBreadth) * h;
-            case "top":
-            case "bottom": return (n.maxDepth - n.minDepth) / (1 + ds) * h;
-          }
-        })
-      .innerRadius(function(n) { return Math.max(0, scale(n.minDepth, ds / 2)) * r; })
-      .outerRadius(function(n) { return scale(n.maxDepth, ds / 2) * r; })
-      .startAngle(function(n) { return (n.minBreadth - .25) * 2 * Math.PI; })
-      .endAngle(function(n) { return (n.maxBreadth - .25) * 2 * Math.PI; });
-
-  return layout;
+/**
+ * Constructs a new, empty partition layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implemeents a hierarchical layout using the partition (or sunburst,
+ * icicle) algorithm. This layout provides both node-link and space-filling
+ * implementations of partition diagrams. In many ways it is similar to
+ * {@link pv.Layout.Cluster}, except that leaf nodes are positioned based on
+ * their distance from the root.
+ *
+ * <p>The partition layout support dynamic sizing for leaf nodes, if a
+ * {@link #size} psuedo-property is specified. The default size function returns
+ * 1, causing all leaf nodes to be sized equally, and all internal nodes to be
+ * sized by the number of leaf nodes they have as descendants.
+ *
+ * <p>The size function can be used in conjunction with the order property,
+ * which allows the nodes to the sorted by the computed size. Note: for sorting
+ * based on other data attributes, simply use the default <tt>null</tt> for the
+ * order property, and sort the nodes beforehand using the {@link pv.Dom}
+ * operator.
+ *
+ * <p>For more details on how to use this layout, see
+ * {@link pv.Layout.Hierarchy}.
+ *
+ * @see pv.Layout.Partition.Fill
+ * @extends pv.Layout.Hierarchy
+ */
+pv.Layout.Partition = function() {
+  pv.Layout.Hierarchy.call(this);
 };
-/** @class Layout for arc diagrams. */
+
+pv.Layout.Partition.prototype = pv.extend(pv.Layout.Hierarchy)
+    .property("order", String) // null, ascending, descending?
+    .property("orient", String) // top, left, right, bottom, radial
+    .property("innerRadius", Number)
+    .property("outerRadius", Number);
+
+/**
+ * The sibling node order. The default order is <tt>null</tt>, which means to
+ * use the sibling order specified by the nodes property as-is. A value of
+ * "ascending" will sort siblings in ascending order of size, while "descending"
+ * will do the reverse. For sorting based on data attributes other than size,
+ * use the default <tt>null</tt> for the order property, and sort the nodes
+ * beforehand using the {@link pv.Dom} operator.
+ *
+ * @see pv.Dom.Node#sort
+ * @type string
+ * @name pv.Layout.Partition.prototype.order
+ */
+
+/**
+ * The orientation. The default orientation is "top", which means that the root
+ * node is placed on the top edge, leaf nodes appear at the bottom, and internal
+ * nodes are in-between. The following orientations are supported:<ul>
+ *
+ * <li>left - left-to-right.
+ * <li>right - right-to-left.
+ * <li>top - top-to-bottom.
+ * <li>bottom - bottom-to-top.
+ * <li>radial - radially, with the root at the center.</ul>
+ *
+ * @type string
+ * @name pv.Layout.Partition.prototype.orient
+ */
+
+/**
+ * The inner radius; defaults to 0. This property applies only to radial
+ * orientations, and can be used to compress the layout radially. Note that for
+ * the node-link implementation, the root node is always at the center,
+ * regardless of the value of this property; this property only affects internal
+ * and leaf nodes. For the space-filling implementation, a non-zero value of
+ * this property will result in the root node represented as a ring rather than
+ * a circle.
+ *
+ * @type number
+ * @name pv.Layout.Partition.prototype.innerRadius
+ */
+
+/**
+ * The outer radius; defaults to fill the containing panel, based on the height
+ * and width of the layout. If the layout has no height and width specified, it
+ * will extend to fill the enclosing panel.
+ *
+ * @type number
+ * @name pv.Layout.Partition.prototype.outerRadius
+ */
+
+/**
+ * Default properties for partition layouts. The default orientation is "top".
+ *
+ * @type pv.Layout.Partition
+ */
+pv.Layout.Partition.prototype.defaults = new pv.Layout.Partition()
+    .extend(pv.Layout.Hierarchy.prototype.defaults)
+    .orient("top");
+
+/** @private */
+pv.Layout.Partition.prototype.$size = function() { return 1; };
+
+/**
+ * Specifies the sizing function. By default, a sizing function is disabled and
+ * all nodes are given constant size. The sizing function is invoked for each
+ * leaf node in the tree (passed to the constructor).
+ *
+ * <p>For example, if the tree data structure represents a file system, with
+ * files as leaf nodes, and each file has a <tt>bytes</tt> attribute, you can
+ * specify a size function as:
+ *
+ * <pre>    .size(function(d) d.bytes)</pre>
+ *
+ * As with other properties, a size function may specify additional arguments to
+ * access the data associated with the layout and any enclosing panels.
+ *
+ * @param {function} f the new sizing function.
+ * @returns {pv.Layout.Partition} this.
+ */
+pv.Layout.Partition.prototype.size = function(f) {
+  this.$size = f;
+  return this;
+};
+
+/** @private */
+pv.Layout.Partition.prototype.buildImplied = function(s) {
+  if (pv.Layout.Hierarchy.prototype.buildImplied.call(this, s)) return;
+
+  var that = this,
+      root = s.nodes[0],
+      stack = pv.Mark.stack,
+      maxDepth = 0;
+
+  /* Recursively compute the tree depth and node size. */
+  stack.unshift(null);
+  root.visitAfter(function(n, i) {
+      if (i > maxDepth) maxDepth = i;
+      n.size = n.firstChild
+          ? pv.sum(n.childNodes, function(n) { return n.size; })
+          : that.$size.apply(that, (stack[0] = n, stack));
+    });
+  stack.shift();
+
+  /* Order */
+  switch (s.order) {
+    case "ascending": root.sort(function(a, b) { return a.size - b.size; }); break;
+    case "descending": root.sort(function(b, a) { return a.size - b.size; }); break;
+  }
+
+  /* Compute the unit breadth and depth of each node. */
+  var ds = 1 / maxDepth;
+  root.minBreadth = 0;
+  root.breadth = .5;
+  root.maxBreadth = 1;
+  root.visitBefore(function(n) {
+    var b = n.minBreadth, s = n.maxBreadth - b;
+      for (var c = n.firstChild; c; c = c.nextSibling) {
+        c.minBreadth = b;
+        c.maxBreadth = b += (c.size / n.size) * s;
+        c.breadth = (b + c.minBreadth) / 2;
+      }
+    });
+  root.visitAfter(function(n, i) {
+      n.minDepth = (i - 1) * ds;
+      n.maxDepth = n.depth = i * ds;
+    });
+
+  pv.Layout.Hierarchy.NodeLink.buildImplied.call(this, s);
+};
+
+/**
+ * Constructs a new, empty space-filling partition layout. Layouts are not
+ * typically constructed directly; instead, they are added to an existing panel
+ * via {@link pv.Mark#add}.
+ *
+ * @class A variant of partition layout that is space-filling. The meaning of
+ * the exported mark prototypes changes slightly in the space-filling
+ * implementation:<ul>
+ *
+ * <li><tt>node</tt> - for rendering nodes; typically a {@link pv.Bar} for
+ * non-radial orientations, and a {@link pv.Wedge} for radial orientations.
+ *
+ * <p><li><tt>link</tt> - unsupported; undefined. Links are encoded implicitly
+ * in the arrangement of the space-filling nodes.
+ *
+ * <p><li><tt>label</tt> - for rendering node labels; typically a
+ * {@link pv.Label}.
+ *
+ * </ul>For more details on how to use this layout, see
+ * {@link pv.Layout.Partition}.
+ *
+ * @extends pv.Layout.Partition
+ */
+pv.Layout.Partition.Fill = function() {
+  pv.Layout.Partition.call(this);
+  pv.Layout.Hierarchy.Fill.constructor.call(this);
+};
+
+pv.Layout.Partition.Fill.prototype = pv.extend(pv.Layout.Partition);
+
+/** @private */
+pv.Layout.Partition.Fill.prototype.buildImplied = function(s) {
+  if (pv.Layout.Partition.prototype.buildImplied.call(this, s)) return;
+  pv.Layout.Hierarchy.Fill.buildImplied.call(this, s);
+};
+/**
+ * Constructs a new, empty arc layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a layout for arc diagrams. An arc diagram is a network
+ * visualization with a one-dimensional layout of nodes, using circular arcs to
+ * render links between nodes. For undirected networks, arcs are rendering on a
+ * single side; this makes arc diagrams useful as annotations to other
+ * two-dimensional network layouts, such as rollup, matrix or table layouts. For
+ * directed networks, links in opposite directions can be rendered on opposite
+ * sides using <tt>directed(true)</tt>.
+ *
+ * <p>Arc layouts are particularly sensitive to node ordering; for best results,
+ * order the nodes such that related nodes are close to each other. A poor
+ * (e.g., random) order may result in large arcs with crossovers that impede
+ * visual processing. A future improvement to this layout may include automatic
+ * reordering using, e.g., spectral graph layout or simulated annealing.
+ *
+ * <p>This visualization technique is related to that developed by
+ * M. Wattenberg, <a
+ * href="http://www.research.ibm.com/visual/papers/arc-diagrams.pdf">"Arc
+ * Diagrams: Visualizing Structure in Strings"</a> in <i>IEEE InfoVis</i>, 2002.
+ * However, this implementation is limited to simple node-link networks, as
+ * opposed to structures with hierarchical self-similarity (such as strings).
+ *
+ * <p>As with other network layouts, three mark prototypes are provided:<ul>
+ *
+ * <li><tt>node</tt> - for rendering nodes; typically a {@link pv.Dot}.
+ * <li><tt>link</tt> - for rendering links; typically a {@link pv.Line}.
+ * <li><tt>label</tt> - for rendering node labels; typically a {@link pv.Label}.
+ *
+ * </ul>For more details on how this layout is structured and can be customized,
+ * see {@link pv.Layout.Network}.
+ *
+ * @extends pv.Layout.Network
+ **/
 pv.Layout.Arc = function() {
   pv.Layout.Network.call(this);
-  var interpolate, directed, reverse, init = this.init;
+  var interpolate, // cached interpolate
+      directed, // cached directed
+      reverse, // cached reverse
+      buildImplied = this.buildImplied;
 
   /** @private Cache layout state to optimize properties. */
-  this.init = function() {
-    var orient = this.orient();
-    directed = this.directed();
-    interpolate = orient == "radial" ? "linear" : "polar";
-    reverse = orient == "right" || orient == "top";
-    init.call(this);
+  this.buildImplied = function(s) {
+    buildImplied.call(this, s);
+    directed = s.directed;
+    interpolate = s.orient == "radial" ? "linear" : "polar";
+    reverse = s.orient == "right" || s.orient == "top";
   };
 
   /* Override link properties to handle directedness and orientation. */
   this.link
       .data(function(p) {
           var s = p.sourceNode, t = p.targetNode;
-          return reverse != (directed || (s.index < t.index)) ? [s, t] : [t, s];
+          return reverse != (directed || (s.breadth < t.breadth)) ? [s, t] : [t, s];
         })
       .interpolate(function() { return interpolate; });
 };
@@ -10854,21 +13713,53 @@ pv.Layout.Arc.prototype = pv.extend(pv.Layout.Network)
     .property("orient", String)
     .property("directed", Boolean);
 
+/**
+ * Default properties for arc layouts. By default, the orientation is "bottom".
+ *
+ * @type pv.Layout.Arc
+ */
 pv.Layout.Arc.prototype.defaults = new pv.Layout.Arc()
     .extend(pv.Layout.Network.prototype.defaults)
     .orient("bottom");
 
+/**
+ * Specifies an optional sort function. The sort function follows the same
+ * comparator contract required by {@link pv.Dom.Node#sort}. Specifying a sort
+ * function provides an alternative to sort the nodes as they are specified by
+ * the <tt>nodes</tt> property; the main advantage of doing this is that the
+ * comparator function can access implicit fields populated by the network
+ * layout, such as the <tt>linkDegree</tt>.
+ *
+ * <p>Note that arc diagrams are particularly sensitive to order. This is
+ * referred to as the seriation problem, and many different techniques exist to
+ * find good node orders that emphasize clusters, such as spectral layout and
+ * simulated annealing.
+ *
+ * @param {function} f comparator function for nodes.
+ * @returns {pv.Layout.Arc} this.
+ */
+pv.Layout.Arc.prototype.sort = function(f) {
+  this.$sort = f;
+  return this;
+};
+
 /** @private Populates the x, y and angle attributes on the nodes. */
-pv.Layout.Arc.prototype.init = function() {
-  if (pv.Layout.Network.prototype.init.call(this)) return;
-  var nodes = this.nodes(),
-      orient = this.orient(),
-      w = this.parent.width(),
-      h = this.parent.height(),
+pv.Layout.Arc.prototype.buildImplied = function(s) {
+  if (pv.Layout.Network.prototype.buildImplied.call(this, s)) return;
+
+  var nodes = s.nodes,
+      orient = s.orient,
+      sort = this.$sort,
+      index = pv.range(nodes.length),
+      w = s.width,
+      h = s.height,
       r = Math.min(w, h) / 2;
 
-  /** @private Returns the angle, given the breadth. */
-  function angle(b) {
+  /* Sort the nodes. */
+  if (sort) index.sort(function(a, b) { return sort(nodes[a], nodes[b]); });
+
+  /** @private Returns the mid-angle, given the breadth. */
+  function midAngle(b) {
     switch (orient) {
       case "top": return -Math.PI / 2;
       case "bottom": return Math.PI / 2;
@@ -10885,7 +13776,7 @@ pv.Layout.Arc.prototype.init = function() {
       case "bottom": return b * w;
       case "left": return 0;
       case "right": return w;
-      case "radial": return w / 2 + r * Math.cos(angle(b));
+      case "radial": return w / 2 + r * Math.cos(midAngle(b));
     }
   }
 
@@ -10896,136 +13787,885 @@ pv.Layout.Arc.prototype.init = function() {
       case "bottom": return h;
       case "left":
       case "right": return b * h;
-      case "radial": return h / 2 + r * Math.sin(angle(b));
+      case "radial": return h / 2 + r * Math.sin(midAngle(b));
     }
   }
 
-  /* Populate the x, y and angle attributes. */
+  /* Populate the x, y and mid-angle attributes. */
   for (var i = 0; i < nodes.length; i++) {
-    var breadth = (i + .5) / nodes.length, n = nodes[i];
-    n.x = x(breadth);
-    n.y = y(breadth);
-    n.angle = angle(breadth);
+    var n = nodes[index[i]], b = n.breadth = (i + .5) / nodes.length;
+    n.x = x(b);
+    n.y = y(b);
+    n.midAngle = midAngle(b);
   }
 };
 
 /**
- * The orientation. The default orientation is "left", which means that the root
- * node is placed on the left edge, leaf nodes appear on the right edge, and
- * internal nodes are in-between. The following orientations are supported:<ul>
+ * The orientation. The default orientation is "left", which means that nodes
+ * will be positioned from left-to-right in the order they are specified in the
+ * <tt>nodes</tt> property. The following orientations are supported:<ul>
  *
  * <li>left - left-to-right.
  * <li>right - right-to-left.
  * <li>top - top-to-bottom.
  * <li>bottom - bottom-to-top.
- * <li>radial - radially, with the root at the center.</ul>
+ * <li>radial - radially, starting at 12 o'clock and proceeding clockwise.</ul>
  *
- * @param {string} v the new orientation.
- * @function
+ * @type string
  * @name pv.Layout.Arc.prototype.orient
- * @returns {pv.Layout.Arc} this, or the current orientation.
  */
 
 /**
- * Whether this arc digram is directed (i.e., bidirectional); only applies to
+ * Whether this arc digram is directed (bidirectional); only applies to
  * non-radial orientations. By default, arc digrams are undirected, such that
  * all arcs appear on one side. If the arc digram is directed, then forward
  * links are drawn on the conventional side (the same as as undirected
  * links--right, left, bottom and top for left, right, top and bottom,
  * respectively), while reverse links are drawn on the opposite side.
  *
- * @param {boolean} x whether or not this arc digram is directed.
- * @function
+ * @type boolean
  * @name pv.Layout.Arc.prototype.directed
- * @returns {pv.Layout.Arc} this, or the current directedness.
+ */
+/**
+ * Constructs a new, empty horizon layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a horizon layout, which is a variation of a single-series
+ * area chart where the area is folded into multiple bands. Color is used to
+ * encode band, allowing the size of the chart to be reduced significantly
+ * without impeding readability. This layout algorithm is based on the work of
+ * J. Heer, N. Kong and M. Agrawala in <a
+ * href="http://hci.stanford.edu/publications/2009/heer-horizon-chi09.pdf">"Sizing
+ * the Horizon: The Effects of Chart Size and Layering on the Graphical
+ * Perception of Time Series Visualizations"</a>, CHI 2009.
+ *
+ * <p>This layout exports a single <tt>band</tt> mark prototype, which is
+ * intended to be used with an area mark. The band mark is contained in a panel
+ * which is replicated per band (and for negative/positive bands). For example,
+ * to create a simple horizon graph given an array of numbers:
+ *
+ * <pre>vis.add(pv.Layout.Horizon)
+ *     .bands(n)
+ *   .band.add(pv.Area)
+ *     .data(data)
+ *     .left(function() this.index * 35)
+ *     .height(function(d) d * 40);</pre>
+ *
+ * The layout can be further customized by changing the number of bands, and
+ * toggling whether the negative bands are mirrored or offset. (See the
+ * above-referenced paper for guidance.)
+ *
+ * <p>The <tt>fillStyle</tt> of the area can be overridden, though typically it
+ * is easier to customize the layout's behavior through the custom
+ * <tt>backgroundStyle</tt>, <tt>positiveStyle</tt> and <tt>negativeStyle</tt>
+ * properties. By default, the background is white, positive bands are blue, and
+ * negative bands are red. For the most accurate presentation, use fully-opaque
+ * colors of equal intensity for the negative and positive bands.
+ *
+ * @extends pv.Layout
  */
 pv.Layout.Horizon = function() {
   pv.Layout.call(this);
-  var mirror = true, // whether to mirror or offset
-      size, // band size
-      red, // negative band color
-      blue; // positive band color
+  var that = this,
+      bands, // cached bands
+      mode, // cached mode
+      size, // cached height
+      fill, // cached background style
+      red, // cached negative color (ramp)
+      blue, // cached positive color (ramp)
+      buildImplied = this.buildImplied;
 
-  /** @private */
-  function data() {
-    size = Math.round(this.parent.height());
-    mirror = this.mode() == "mirror";
-    var n = this.bands(), fill = this.backgroundStyle();
-    red = pv.Scale.linear(0, n).range(fill, this.negativeStyle());
-    blue = pv.Scale.linear(0, n).range(fill, this.positiveStyle());
-    return pv.range(n * 2);
-  }
+  /** @private Cache the layout state to optimize properties. */
+  this.buildImplied = function(s) {
+    buildImplied.call(this, s);
+    bands = s.bands;
+    mode = s.mode;
+    size = Math.round((mode == "color" ? .5 : 1) * s.height);
+    fill = s.backgroundStyle;
+    red = pv.ramp(fill, s.negativeStyle).domain(0, bands);
+    blue = pv.ramp(fill, s.positiveStyle).domain(0, bands);
+  };
 
-  /* Set the fill style directly, rather than using the alias. */
-  this.propertyValue("fillStyle", function(i) {
-      return i ? null : this.backgroundStyle();
-    }).type = 3;
-
-  this.bands(2)
-      .mode("offset")
-      .backgroundStyle("white")
-      .negativeStyle("red")
-      .positiveStyle("blue")
-      .data(data)
+  var bands = new pv.Panel()
+      .data(function() { return pv.range(bands * 2); })
       .overflow("hidden")
       .height(function() { return size; })
-      .transform(function(i) {
-          var y = Math.floor((i + 1) / 2) * size * (!mirror && (i % 2) ? -1 : 1);
-          return pv.Transform.identity.translate(0, y);
+      .top(function(i) { return mode == "color" ? (i & 1) * size : 0; })
+      .fillStyle(function(i) { return i ? null : fill; });
+
+  /**
+   * The band prototype. This prototype is intended to be used with an Area
+   * mark to render the horizon bands.
+   *
+   * @type pv.Mark
+   * @name pv.Layout.Horizon.prototype.band
+   */
+  this.band = new pv.Mark()
+      .top(function(d, i) {
+          return mode == "mirror" && i & 1
+              ? (i + 1 >> 1) * size
+              : null;
+        })
+      .bottom(function(d, i) {
+          return mode == "mirror"
+              ? (i & 1 ? null : (i + 1 >> 1) * -size)
+              : ((i & 1 || -1) * (i + 1 >> 1) * size);
+        })
+      .fillStyle(function(d, i) {
+          return (i & 1 ? red : blue)((i >> 1) + 1);
         });
 
-  this.band = new pv.Mark()
-      .top(function(d, i) { return mirror && (i % 2) ? 0 : null; })
-      .bottom(function(d, i) { return mirror && (i % 2) ? null : 0; })
-      .fillStyle(function(d, i) { return ((i % 2) ? red : blue)((i >> 1) + 1); });
+  this.band.add = function(type) {
+    return that.add(pv.Panel).extend(bands).add(type).extend(this);
+  };
 };
 
 pv.Layout.Horizon.prototype = pv.extend(pv.Layout)
     .property("bands", Number)
     .property("mode", String)
     .property("backgroundStyle", pv.color)
-    .property("negativeStyle", pv.color)
-    .property("positiveStyle", pv.color);
+    .property("positiveStyle", pv.color)
+    .property("negativeStyle", pv.color);
 
-pv.Layout.Horizon.prototype.add = function(type) {
-  return pv.Mark.prototype.add.call(this, pv.Panel).add(type).extend(this.band);
+/**
+ * Default properties for horizon layouts. By default, there are two bands, the
+ * mode is "offset", the background style is "white", the positive style is
+ * blue, negative style is red.
+ *
+ * @type pv.Layout.Horizon
+ */
+pv.Layout.Horizon.prototype.defaults = new pv.Layout.Horizon()
+    .extend(pv.Layout.prototype.defaults)
+    .bands(2)
+    .mode("offset")
+    .backgroundStyle("white")
+    .positiveStyle("#1f77b4")
+    .negativeStyle("#d62728");
+
+/**
+ * The horizon mode: offset, mirror, or color. The default is "offset".
+ *
+ * @type string
+ * @name pv.Layout.Horizon.prototype.mode
+ */
+
+/**
+ * The number of bands. Must be at least one. The default value is two.
+ *
+ * @type number
+ * @name pv.Layout.Horizon.prototype.bands
+ */
+
+/**
+ * The positive band color; if non-null, the interior of positive bands are
+ * filled with the specified color. The default value of this property is blue.
+ * For accurate blending, this color should be fully opaque.
+ *
+ * @type pv.Color
+ * @name pv.Layout.Horizon.prototype.positiveStyle
+ */
+
+/**
+ * The negative band color; if non-null, the interior of negative bands are
+ * filled with the specified color. The default value of this property is red.
+ * For accurate blending, this color should be fully opaque.
+ *
+ * @type pv.Color
+ * @name pv.Layout.Horizon.prototype.negativeStyle
+ */
+
+/**
+ * The background color. The panel background is filled with the specified
+ * color, and the negative and positive bands are filled with an interpolated
+ * color between this color and the respective band color. The default value of
+ * this property is white. For accurate blending, this color should be fully
+ * opaque.
+ *
+ * @type pv.Color
+ * @name pv.Layout.Horizon.prototype.backgroundStyle
+ */
+/**
+ * Constructs a new, empty rollup network layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a network visualization using a node-link diagram where
+ * nodes are rolled up along two dimensions. This implementation is based on the
+ * "PivotGraph" designed by Martin Wattenberg:
+ *
+ * <blockquote>The method is designed for graphs that are "multivariate", i.e.,
+ * where each node is associated with several attributes. Unlike visualizations
+ * which emphasize global graph topology, PivotGraph uses a simple grid-based
+ * approach to focus on the relationship between node attributes &amp;
+ * connections.</blockquote>
+ *
+ * This layout requires two psuedo-properties to be specified, which assign node
+ * positions along the two dimensions {@link #x} and {@link #y}, corresponding
+ * to the left and top properties, respectively. Typically, these functions are
+ * specified using an {@link pv.Scale.ordinal}. Nodes that share the same
+ * position in <i>x</i> and <i>y</i> are "rolled up" into a meta-node, and
+ * similarly links are aggregated between meta-nodes. For example, to construct
+ * a rollup to analyze links by gender and affiliation, first define two ordinal
+ * scales:
+ *
+ * <pre>var x = pv.Scale.ordinal(nodes, function(d) d.gender).split(0, w),
+ *     y = pv.Scale.ordinal(nodes, function(d) d.aff).split(0, h);</pre>
+ *
+ * Next, define the position psuedo-properties:
+ *
+ * <pre>    .x(function(d) x(d.gender))
+ *     .y(function(d) y(d.aff))</pre>
+ *
+ * Linear and other quantitative scales can alternatively be used to position
+ * the nodes along either dimension. Note, however, that the rollup requires
+ * that the positions match exactly, and thus ordinal scales are recommended to
+ * avoid precision errors.
+ *
+ * <p>Note that because this layout provides a visualization of the rolled up
+ * graph, the data properties for the mark prototypes (<tt>node</tt>,
+ * <tt>link</tt> and <tt>label</tt>) are different from most other network
+ * layouts: they reference the rolled-up nodes and links, rather than the nodes
+ * and links of the full network. The underlying nodes and links for each
+ * rolled-up node and link can be accessed via the <tt>nodes</tt> and
+ * <tt>links</tt> attributes, respectively. The aggregated link values for
+ * rolled-up links can similarly be accessed via the <tt>linkValue</tt>
+ * attribute.
+ *
+ * <p>For undirected networks, links are duplicated in both directions. For
+ * directed networks, use <tt>directed(true)</tt>. The graph is assumed to be
+ * undirected by default.
+ *
+ * @extends pv.Layout.Network
+ * @see <a href="http://www.research.ibm.com/visual/papers/pivotgraph.pdf"
+ * >"Visual Exploration of Multivariate Graphs"</a> by M. Wattenberg, CHI 2006.
+ */
+pv.Layout.Rollup = function() {
+  pv.Layout.Network.call(this);
+  var that = this,
+      nodes, // cached rollup nodes
+      links, // cached rollup links
+      buildImplied = that.buildImplied;
+
+  /** @private Cache layout state to optimize properties. */
+  this.buildImplied = function(s) {
+    buildImplied.call(this, s);
+    nodes = s.$rollup.nodes;
+    links = s.$rollup.links;
+  };
+
+  /* Render rollup nodes. */
+  this.node
+      .data(function() { return nodes; })
+      .shapeSize(function(d) { return d.nodes.length * 20; });
+
+  /* Render rollup links. */
+  this.link
+      .interpolate("polar")
+      .eccentricity(.8);
+
+  this.link.add = function(type) {
+    return that.add(pv.Panel)
+        .data(function() { return links; })
+      .add(type)
+        .extend(this);
+  };
 };
 
-pv.Layout.Horizon.prototype.fillStyle = pv.Layout.Horizon.prototype.backgroundStyle;
+pv.Layout.Rollup.prototype = pv.extend(pv.Layout.Network)
+    .property("directed", Boolean);
+
 /**
- * @ignore
- * @namespace
+ * Whether the underlying network is directed. By default, the graph is assumed
+ * to be undirected, and links are rendered in both directions. If the network
+ * is directed, then forward links are drawn above the diagonal, while reverse
+ * links are drawn below.
+ *
+ * @type boolean
+ * @name pv.Layout.Rollup.prototype.directed
+ */
+
+/**
+ * Specifies the <i>x</i>-position function used to rollup nodes. The rolled up
+ * nodes are positioned horizontally using the return values from the given
+ * function. Typically the function is specified as an ordinal scale. For
+ * single-dimension rollups, a constant value can be specified.
+ *
+ * @param {function} f the <i>x</i>-position function.
+ * @returns {pv.Layout.Rollup} this.
+ * @see pv.Scale.ordinal
+ */
+pv.Layout.Rollup.prototype.x = function(f) {
+  this.$x = pv.functor(f);
+  return this;
+};
+
+/**
+ * Specifies the <i>y</i>-position function used to rollup nodes. The rolled up
+ * nodes are positioned vertically using the return values from the given
+ * function. Typically the function is specified as an ordinal scale. For
+ * single-dimension rollups, a constant value can be specified.
+ *
+ * @param {function} f the <i>y</i>-position function.
+ * @returns {pv.Layout.Rollup} this.
+ * @see pv.Scale.ordinal
+ */
+pv.Layout.Rollup.prototype.y = function(f) {
+  this.$y = pv.functor(f);
+  return this;
+};
+
+/** @private */
+pv.Layout.Rollup.prototype.buildImplied = function(s) {
+  if (pv.Layout.Network.prototype.buildImplied.call(this, s)) return;
+
+  var nodes = s.nodes,
+      links = s.links,
+      directed = s.directed,
+      n = nodes.length,
+      x = [],
+      y = [],
+      rnindex = 0,
+      rnodes = {},
+      rlinks = {};
+
+  /** @private */
+  function id(i) {
+    return x[i] + "," + y[i];
+  }
+
+  /* Iterate over the data, evaluating the x and y functions. */
+  var stack = pv.Mark.stack, o = {parent: this};
+  stack.unshift(null);
+  for (var i = 0; i < n; i++) {
+    o.index = i;
+    stack[0] = nodes[i];
+    x[i] = this.$x.apply(o, stack);
+    y[i] = this.$y.apply(o, stack);
+  }
+  stack.shift();
+
+  /* Compute rollup nodes. */
+  for (var i = 0; i < nodes.length; i++) {
+    var nodeId = id(i),
+        rn = rnodes[nodeId];
+    if (!rn) {
+      rn = rnodes[nodeId] = pv.extend(nodes[i]);
+      rn.index = rnindex++;
+      rn.x = x[i];
+      rn.y = y[i];
+      rn.nodes = [];
+    }
+    rn.nodes.push(nodes[i]);
+  }
+
+  /* Compute rollup links. */
+  for (var i = 0; i < links.length; i++) {
+    var source = links[i].sourceNode,
+        target = links[i].targetNode,
+        rsource = rnodes[id(source.index)],
+        rtarget = rnodes[id(target.index)],
+        reverse = !directed && rsource.index > rtarget.index,
+        linkId = reverse
+            ? rtarget.index + "," + rsource.index
+            : rsource.index + "," + rtarget.index,
+        rl = rlinks[linkId];
+    if (!rl) {
+      rl = rlinks[linkId] = {
+        sourceNode: rsource,
+        targetNode: rtarget,
+        linkValue: 0,
+        links: []
+      };
+    }
+    rl.links.push(links[i]);
+    rl.linkValue += links[i].linkValue;
+  }
+
+  /* Export the rolled up nodes and links to the scene. */
+  s.$rollup = {
+    nodes: pv.values(rnodes),
+    links: pv.values(rlinks)
+  };
+};
+/**
+ * Constructs a new, empty matrix network layout. Layouts are not typically
+ * constructed directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class Implements a network visualization using a matrix view. This is, in
+ * effect, a visualization of the graph's <i>adjacency matrix</i>: the cell at
+ * row <i>i</i>, column <i>j</i>, corresponds to the link from node <i>i</i> to
+ * node <i>j</i>. The fill color of each cell is binary by default, and
+ * corresponds to whether a link exists between the two nodes. If the underlying
+ * graph has links with variable values, the <tt>fillStyle</tt> property can be
+ * substited to use an appropriate color function, such as {@link pv.ramp}.
+ *
+ * <p>For undirected networks, the matrix is symmetric around the diagonal. For
+ * directed networks, links in opposite directions can be rendered on opposite
+ * sides of the diagonal using <tt>directed(true)</tt>. The graph is assumed to
+ * be undirected by default.
+ *
+ * <p>The mark prototypes for this network layout are slightly different than
+ * other implementations:<ul>
+ *
+ * <li><tt>node</tt> - unsupported; undefined. No mark is needed to visualize
+ * nodes directly, as the nodes are implicit in the location (rows and columns)
+ * of the links.
+ *
+ * <p><li><tt>link</tt> - for rendering links; typically a {@link pv.Bar}. The
+ * link mark is added directly to the layout, with the data property defined as
+ * all possible pairs of nodes. Each pair is represented as a
+ * {@link pv.Network.Layout.Link}, though the <tt>linkValue</tt> attribute may
+ * be 0 if no link exists in the graph.
+ *
+ * <p><li><tt>label</tt> - for rendering node labels; typically a
+ * {@link pv.Label}. The label mark is added directly to the layout, with the
+ * data property defined via the layout's <tt>nodes</tt> property; note,
+ * however, that the nodes are duplicated so as to provide a label across the
+ * top and down the side. Properties such as <tt>strokeStyle</tt> and
+ * <tt>fillStyle</tt> can be overridden to compute properties from node data
+ * dynamically.
+ *
+ * </ul>For more details on how to use this layout, see
+ * {@link pv.Layout.Network}.
+ *
+ * @extends pv.Layout.Network
+ */
+pv.Layout.Matrix = function() {
+  pv.Layout.Network.call(this);
+  var that = this,
+      n, // cached matrix size
+      dx, // cached cell width
+      dy, // cached cell height
+      labels, // cached labels (array of strings)
+      pairs, // cached pairs (array of links)
+      buildImplied = that.buildImplied;
+
+  /** @private Cache layout state to optimize properties. */
+  this.buildImplied = function(s) {
+    buildImplied.call(this, s);
+    n = s.nodes.length;
+    dx = s.width / n;
+    dy = s.height / n;
+    labels = s.$matrix.labels;
+    pairs = s.$matrix.pairs;
+  };
+
+  /* Links are all pairs of nodes. */
+  this.link
+      .data(function() { return pairs; })
+      .left(function() { return dx * (this.index % n); })
+      .top(function() { return dy * Math.floor(this.index / n); })
+      .width(function() { return dx; })
+      .height(function() { return dy; })
+      .lineWidth(1.5)
+      .strokeStyle("#fff")
+      .fillStyle(function(l) { return l.linkValue ? "#555" : "#eee"; })
+      .parent = this;
+
+  /* No special add for links! */
+  delete this.link.add;
+
+  /* Labels are duplicated for top & left. */
+  this.label
+      .data(function() { return labels; })
+      .left(function() { return this.index & 1 ? dx * ((this.index >> 1) + .5) : 0; })
+      .top(function() { return this.index & 1 ? 0 : dy * ((this.index >> 1) + .5); })
+      .textMargin(4)
+      .textAlign(function() { return this.index & 1 ? "left" : "right"; })
+      .textAngle(function() { return this.index & 1 ? -Math.PI / 2 : 0; });
+
+  /* The node mark is unused. */
+  delete this.node;
+};
+
+pv.Layout.Matrix.prototype = pv.extend(pv.Layout.Network)
+    .property("directed", Boolean);
+
+/**
+ * Whether this matrix visualization is directed (bidirectional). By default,
+ * the graph is assumed to be undirected, such that the visualization is
+ * symmetric across the matrix diagonal. If the network is directed, then
+ * forward links are drawn above the diagonal, while reverse links are drawn
+ * below.
+ *
+ * @type boolean
+ * @name pv.Layout.Matrix.prototype.directed
+ */
+
+/**
+ * Specifies an optional sort function. The sort function follows the same
+ * comparator contract required by {@link pv.Dom.Node#sort}. Specifying a sort
+ * function provides an alternative to sort the nodes as they are specified by
+ * the <tt>nodes</tt> property; the main advantage of doing this is that the
+ * comparator function can access implicit fields populated by the network
+ * layout, such as the <tt>linkDegree</tt>.
+ *
+ * <p>Note that matrix visualizations are particularly sensitive to order. This
+ * is referred to as the seriation problem, and many different techniques exist
+ * to find good node orders that emphasize clusters, such as spectral layout and
+ * simulated annealing.
+ *
+ * @param {function} f comparator function for nodes.
+ * @returns {pv.Layout.Matrix} this.
+ */
+pv.Layout.Matrix.prototype.sort = function(f) {
+  this.$sort = f;
+  return this;
+};
+
+/** @private */
+pv.Layout.Matrix.prototype.buildImplied = function(s) {
+  if (pv.Layout.Network.prototype.buildImplied.call(this, s)) return;
+
+  var nodes = s.nodes,
+      links = s.links,
+      sort = this.$sort,
+      n = nodes.length,
+      index = pv.range(n),
+      labels = [],
+      pairs = [],
+      map = {};
+
+  s.$matrix = {labels: labels, pairs: pairs};
+
+  /* Sort the nodes. */
+  if (sort) index.sort(function(a, b) { return sort(nodes[a], nodes[b]); });
+
+  /* Create pairs. */
+  for (var i = 0; i < n; i++) {
+    for (var j = 0; j < n; j++) {
+      var a = index[i],
+          b = index[j],
+          p = {
+            row: i,
+            col: j,
+            sourceNode: nodes[a],
+            targetNode: nodes[b],
+            linkValue: 0
+          };
+      pairs.push(map[a + "." + b] = p);
+    }
+  }
+
+  /* Create labels. */
+  for (var i = 0; i < n; i++) {
+    var a = index[i];
+    labels.push(nodes[a], nodes[a]);
+  }
+
+  /* Accumulate link values. */
+  for (var i = 0; i < links.length; i++) {
+    var l = links[i],
+        source = l.sourceNode.index,
+        target = l.targetNode.index,
+        value = l.linkValue;
+    map[source + "." + target].linkValue += value;
+    if (!s.directed) map[target + "." + source].linkValue += value;
+  }
+};
+// ranges (bad, satisfactory, good)
+// measures (actual, forecast)
+// markers (previous, goal)
+
+/*
+ * Chart design based on the recommendations of Stephen Few. Implementation
+ * based on the work of Clint Ivy, Jamie Love, and Jason Davies.
+ * http://projects.instantcognition.com/protovis/bulletchart/
+ */
+
+/**
+ * Constructs a new, empty bullet layout. Layouts are not typically constructed
+ * directly; instead, they are added to an existing panel via
+ * {@link pv.Mark#add}.
+ *
+ * @class
+ * @extends pv.Layout
+ */
+pv.Layout.Bullet = function() {
+  pv.Layout.call(this);
+  var that = this,
+      buildImplied = that.buildImplied,
+      scale = that.x = pv.Scale.linear(),
+      orient,
+      horizontal,
+      rangeColor,
+      measureColor,
+      x;
+
+  /** @private Cache layout state to optimize properties. */
+  this.buildImplied = function(s) {
+    buildImplied.call(this, x = s);
+    orient = s.orient;
+    horizontal = /^left|right$/.test(orient);
+    rangeColor = pv.ramp("#bbb", "#eee")
+        .domain(0, Math.max(1, x.ranges.length - 1));
+    measureColor = pv.ramp("steelblue", "lightsteelblue")
+        .domain(0, Math.max(1, x.measures.length - 1));
+  };
+
+  /**
+   * The range prototype.
+   *
+   * @type pv.Mark
+   * @name pv.Layout.Bullet.prototype.range
+   */
+  (this.range = new pv.Mark())
+      .data(function() { return x.ranges; })
+      .reverse(true)
+      .left(function() { return orient == "left" ? 0 : null; })
+      .top(function() { return orient == "top" ? 0 : null; })
+      .right(function() { return orient == "right" ? 0 : null; })
+      .bottom(function() { return orient == "bottom" ? 0 : null; })
+      .width(function(d) { return horizontal ? scale(d) : null; })
+      .height(function(d) { return horizontal ? null : scale(d); })
+      .fillStyle(function() { return rangeColor(this.index); })
+      .antialias(false)
+      .parent = that;
+
+  /**
+   * The measure prototype.
+   *
+   * @type pv.Mark
+   * @name pv.Layout.Bullet.prototype.measure
+   */
+  (this.measure = new pv.Mark())
+      .extend(this.range)
+      .data(function() { return x.measures; })
+      .left(function() { return orient == "left" ? 0 : horizontal ? null : this.parent.width() / 3.25; })
+      .top(function() { return orient == "top" ? 0 : horizontal ? this.parent.height() / 3.25 : null; })
+      .right(function() { return orient == "right" ? 0 : horizontal ? null : this.parent.width() / 3.25; })
+      .bottom(function() { return orient == "bottom" ? 0 : horizontal ? this.parent.height() / 3.25 : null; })
+      .fillStyle(function() { return measureColor(this.index); })
+      .parent = that;
+
+  /**
+   * The marker prototype.
+   *
+   * @type pv.Mark
+   * @name pv.Layout.Bullet.prototype.marker
+   */
+  (this.marker = new pv.Mark())
+      .data(function() { return x.markers; })
+      .left(function(d) { return orient == "left" ? scale(d) : horizontal ? null : this.parent.width() / 2; })
+      .top(function(d) { return orient == "top" ? scale(d) : horizontal ? this.parent.height() / 2 : null; })
+      .right(function(d) { return orient == "right" ? scale(d) : null; })
+      .bottom(function(d) { return orient == "bottom" ? scale(d) : null; })
+      .strokeStyle("black")
+      .shape("bar")
+      .shapeAngle(function() { return horizontal ? 0 : Math.PI / 2; })
+      .parent = that;
+
+  (this.tick = new pv.Mark())
+      .data(function() { return scale.ticks(7); })
+      .left(function(d) { return orient == "left" ? scale(d) : null; })
+      .top(function(d) { return orient == "top" ? scale(d) : null; })
+      .right(function(d) { return orient == "right" ? scale(d) : horizontal ? null : -6; })
+      .bottom(function(d) { return orient == "bottom" ? scale(d) : horizontal ? -8 : null; })
+      .height(function() { return horizontal ? 6 : null; })
+      .width(function() { return horizontal ? null : 6; })
+      .parent = that;
+};
+
+pv.Layout.Bullet.prototype = pv.extend(pv.Layout)
+    .property("orient", String) // left, right, top, bottom
+    .property("ranges")
+    .property("markers")
+    .property("measures")
+    .property("maximum", Number);
+
+/**
+ * Default properties for bullet layouts.
+ *
+ * @type pv.Layout.Bullet
+ */
+pv.Layout.Bullet.prototype.defaults = new pv.Layout.Bullet()
+    .extend(pv.Layout.prototype.defaults)
+    .orient("left")
+    .ranges([])
+    .markers([])
+    .measures([]);
+
+/**
+ * The orientation.
+ *
+ * @type string
+ * @name pv.Layout.Bullet.prototype.orient
+ */
+
+/**
+ * The array of range values.
+ *
+ * @type array
+ * @name pv.Layout.Bullet.prototype.ranges
+ */
+
+/**
+ * The array of marker values.
+ *
+ * @type array
+ * @name pv.Layout.Bullet.prototype.markers
+ */
+
+/**
+ * The array of measure values.
+ *
+ * @type array
+ * @name pv.Layout.Bullet.prototype.measures
+ */
+
+/**
+ * Optional; the maximum range value.
+ *
+ * @type number
+ * @name pv.Layout.Bullet.prototype.maximum
+ */
+
+/** @private */
+pv.Layout.Bullet.prototype.buildImplied = function(s) {
+  pv.Layout.prototype.buildImplied.call(this, s);
+  var size = this.parent[/^left|right$/.test(s.orient) ? "width" : "height"]();
+  s.maximum = s.maximum || pv.max([].concat(s.ranges, s.markers, s.measures));
+  this.x.domain(0, s.maximum).range(0, size);
+};
+/**
+ * Abstract; see an implementing class for details.
+ *
+ * @class Represents a reusable interaction; applies an interactive behavior to
+ * a given mark. Behaviors are themselves functions designed to be used as event
+ * handlers. For example, to add pan and zoom support to any panel, say:
+ *
+ * <pre>    .event("mousedown", pv.Behavior.pan())
+ *     .event("mousewheel", pv.Behavior.zoom())</pre>
+ *
+ * The behavior should be registered on the event that triggers the start of the
+ * behavior. Typically, the behavior will take care of registering for any
+ * additional events that are necessary. For example, dragging starts on
+ * mousedown, while the drag behavior automatically listens for mousemove and
+ * mouseup events on the window. By listening to the window, the behavior can
+ * continue to receive mouse events even if the mouse briefly leaves the mark
+ * being dragged, or even the root panel.
+ *
+ * <p>Each behavior implementation has specific requirements as to which events
+ * it supports, and how it should be used. For example, the drag behavior
+ * requires that the data associated with the mark be an object with <tt>x</tt>
+ * and <tt>y</tt> attributes, such as a {@link pv.Vector}, storing the mark's
+ * position. See an implementing class for details.
+ *
+ * @see pv.Behavior.drag
+ * @see pv.Behavior.pan
+ * @see pv.Behavior.point
+ * @see pv.Behavior.select
+ * @see pv.Behavior.zoom
+ * @extends function
  */
 pv.Behavior = {};
+/**
+ * Returns a new drag behavior to be registered on mousedown events.
+ *
+ * @class Implements interactive dragging starting with mousedown events.
+ * Register this behavior on marks that should be draggable by the user, such as
+ * the selected region for brushing and linking. This behavior can be used in
+ * tandom with {@link pv.Behavior.select} to allow the selected region to be
+ * dragged interactively.
+ *
+ * <p>After the initial mousedown event is triggered, this behavior listens for
+ * mousemove and mouseup events on the window. This allows dragging to continue
+ * even if the mouse temporarily leaves the mark that is being dragged, or even
+ * the root panel.
+ *
+ * <p>This behavior requires that the data associated with the mark being
+ * dragged have <tt>x</tt> and <tt>y</tt> attributes that correspond to the
+ * mark's location in pixels. The mark's positional properties are not set
+ * directly by this behavior; instead, the positional properties should be
+ * defined as:
+ *
+ * <pre>    .left(function(d) d.x)
+ *     .top(function(d) d.y)</pre>
+ *
+ * Thus, the behavior does not move the mark directly, but instead updates the
+ * mark position by updating the underlying data. Note that if the positional
+ * properties are defined with bottom and right (rather than top and left), the
+ * drag behavior will be inverted, which will confuse users!
+ *
+ * <p>The drag behavior is bounded by the parent panel; the <tt>x</tt> and
+ * <tt>y</tt> attributes are clamped such that the mark being dragged does not
+ * extend outside the enclosing panel's bounds. To facilitate this, the drag
+ * behavior also queries for <tt>dx</tt> and <tt>dy</tt> attributes on the
+ * underlying data, to determine the dimensions of the bar being dragged. For
+ * non-rectangular marks, the drag behavior simply treats the mark as a point,
+ * which means that only the mark's center is bounded.
+ *
+ * <p>The mark being dragged is automatically re-rendered for each mouse event
+ * as part of the drag operation. In addition, a <tt>fix</tt> attribute is
+ * populated on the mark, which allows visual feedback for dragging. For
+ * example, to change the mark fill color while dragging:
+ *
+ * <pre>    .fillStyle(function(d) d.fix ? "#ff7f0e" : "#aec7e8")</pre>
+ *
+ * In some cases, such as with network layouts, dragging the mark may cause
+ * related marks to change, in which case additional marks may also need to be
+ * rendered. This can be accomplished by listening for the drag
+ * psuedo-events:<ul>
+ *
+ * <li>dragstart (on mousedown)
+ * <li>drag (on mousemove)
+ * <li>dragend (on mouseup)
+ *
+ * </ul>For example, to render the parent panel while dragging, thus
+ * re-rendering all sibling marks:
+ *
+ * <pre>    .event("mousedown", pv.Behavior.drag())
+ *     .event("drag", function() this.parent)</pre>
+ *
+ * This behavior may be enhanced in the future to allow more flexible
+ * configuration of drag behavior.
+ *
+ * @extends pv.Behavior
+ * @see pv.Behavior
+ * @see pv.Behavior.select
+ * @see pv.Layout.force
+ */
 pv.Behavior.drag = function() {
   var scene, // scene context
       index, // scene context
       p, // particle being dragged
-      v1; // initial mouse-particle offset
+      v1, // initial mouse-particle offset
+      max;
 
+  /** @private */
   function mousedown(d) {
     index = this.index;
     scene = this.scene;
     var m = this.mouse();
-    v1 = pv.vector(d.x, d.y).minus(m);
-    p = d;
-    p.fixed = true;
+    v1 = ((p = d).fix = pv.vector(d.x, d.y)).minus(m);
+    max = {
+      x: this.parent.width() - (d.dx || 0),
+      y: this.parent.height() - (d.dy || 0)
+    };
+    scene.mark.context(scene, index, function() { this.render(); });
+    pv.Mark.dispatch("dragstart", scene, index);
   }
 
+  /** @private */
   function mousemove() {
     if (!scene) return;
     scene.mark.context(scene, index, function() {
         var m = this.mouse();
-        p.x = v1.x + m.x;
-        p.y = v1.y + m.y;
+        p.x = p.fix.x = Math.max(0, Math.min(v1.x + m.x, max.x));
+        p.y = p.fix.y = Math.max(0, Math.min(v1.y + m.y, max.y));
+        this.render();
       });
+    pv.Mark.dispatch("drag", scene, index);
   }
 
+  /** @private */
   function mouseup() {
     if (!scene) return;
-    mousemove();
-    p.fixed = false;
-    p = null;
+    p.fix = null;
+    scene.mark.context(scene, index, function() { this.render(); });
+    pv.Mark.dispatch("dragend", scene, index);
     scene = null;
   }
 
@@ -11033,6 +14673,62 @@ pv.Behavior.drag = function() {
   pv.listen(window, "mouseup", mouseup);
   return mousedown;
 };
+/**
+ * Returns a new point behavior to be registered on mousemove events.
+ *
+ * @class Implements interactive fuzzy pointing, identifying marks that are in
+ * close proximity to the mouse cursor. This behavior is an alternative to the
+ * native mouseover and mouseout events, improving usability. Rather than
+ * requiring the user to mouseover a mark exactly, the mouse simply needs to
+ * move near the given mark and a "point" event is triggered. In addition, if
+ * multiple marks overlap, the point behavior can be used to identify the mark
+ * instance closest to the cursor, as opposed to the one that is rendered on
+ * top.
+ *
+ * <p>The point behavior can also identify the closest mark instance for marks
+ * that produce a continuous graphic primitive. The point behavior can thus be
+ * used to provide details-on-demand for both discrete marks (such as dots and
+ * bars), as well as continuous marks (such as lines and areas).
+ *
+ * <p>This behavior is implemented by finding the closest mark instance to the
+ * mouse cursor on every mousemove event. If this closest mark is within the
+ * given radius threshold, which defaults to 30 pixels, a "point" psuedo-event
+ * is dispatched to the given mark instance. If any mark were previously
+ * pointed, it would receive a corresponding "unpoint" event. These two
+ * psuedo-event types correspond to the native "mouseover" and "mouseout"
+ * events, respectively. To increase the radius at which the point behavior can
+ * be applied, specify an appropriate threshold to the constructor, up to
+ * <tt>Infinity</tt>.
+ *
+ * <p>By default, the standard Cartesian distance is computed. However, with
+ * some visualizations it is desirable to consider only a single dimension, such
+ * as the <i>x</i>-dimension for an independent variable. In this case, the
+ * collapse parameter can be set to collapse the <i>y</i> dimension:
+ *
+ * <pre>    .event("mousemove", pv.Behavior.point(Infinity).collapse("y"))</pre>
+ *
+ * <p>This behavior only listens to mousemove events on the assigned panel,
+ * which is typically the root panel. The behavior will search recursively for
+ * descendant marks to point. If the mouse leaves the assigned panel, the
+ * behavior no longer receives mousemove events; an unpoint psuedo-event is
+ * automatically dispatched to unpoint any pointed mark. Marks may be re-pointed
+ * when the mouse reenters the panel.
+ *
+ * <p>Panels have transparent fill styles by default; this means that panels may
+ * not receive the initial mousemove event to start pointing. To fix this
+ * problem, either given the panel a visible fill style (such as "white"), or
+ * set the <tt>events</tt> property to "all" such that the panel receives events
+ * despite its transparent fill.
+ *
+ * <p>Note: this behavior does not currently wedge marks.
+ *
+ * @extends pv.Behavior
+ *
+ * @param {number} [r] the fuzzy radius threshold in pixels
+ * @see <a href="http://www.tovigrossman.com/papers/chi2005bubblecursor.pdf"
+ * >"The Bubble Cursor: Enhancing Target Acquisition by Dynamic Resizing of the
+ * Cursor's Activation Area"</a> by T. Grossman &amp; R. Balakrishnan, CHI 2005.
+ */
 pv.Behavior.point = function(r) {
   var unpoint, // the current pointer target
       collapse = null, // dimensions to collapse
@@ -11040,30 +14736,27 @@ pv.Behavior.point = function(r) {
       ky = 1, // y-dimension cost scale
       r2 = arguments.length ? r * r : 900; // fuzzy radius
 
-  /** @private Creates a fake mouse event of the specified type. */
-  function event(type) {
-    var e = document.createEvent("MouseEvents");
-    e.initEvent(type, true, false);
-    return e;
-  }
-
-  /** @Private Search for the mark closest to the mouse. */
+  /** @private Search for the mark closest to the mouse. */
   function search(scene, index) {
-    var v = scene.mark.mouse(),
-        s = scene[index],
-        point = {cost: Infinity, distance: Infinity};
-    for (var i = 0, n = s.children.length; i < n; i++) {
-      var child = s.children[i], p;
-      if (child.mark.type == "panel") {
+    var s = scene[index],
+        point = {cost: Infinity};
+    for (var i = 0, n = s.visible && s.children.length; i < n; i++) {
+      var child = s.children[i], mark = child.mark, p;
+      if (mark.type == "panel") {
+        mark.scene = child;
         for (var j = 0, m = child.length; j < m; j++) {
+          mark.index = j;
           p = search(child, j);
           if (p.cost < point.cost) point = p;
         }
-      } else if (child.mark.$handlers.point) {
+        delete mark.scene;
+        delete mark.index;
+      } else if (mark.$handlers.point) {
+        var v = mark.mouse();
         for (var j = 0, m = child.length; j < m; j++) {
           var c = child[j],
-              dx = v.x - c.left,
-              dy = v.y - c.top,
+              dx = v.x - c.left - (c.width || 0) / 2,
+              dy = v.y - c.top - (c.height || 0) / 2,
               dd = kx * dx * dx + ky * dy * dy;
           if (dd < point.cost) {
             point.distance = dx * dx + dy * dy;
@@ -11077,25 +14770,51 @@ pv.Behavior.point = function(r) {
     return point;
   }
 
+  /** @private */
   function mousemove() {
     /* If the closest mark is far away, clear the current target. */
     var point = search(this.scene, this.index);
-    if (point.distance > r2) point = null;
+    if ((point.cost == Infinity) || (point.distance > r2)) point = null;
 
     /* Unpoint the old target, if it's not the new target. */
     if (unpoint) {
       if (point
           && (unpoint.scene == point.scene)
           && (unpoint.index == point.index)) return;
-      pv.Mark.dispatch(event("unpoint"), unpoint.scene, unpoint.index);
+      pv.Mark.dispatch("unpoint", unpoint.scene, unpoint.index);
     }
 
     /* Point the new target, if there is one. */
     if (unpoint = point) {
-      pv.Mark.dispatch(event("point"), point.scene, point.index);
+      pv.Mark.dispatch("point", point.scene, point.index);
+
+      /* Unpoint when the mouse leaves the root panel. */
+      pv.listen(this.root.canvas(), "mouseout", mouseout);
     }
   }
 
+  /** @private */
+  function mouseout(e) {
+    if (unpoint && !pv.ancestor(this, e.relatedTarget)) {
+      pv.Mark.dispatch("unpoint", unpoint.scene, unpoint.index);
+      unpoint = null;
+    }
+  }
+
+  /**
+   * Sets or gets the collapse parameter. By default, the standard Cartesian
+   * distance is computed. However, with some visualizations it is desirable to
+   * consider only a single dimension, such as the <i>x</i>-dimension for an
+   * independent variable. In this case, the collapse parameter can be set to
+   * collapse the <i>y</i> dimension:
+   *
+   * <pre>    .event("mousemove", pv.Behavior.point(Infinity).collapse("y"))</pre>
+   *
+   * @function
+   * @returns {pv.Behavior.point} this, or the current collapse parameter.
+   * @name pv.Behavior.point.prototype.collapse
+   * @param {string} [x] the new collapse parameter
+   */
   mousemove.collapse = function(x) {
     if (arguments.length) {
       collapse = String(x);
@@ -11111,84 +14830,99 @@ pv.Behavior.point = function(r) {
 
   return mousemove;
 };
-pv.Behavior.select = function(f) {
-  var target, m1, index, scenes, args, region;
-
-  /* Setup the scene stack. */
-  function setup() {
-    var m = target, s = scenes, i = index;
-    do {
-      m.index = i;
-      m.scene = s;
-      i = s.parentIndex;
-      s = s.parent;
-    } while (m = m.parent);
-  }
-
-  function mousedown() {
-    target = this;
-    index = target.index;
-    scenes = target.scene;
-    m1 = this.mouse();
-    region = {};
-    region.left = m1.x;
-    region.top = m1.y;
-    region.right = target.width() - m1.x;
-    region.bottom = target.height() - m1.y;
-    region.width = 0;
-    region.height = 0;
-    args = Array.prototype.concat.apply([region], arguments);
-    f.apply(this, args);
-  }
-
-  function mousemove() {
-    if (!target) return;
-    setup();
-    var m2 = target.mouse();
-    region.left = Math.max(0, Math.min(m1.x, m2.x));
-    region.top = Math.max(0, Math.min(m1.y, m2.y));
-    region.right = Math.max(0, target.width() - Math.max(m1.x, m2.x));
-    region.bottom = Math.max(0, target.height() - Math.max(m1.y, m2.y));
-    region.width = Math.max(0, target.width() - region.left - region.right);
-    region.height = Math.max(0, target.height() - region.top - region.bottom);
-    f.apply(target, args);
-  }
-
-  function mouseup() {
-    mousemove();
-    target = null;
-  }
-
-  pv.listen(window, "mousemove", mousemove);
-  pv.listen(window, "mouseup", mouseup);
-  return mousedown;
-};
-pv.Behavior.pan = function() {
+/**
+ * Returns a new select behavior to be registered on mousedown events.
+ *
+ * @class Implements interactive selecting starting with mousedown events.
+ * Register this behavior on panels that should be selectable by the user, such
+ * for brushing and linking. This behavior can be used in tandom with
+ * {@link pv.Behavior.drag} to allow the selected region to be dragged
+ * interactively.
+ *
+ * <p>After the initial mousedown event is triggered, this behavior listens for
+ * mousemove and mouseup events on the window. This allows selecting to continue
+ * even if the mouse temporarily leaves the assigned panel, or even the root
+ * panel.
+ *
+ * <p>This behavior requires that the data associated with the mark being
+ * dragged have <tt>x</tt>, <tt>y</tt>, <tt>dx</tt> and <tt>dy</tt> attributes
+ * that correspond to the mark's location and dimensions in pixels. The mark's
+ * positional properties are not set directly by this behavior; instead, the
+ * positional properties should be defined as:
+ *
+ * <pre>    .left(function(d) d.x)
+ *     .top(function(d) d.y)
+ *     .width(function(d) d.dx)
+ *     .height(function(d) d.dy)</pre>
+ *
+ * Thus, the behavior does not resize the mark directly, but instead updates the
+ * selection by updating the assigned panel's underlying data. Note that if the
+ * positional properties are defined with bottom and right (rather than top and
+ * left), the drag behavior will be inverted, which will confuse users!
+ *
+ * <p>The select behavior is bounded by the assigned panel; the positional
+ * attributes are clamped such that the selection does not extend outside the
+ * panel's bounds.
+ *
+ * <p>The panel being selected is automatically re-rendered for each mouse event
+ * as part of the drag operation. This behavior may be enhanced in the future to
+ * allow more flexible configuration of select behavior. In some cases, such as
+ * with parallel coordinates, making a selection may cause related marks to
+ * change, in which case additional marks may also need to be rendered. This can
+ * be accomplished by listening for the select psuedo-events:<ul>
+ *
+ * <li>selectstart (on mousedown)
+ * <li>select (on mousemove)
+ * <li>selectend (on mouseup)
+ *
+ * </ul>For example, to render the parent panel while selecting, thus
+ * re-rendering all sibling marks:
+ *
+ * <pre>    .event("mousedown", pv.Behavior.drag())
+ *     .event("select", function() this.parent)</pre>
+ *
+ * This behavior may be enhanced in the future to allow more flexible
+ * configuration of the selection behavior.
+ *
+ * @extends pv.Behavior
+ * @see pv.Behavior.drag
+ */
+pv.Behavior.select = function() {
   var scene, // scene context
       index, // scene context
-      m1, // transformation matrix at the start of panning
-      v1, // mouse location at the start of panning
-      k; // inverse scale
+      r, // region being selected
+      m1; // initial mouse position
 
-  function mousedown() {
+  /** @private */
+  function mousedown(d) {
     index = this.index;
     scene = this.scene;
-    v1 = pv.vector(pv.event.pageX, pv.event.pageY);
-    m1 = this.transform();
-    k = 1 / (m1.k * this.scale);
+    m1 = this.mouse();
+    r = d;
+    r.x = m1.x;
+    r.y = m1.y;
+    r.dx = r.dy = 0;
+    pv.Mark.dispatch("selectstart", scene, index);
   }
 
+  /** @private */
   function mousemove() {
     if (!scene) return;
     scene.mark.context(scene, index, function() {
-        var x = (pv.event.pageX - v1.x) * k,
-            y = (pv.event.pageY - v1.y) * k;
-        this.transform(m1.translate(x, y)).render();
+        var m2 = this.mouse();
+        r.x = Math.max(0, Math.min(m1.x, m2.x));
+        r.y = Math.max(0, Math.min(m1.y, m2.y));
+        r.dx = Math.min(this.width(), Math.max(m2.x, m1.x)) - r.x;
+        r.dy = Math.min(this.height(), Math.max(m2.y, m1.y)) - r.y;
+        this.render();
       });
+    pv.Mark.dispatch("select", scene, index);
   }
 
+  /** @private */
   function mouseup() {
-    mousemove();
+    if (!scene) return;
+    pv.Mark.dispatch("selectend", scene, index);
     scene = null;
   }
 
@@ -11196,37 +14930,797 @@ pv.Behavior.pan = function() {
   pv.listen(window, "mouseup", mouseup);
   return mousedown;
 };
-pv.Behavior.zoom = function() {
-  return function() {
-      var v = this.mouse(), k = window.event.wheelDelta;
-      this.transform(this.transform().translate(v.x, v.y)
-          .scale((k < 0) ? (1000 / (1000 - k)) : ((1000 + k) / 1000))
-          .translate(-v.x, -v.y)).render();
-    };
-};
-/*
- * Parses the Protovis specifications on load, allowing the use of JavaScript
- * 1.8 function expressions on browsers that only support JavaScript 1.6.
+/**
+ * Returns a new resize behavior to be registered on mousedown events.
  *
- * @see pv.parse
+ * @class Implements interactive resizing of a selection starting with mousedown
+ * events. Register this behavior on selection handles that should be resizeable
+ * by the user, such for brushing and linking. This behavior can be used in
+ * tandom with {@link pv.Behavior.select} and {@link pv.Behavior.drag} to allow
+ * the selected region to be selected and dragged interactively.
+ *
+ * <p>After the initial mousedown event is triggered, this behavior listens for
+ * mousemove and mouseup events on the window. This allows resizing to continue
+ * even if the mouse temporarily leaves the assigned panel, or even the root
+ * panel.
+ *
+ * <p>This behavior requires that the data associated with the mark being
+ * resized have <tt>x</tt>, <tt>y</tt>, <tt>dx</tt> and <tt>dy</tt> attributes
+ * that correspond to the mark's location and dimensions in pixels. The mark's
+ * positional properties are not set directly by this behavior; instead, the
+ * positional properties should be defined as:
+ *
+ * <pre>    .left(function(d) d.x)
+ *     .top(function(d) d.y)
+ *     .width(function(d) d.dx)
+ *     .height(function(d) d.dy)</pre>
+ *
+ * Thus, the behavior does not resize the mark directly, but instead updates the
+ * size by updating the assigned panel's underlying data. Note that if the
+ * positional properties are defined with bottom and right (rather than top and
+ * left), the resize behavior will be inverted, which will confuse users!
+ *
+ * <p>The resize behavior is bounded by the assigned mark's enclosing panel; the
+ * positional attributes are clamped such that the selection does not extend
+ * outside the panel's bounds.
+ *
+ * <p>The mark being resized is automatically re-rendered for each mouse event
+ * as part of the resize operation. This behavior may be enhanced in the future
+ * to allow more flexible configuration. In some cases, such as with parallel
+ * coordinates, resizing the selection may cause related marks to change, in
+ * which case additional marks may also need to be rendered. This can be
+ * accomplished by listening for the select psuedo-events:<ul>
+ *
+ * <li>resizestart (on mousedown)
+ * <li>resize (on mousemove)
+ * <li>resizeend (on mouseup)
+ *
+ * </ul>For example, to render the parent panel while resizing, thus
+ * re-rendering all sibling marks:
+ *
+ * <pre>    .event("mousedown", pv.Behavior.resize("left"))
+ *     .event("resize", function() this.parent)</pre>
+ *
+ * This behavior may be enhanced in the future to allow more flexible
+ * configuration of the selection behavior.
+ *
+ * @extends pv.Behavior
+ * @see pv.Behavior.select
+ * @see pv.Behavior.drag
  */
-pv.listen(window, "load", function() {
-   /*
-    * Note: in Firefox any variables declared here are visible to the eval'd
-    * script below. Even worse, any global variables declared by the script
-    * could overwrite local variables here (such as the index, `i`)!  To protect
-    * against this, all variables are explicitly scoped on a pv.$ object.
-    */
-    pv.$ = {i:0, x:document.getElementsByTagName("script")};
-    for (; pv.$.i < pv.$.x.length; pv.$.i++) {
-      pv.$.s = pv.$.x[pv.$.i];
-      if (pv.$.s.type == "text/javascript+protovis") {
-        try {
-          window.eval(pv.parse(pv.$.s.textContent || pv.$.s.innerHTML));
-        } catch (e) {
-          pv.error(e);
-        }
-      }
+pv.Behavior.resize = function(side) {
+  var scene, // scene context
+      index, // scene context
+      r, // region being selected
+      m1; // initial mouse position
+
+  /** @private */
+  function mousedown(d) {
+    index = this.index;
+    scene = this.scene;
+    m1 = this.mouse();
+    r = d;
+    switch (side) {
+      case "left": m1.x = r.x + r.dx; break;
+      case "right": m1.x = r.x; break;
+      case "top": m1.y = r.y + r.dy; break;
+      case "bottom": m1.y = r.y; break;
     }
-    delete pv.$;
-  });
+    pv.Mark.dispatch("resizestart", scene, index);
+  }
+
+  /** @private */
+  function mousemove() {
+    if (!scene) return;
+    scene.mark.context(scene, index, function() {
+        var m2 = this.mouse();
+        r.x = Math.max(0, Math.min(m1.x, m2.x));
+        r.y = Math.max(0, Math.min(m1.y, m2.y));
+        r.dx = Math.min(this.parent.width(), Math.max(m2.x, m1.x)) - r.x;
+        r.dy = Math.min(this.parent.height(), Math.max(m2.y, m1.y)) - r.y;
+        this.render();
+      });
+    pv.Mark.dispatch("resize", scene, index);
+  }
+
+  /** @private */
+  function mouseup() {
+    if (!scene) return;
+    pv.Mark.dispatch("resizeend", scene, index);
+    scene = null;
+  }
+
+  pv.listen(window, "mousemove", mousemove);
+  pv.listen(window, "mouseup", mouseup);
+  return mousedown;
+};
+/**
+ * Returns a new pan behavior to be registered on mousedown events.
+ *
+ * @class Implements interactive panning starting with mousedown events.
+ * Register this behavior on panels to allow panning. This behavior can be used
+ * in tandem with {@link pv.Behavior.zoom} to allow both panning and zooming:
+ *
+ * <pre>    .event("mousedown", pv.Behavior.pan())
+ *     .event("mousewheel", pv.Behavior.zoom())</pre>
+ *
+ * The pan behavior currently supports only mouse events; support for keyboard
+ * shortcuts to improve accessibility may be added in the future.
+ *
+ * <p>After the initial mousedown event is triggered, this behavior listens for
+ * mousemove and mouseup events on the window. This allows panning to continue
+ * even if the mouse temporarily leaves the panel that is being panned, or even
+ * the root panel.
+ *
+ * <p>The implementation of this behavior relies on the panel's
+ * <tt>transform</tt> property, which specifies a matrix transformation that is
+ * applied to child marks. Note that the transform property only affects the
+ * panel's children, but not the panel itself; therefore the panel's fill and
+ * stroke will not change when the contents are panned.
+ *
+ * <p>Panels have transparent fill styles by default; this means that panels may
+ * not receive the initial mousedown event to start panning. To fix this
+ * problem, either given the panel a visible fill style (such as "white"), or
+ * set the <tt>events</tt> property to "all" such that the panel receives events
+ * despite its transparent fill.
+ *
+ * <p>The pan behavior has optional support for bounding. If enabled, the user
+ * will not be able to pan the panel outside of the initial bounds. This feature
+ * is designed to work in conjunction with the zoom behavior; otherwise,
+ * bounding the panel effectively disables all panning.
+ *
+ * @extends pv.Behavior
+ * @see pv.Behavior.zoom
+ * @see pv.Panel#transform
+ */
+pv.Behavior.pan = function() {
+  var scene, // scene context
+      index, // scene context
+      m1, // transformation matrix at the start of panning
+      v1, // mouse location at the start of panning
+      k, // inverse scale
+      bound; // whether to bound to the panel
+
+  /** @private */
+  function mousedown() {
+    index = this.index;
+    scene = this.scene;
+    v1 = pv.vector(pv.event.pageX, pv.event.pageY);
+    m1 = this.transform();
+    k = 1 / (m1.k * this.scale);
+    if (bound) {
+      bound = {
+        x: (1 - m1.k) * this.width(),
+        y: (1 - m1.k) * this.height()
+      };
+    }
+  }
+
+  /** @private */
+  function mousemove() {
+    if (!scene) return;
+    scene.mark.context(scene, index, function() {
+        var x = (pv.event.pageX - v1.x) * k,
+            y = (pv.event.pageY - v1.y) * k,
+            m = m1.translate(x, y);
+        if (bound) {
+          m.x = Math.max(bound.x, Math.min(0, m.x));
+          m.y = Math.max(bound.y, Math.min(0, m.y));
+        }
+        this.transform(m).render();
+      });
+    pv.Mark.dispatch("pan", scene, index);
+  }
+
+  /** @private */
+  function mouseup() {
+    scene = null;
+  }
+
+  /**
+   * Sets or gets the bound parameter. If bounding is enabled, the user will not
+   * be able to pan outside the initial panel bounds; this typically applies
+   * only when the pan behavior is used in tandem with the zoom behavior.
+   * Bounding is not enabled by default.
+   *
+   * <p>Note: enabling bounding after panning has already occurred will not
+   * immediately reset the transform. Bounding should be enabled before the
+   * panning behavior is applied.
+   *
+   * @function
+   * @returns {pv.Behavior.pan} this, or the current bound parameter.
+   * @name pv.Behavior.pan.prototype.bound
+   * @param {boolean} [x] the new bound parameter.
+   */
+  mousedown.bound = function(x) {
+    if (arguments.length) {
+      bound = Boolean(x);
+      return this;
+    }
+    return Boolean(bound);
+  };
+
+  pv.listen(window, "mousemove", mousemove);
+  pv.listen(window, "mouseup", mouseup);
+  return mousedown;
+};
+/**
+ * Returns a new zoom behavior to be registered on mousewheel events.
+ *
+ * @class Implements interactive zooming using mousewheel events. Register this
+ * behavior on panels to allow zooming. This behavior can be used in tandem with
+ * {@link pv.Behavior.pan} to allow both panning and zooming:
+ *
+ * <pre>    .event("mousedown", pv.Behavior.pan())
+ *     .event("mousewheel", pv.Behavior.zoom())</pre>
+ *
+ * The zoom behavior currently supports only mousewheel events; support for
+ * keyboard shortcuts and gesture events to improve accessibility may be added
+ * in the future.
+ *
+ * <p>The implementation of this behavior relies on the panel's
+ * <tt>transform</tt> property, which specifies a matrix transformation that is
+ * applied to child marks. Note that the transform property only affects the
+ * panel's children, but not the panel itself; therefore the panel's fill and
+ * stroke will not change when the contents are zoomed. The built-in support for
+ * transforms only supports uniform scaling and translates, which is sufficient
+ * for panning and zooming.  Note that this is not a strict geometric
+ * transformation, as the <tt>lineWidth</tt> property is scale-aware: strokes
+ * are drawn at constant size independent of scale.
+ *
+ * <p>Panels have transparent fill styles by default; this means that panels may
+ * not receive mousewheel events to zoom. To fix this problem, either given the
+ * panel a visible fill style (such as "white"), or set the <tt>events</tt>
+ * property to "all" such that the panel receives events despite its transparent
+ * fill.
+ *
+ * <p>The zoom behavior has optional support for bounding. If enabled, the user
+ * will not be able to zoom out farther than the initial bounds. This feature is
+ * designed to work in conjunction with the pan behavior.
+ *
+ * @extends pv.Behavior
+ * @see pv.Panel#transform
+ * @see pv.Mark#scale
+ * @param {number} speed
+ */
+pv.Behavior.zoom = function(speed) {
+  var bound; // whether to bound to the panel
+
+  if (!arguments.length) speed = 1 / 48;
+
+  /** @private */
+  function mousewheel() {
+    var v = this.mouse(),
+        k = pv.event.wheel * speed,
+        m = this.transform().translate(v.x, v.y)
+            .scale((k < 0) ? (1e3 / (1e3 - k)) : ((1e3 + k) / 1e3))
+            .translate(-v.x, -v.y);
+    if (bound) {
+      m.k = Math.max(1, m.k);
+      m.x = Math.max((1 - m.k) * this.width(), Math.min(0, m.x));
+      m.y = Math.max((1 - m.k) * this.height(), Math.min(0, m.y));
+    }
+    this.transform(m).render();
+    pv.Mark.dispatch("zoom", this.scene, this.index);
+  }
+
+  /**
+   * Sets or gets the bound parameter. If bounding is enabled, the user will not
+   * be able to zoom out farther than the initial panel bounds. Bounding is not
+   * enabled by default. If this behavior is used in tandem with the pan
+   * behavior, both should use the same bound parameter.
+   *
+   * <p>Note: enabling bounding after zooming has already occurred will not
+   * immediately reset the transform. Bounding should be enabled before the zoom
+   * behavior is applied.
+   *
+   * @function
+   * @returns {pv.Behavior.zoom} this, or the current bound parameter.
+   * @name pv.Behavior.zoom.prototype.bound
+   * @param {boolean} [x] the new bound parameter.
+   */
+  mousewheel.bound = function(x) {
+    if (arguments.length) {
+      bound = Boolean(x);
+      return this;
+    }
+    return Boolean(bound);
+  };
+
+  return mousewheel;
+};
+/**
+ * @ignore
+ * @namespace
+ */
+pv.Geo = function() {};
+/**
+ * Abstract; not implemented. There is no explicit constructor; this class
+ * merely serves to document the representation used by {@link pv.Geo.scale}.
+ *
+ * @class Represents a pair of geographic coordinates.
+ *
+ * @name pv.Geo.LatLng
+ * @see pv.Geo.scale
+ */
+
+/**
+ * The <i>latitude</i> coordinate in degrees; positive is North.
+ *
+ * @type number
+ * @name pv.Geo.LatLng.prototype.lat
+ */
+
+/**
+ * The <i>longitude</i> coordinate in degrees; positive is East.
+ *
+ * @type number
+ * @name pv.Geo.LatLng.prototype.lng
+ */
+/**
+ * Abstract; not implemented. There is no explicit constructor; this class
+ * merely serves to document the representation used by {@link pv.Geo.scale}.
+ *
+ * @class Represents a geographic projection. This class provides the core
+ * implementation for {@link pv.Geo.scale}s, mapping between geographic
+ * coordinates (latitude and longitude) and normalized screen space in the range
+ * [-1,1]. The remaining mapping between normalized screen space and actual
+ * pixels is performed by <tt>pv.Geo.scale</tt>.
+ *
+ * <p>Many geographic projections have a point around which the projection is
+ * centered. Rather than have each implementation add support for a
+ * user-specified center point, the <tt>pv.Geo.scale</tt> translates the
+ * geographic coordinates relative to the center point for both the forward and
+ * inverse projection.
+ *
+ * <p>In general, this class should not be used directly, unless the desire is
+ * to implement a new geographic projection. Instead, use <tt>pv.Geo.scale</tt>.
+ * Implementations are not required to implement inverse projections, but are
+ * needed for some forms of interactivity. Also note that some inverse
+ * projections are ambiguous, such as the connecting points in Dymaxian maps.
+ *
+ * @name pv.Geo.Projection
+ * @see pv.Geo.scale
+ */
+
+/**
+ * The <i>forward</i> projection.
+ *
+ * @function
+ * @name pv.Geo.Projection.prototype.project
+ * @param {pv.Geo.LatLng} latlng the latitude and longitude to project.
+ * @returns {pv.Vector} the xy-coordinates of the given point.
+ */
+
+/**
+ * The <i>inverse</i> projection; optional.
+ *
+ * @function
+ * @name pv.Geo.Projection.prototype.invert
+ * @param {pv.Vector} xy the x- and y-coordinates to invert.
+ * @returns {pv.Geo.LatLng} the latitude and longitude of the given point.
+ */
+/**
+ * The built-in projections.
+ *
+ * @see pv.Geo.Projection
+ * @namespace
+ */
+pv.Geo.projections = {
+
+  /** @see http://en.wikipedia.org/wiki/Mercator_projection */
+  mercator: {
+    project: function(latlng) {
+      return {
+          x: latlng.lng / 180,
+          y: latlng.lat > 85 ? 1 : latlng.lat < -85 ? -1
+              : Math.log(Math.tan(Math.PI / 4
+              + pv.radians(latlng.lat) / 2)) / Math.PI
+        };
+    },
+    invert: function(xy) {
+      return {
+          lng: xy.x * 180,
+          lat: pv.degrees(2 * Math.atan(Math.exp(xy.y * Math.PI)) - Math.PI / 2)
+        };
+    }
+  },
+
+  /** @see http://en.wikipedia.org/wiki/Gall-Peters_projection */
+  "gall-peters": {
+    project: function(latlng) {
+      return {
+          x: latlng.lng / 180,
+          y: Math.sin(pv.radians(latlng.lat))
+        };
+    },
+    invert: function(xy) {
+      return {
+          lng: xy.x * 180,
+          lat: pv.degrees(Math.asin(xy.y))
+        };
+    }
+  },
+
+  /** @see http://en.wikipedia.org/wiki/Sinusoidal_projection */
+  sinusoidal: {
+    project: function(latlng) {
+      return {
+          x: pv.radians(latlng.lng) * Math.cos(pv.radians(latlng.lat)) / Math.PI,
+          y: latlng.lat / 90
+        };
+    },
+    invert: function(xy) {
+      return {
+          lng: pv.degrees((xy.x * Math.PI) / Math.cos(xy.y * Math.PI / 2)),
+          lat: xy.y * 90
+        };
+    }
+  },
+
+  /** @see http://en.wikipedia.org/wiki/Aitoff_projection */
+  aitoff: {
+    project: function(latlng) {
+      var l = pv.radians(latlng.lng),
+          f = pv.radians(latlng.lat),
+          a = Math.acos(Math.cos(f) * Math.cos(l / 2));
+      return {
+          x: 2 * (a ? (Math.cos(f) * Math.sin(l / 2) * a / Math.sin(a)) : 0) / Math.PI,
+          y: 2 * (a ? (Math.sin(f) * a / Math.sin(a)) : 0) / Math.PI
+        };
+    },
+    invert: function(xy) {
+      var x = xy.x * Math.PI / 2,
+          y = xy.y * Math.PI / 2;
+      return {
+          lng: pv.degrees(x / Math.cos(y)),
+          lat: pv.degrees(y)
+        };
+    }
+  },
+
+  /** @see http://en.wikipedia.org/wiki/Hammer_projection */
+  hammer: {
+    project: function(latlng) {
+      var l = pv.radians(latlng.lng),
+          f = pv.radians(latlng.lat),
+          c = Math.sqrt(1 + Math.cos(f) * Math.cos(l / 2));
+      return {
+          x: 2 * Math.SQRT2 * Math.cos(f) * Math.sin(l / 2) / c / 3,
+          y: Math.SQRT2 * Math.sin(f) / c / 1.5
+        };
+    },
+    invert: function(xy) {
+      var x = xy.x * 3,
+          y = xy.y * 1.5,
+          z = Math.sqrt(1 - x * x / 16 - y * y / 4);
+      return {
+          lng: pv.degrees(2 * Math.atan2(z * x, 2 * (2 * z * z - 1))),
+          lat: pv.degrees(Math.asin(z * y))
+        };
+    }
+  },
+
+  /** The identity or "none" projection. */
+  identity: {
+    project: function(latlng) {
+      return {
+          x: latlng.lng / 180,
+          y: latlng.lat / 90
+        };
+    },
+    invert: function(xy) {
+      return {
+          lng: xy.x * 180,
+          lat: xy.y * 90
+        };
+    }
+  }
+};
+/**
+ * Returns a geographic scale. The arguments to this constructor are optional,
+ * and equivalent to calling {@link #projection}.
+ *
+ * @class Represents a geographic scale; a mapping between latitude-longitude
+ * coordinates and screen pixel coordinates. By default, the domain is inferred
+ * from the geographic coordinates, so that the domain fills the output range.
+ *
+ * <p>Note that geographic scales are two-dimensional transformations, rather
+ * than the one-dimensional bidrectional mapping typical of other scales.
+ * Rather than mapping (for example) between a numeric domain and a numeric
+ * range, geographic scales map between two coordinate objects: {@link
+ * pv.Geo.LatLng} and {@link pv.Vector}.
+ *
+ * @param {pv.Geo.Projection} [p] optional projection.
+ * @see pv.Geo.scale#ticks
+ */
+pv.Geo.scale = function(p) {
+  var rmin = {x: 0, y: 0}, // default range minimum
+      rmax = {x: 1, y: 1}, // default range maximum
+      d = [], // default domain
+      j = pv.Geo.projections.identity, // domain <-> normalized range
+      x = pv.Scale.linear(-1, 1).range(0, 1), // normalized <-> range
+      y = pv.Scale.linear(-1, 1).range(1, 0), // normalized <-> range
+      c = {lng: 0, lat: 0}, // Center Point
+      lastLatLng, // cached latlng
+      lastPoint; // cached point
+
+  /** @private */
+  function scale(latlng) {
+    if (!lastLatLng
+        || (latlng.lng != lastLatLng.lng)
+        || (latlng.lat != lastLatLng.lat)) {
+      lastLatLng = latlng;
+      var p = project(latlng);
+      lastPoint = {x: x(p.x), y: y(p.y)};
+    }
+    return lastPoint;
+  }
+
+  /** @private */
+  function project(latlng) {
+    var offset = {lng: latlng.lng - c.lng, lat: latlng.lat};
+    return j.project(offset);
+  }
+
+  /** @private */
+  function invert(xy) {
+    var latlng = j.invert(xy);
+    latlng.lng += c.lng;
+    return latlng;
+  }
+
+  /** Returns the projected x-coordinate. */
+  scale.x = function(latlng) {
+    return scale(latlng).x;
+  };
+
+  /** Returns the projected y-coordinate. */
+  scale.y = function(latlng) {
+    return scale(latlng).y;
+  };
+
+  /**
+   * Abstract; this is a local namespace on a given geographic scale.
+   *
+   * @namespace Tick functions for geographic scales. Because geographic scales
+   * represent two-dimensional transformations (as opposed to one-dimensional
+   * transformations typical of other scales), the tick values are similarly
+   * represented as two-dimensional coordinates in the input domain, i.e.,
+   * {@link pv.Geo.LatLng} objects.
+   *
+   * <p>Also, note that non-rectilinear projections, such as sinsuoidal and
+   * aitoff, may not produce straight lines for constant longitude or constant
+   * latitude. Therefore the returned array of ticks is a two-dimensional array,
+   * sampling various latitudes as constant longitude, and vice versa.
+   *
+   * <p>The tick lines can therefore be approximated as polylines, either with
+   * "linear" or "cardinal" interpolation. This is not as accurate as drawing
+   * the true curve through the projection space, but is usually sufficient.
+   *
+   * @name pv.Geo.scale.prototype.ticks
+   * @see pv.Geo.scale
+   * @see pv.Geo.LatLng
+   * @see pv.Line#interpolate
+   */
+  scale.ticks = {
+
+    /**
+     * Returns longitude ticks.
+     *
+     * @function
+     * @param {number} [m] the desired number of ticks.
+     * @returns {array} a nested array of <tt>pv.Geo.LatLng</tt> ticks.
+     * @name pv.Geo.scale.prototype.ticks.prototype.lng
+     */
+    lng: function(m) {
+      var lat, lng;
+      if (d.length > 1) {
+        var s = pv.Scale.linear();
+        if (m == undefined) m = 10;
+        lat = s.domain(d, function(d) { return d.lat; }).ticks(m);
+        lng = s.domain(d, function(d) { return d.lng; }).ticks(m);
+      } else {
+        lat = pv.range(-80, 81, 10);
+        lng = pv.range(-180, 181, 10);
+      }
+      return lng.map(function(lng) {
+        return lat.map(function(lat) {
+          return {lat: lat, lng: lng};
+        });
+      });
+    },
+
+    /**
+     * Returns latitude ticks.
+     *
+     * @function
+     * @param {number} [m] the desired number of ticks.
+     * @returns {array} a nested array of <tt>pv.Geo.LatLng</tt> ticks.
+     * @name pv.Geo.scale.prototype.ticks.prototype.lat
+     */
+    lat: function(m) {
+      return pv.transpose(scale.ticks.lng(m));
+    }
+  };
+
+  /**
+   * Inverts the specified value in the output range, returning the
+   * corresponding value in the input domain. This is frequently used to convert
+   * the mouse location (see {@link pv.Mark#mouse}) to a value in the input
+   * domain. Inversion is only supported for numeric ranges, and not colors.
+   *
+   * <p>Note that this method does not do any rounding or bounds checking. If
+   * the input domain is discrete (e.g., an array index), the returned value
+   * should be rounded. If the specified <tt>y</tt> value is outside the range,
+   * the returned value may be equivalently outside the input domain.
+   *
+   * @function
+   * @name pv.Geo.scale.prototype.invert
+   * @param {number} y a value in the output range (a pixel location).
+   * @returns {number} a value in the input domain.
+   */
+  scale.invert = function(p) {
+    return invert({x: x.invert(p.x), y: y.invert(p.y)});
+  };
+
+  /**
+   * Sets or gets the input domain. Note that unlike quantitative scales, the
+   * domain cannot be reduced to a simple rectangle (i.e., minimum and maximum
+   * values for latitude and longitude). Instead, the domain values must be
+   * projected to normalized space, effectively finding the domain in normalized
+   * space rather than in terms of latitude and longitude. Thus, changing the
+   * projection requires recomputing the normalized domain.
+   *
+   * <p>This method can be invoked several ways:
+   *
+   * <p>1. <tt>domain(values...)</tt>
+   *
+   * <p>Specifying the domain as a series of {@link pv.Geo.LatLng}s is the most
+   * explicit and recommended approach. However, if the domain values are
+   * derived from data, you may find the second method more appropriate.
+   *
+   * <p>2. <tt>domain(array, f)</tt>
+   *
+   * <p>Rather than enumerating the domain explicitly, you can specify a single
+   * argument of an array. In addition, you can specify an optional accessor
+   * function to extract the domain values (as {@link pv.Geo.LatLng}s) from the
+   * array. If the specified array has fewer than two elements, this scale will
+   * default to the full normalized domain.
+   *
+   * <p>2. <tt>domain()</tt>
+   *
+   * <p>Invoking the <tt>domain</tt> method with no arguments returns the
+   * current domain as an array.
+   *
+   * @function
+   * @name pv.Geo.scale.prototype.domain
+   * @param {...} domain... domain values.
+   * @returns {pv.Geo.scale} <tt>this</tt>, or the current domain.
+   */
+  scale.domain = function(array, f) {
+    if (arguments.length) {
+      d = (array instanceof Array)
+          ? ((arguments.length > 1) ? pv.map(array, f) : array)
+          : Array.prototype.slice.call(arguments);
+      if (d.length > 1) {
+        var lngs = d.map(function(c) { return c.lng; });
+        var lats = d.map(function(c) { return c.lat; });
+        c = {
+          lng: (pv.max(lngs) + pv.min(lngs)) / 2,
+          lat: (pv.max(lats) + pv.min(lats)) / 2
+        };
+        var n = d.map(project); // normalized domain
+        x.domain(n, function(p) { return p.x; });
+        y.domain(n, function(p) { return p.y; });
+      } else {
+        c = {lng: 0, lat: 0};
+        x.domain(-1, 1);
+        y.domain(-1, 1);
+      }
+      lastLatLng = null; // invalidate the cache
+      return this;
+    }
+    return d;
+  };
+
+  /**
+   * Sets or gets the output range. This method can be invoked several ways:
+   *
+   * <p>1. <tt>range(min, max)</tt>
+   *
+   * <p>If two objects are specified, the arguments should be {@link pv.Vector}s
+   * which specify the minimum and maximum values of the x- and y-coordinates
+   * explicitly.
+   *
+   * <p>2. <tt>range(width, height)</tt>
+   *
+   * <p>If two numbers are specified, the arguments specify the maximum values
+   * of the x- and y-coordinates explicitly; the minimum values are implicitly
+   * zero.
+   *
+   * <p>3. <tt>range()</tt>
+   *
+   * <p>Invoking the <tt>range</tt> method with no arguments returns the current
+   * range as an array of two {@link pv.Vector}s: the minimum (top-left) and
+   * maximum (bottom-right) values.
+   *
+   * @function
+   * @name pv.Geo.scale.prototype.range
+   * @param {...} range... range values.
+   * @returns {pv.Geo.scale} <tt>this</tt>, or the current range.
+   */
+  scale.range = function(min, max) {
+    if (arguments.length) {
+      if (typeof min == "object") {
+        rmin = {x: Number(min.x), y: Number(min.y)};
+        rmax = {x: Number(max.x), y: Number(max.y)};
+      } else {
+        rmin = {x: 0, y: 0};
+        rmax = {x: Number(min), y: Number(max)};
+      }
+      x.range(rmin.x, rmax.x);
+      y.range(rmax.y, rmin.y); // XXX flipped?
+      lastLatLng = null; // invalidate the cache
+      return this;
+    }
+    return [rmin, rmax];
+  };
+
+  /**
+   * Sets or gets the projection. This method can be invoked several ways:
+   *
+   * <p>1. <tt>projection(string)</tt>
+   *
+   * <p>Specifying a string sets the projection to the given named projection in
+   * {@link pv.Geo.projections}. If no such projection is found, the identity
+   * projection is used.
+   *
+   * <p>2. <tt>projection(object)</tt>
+   *
+   * <p>Specifying an object sets the projection to the given custom projection,
+   * which must implement the <i>forward</i> and <i>inverse</i> methods per the
+   * {@link pv.Geo.Projection} interface.
+   *
+   * <p>3. <tt>projection()</tt>
+   *
+   * <p>Invoking the <tt>projection</tt> method with no arguments returns the
+   * current object that defined the projection.
+   *
+   * @function
+   * @name pv.Scale.geo.prototype.projection
+   * @param {...} range... range values.
+   * @returns {pv.Scale.geo} <tt>this</tt>, or the current range.
+   */
+  scale.projection = function(p) {
+    if (arguments.length) {
+      j = typeof p == "string"
+          ? pv.Geo.projections[p] || pv.Geo.projections.identity
+          : p;
+      return this.domain(d); // recompute normalized domain
+    }
+    return p;
+  };
+
+  /**
+   * Returns a view of this scale by the specified accessor function <tt>f</tt>.
+   * Given a scale <tt>g</tt>, <tt>g.by(function(d) d.foo)</tt> is equivalent to
+   * <tt>function(d) g(d.foo)</tt>. This method should be used judiciously; it
+   * is typically more clear to invoke the scale directly, passing in the value
+   * to be scaled.
+   *
+   * @function
+   * @name pv.Geo.scale.prototype.by
+   * @param {function} f an accessor function.
+   * @returns {pv.Geo.scale} a view of this scale by the specified accessor
+   * function.
+   */
+  scale.by = function(f) {
+    function by() { return scale(f.apply(this, arguments)); }
+    for (var method in scale) by[method] = scale[method];
+    return by;
+  };
+
+  if (arguments.length) scale.projection(p);
+  return scale;
+};

@@ -4,11 +4,16 @@
  */
 package pt.webdetails.cgg.scripts;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.mozilla.javascript.*;
 import pt.webdetails.cgg.datasources.DatasourceFactory;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -16,9 +21,16 @@ import org.mozilla.javascript.ScriptableObject;
  */
 public abstract class BaseScript implements Script {
 
-    Scriptable scope;
+    protected static final Log logger = LogFactory.getLog(BaseScript.class);
+    protected String source, rootPath;
+    protected Scriptable scope;
+
     BaseScript() {
-    
+    }
+
+    BaseScript(String source) {
+        this.source = source.replaceAll("\\\\", "/").replaceAll("/+", "/");
+        this.rootPath = this.source.replaceAll("(.*/).*", "$1");
     }
 
     public void initializeObjects() {
@@ -29,6 +41,32 @@ public abstract class BaseScript implements Script {
 
     public void setScope(Scriptable scope) {
         this.scope = scope;
+        if (scope instanceof BaseScope) {
+            ((BaseScope) scope).setBasePath(this.rootPath);
+        }
         initializeObjects();
+    }
+
+    protected void executeScript(Map<String, String> params) {
+        Context cx = Context.getCurrentContext();
+        // env.js has methods that pass the 64k Java limit, so we can't compile
+        // to bytecode. Interpreter mode to the rescue!
+        cx.setOptimizationLevel(-1);
+        cx.setLanguageVersion(Context.VERSION_1_5);
+        OutputStream bytes = new ByteArrayOutputStream();
+
+        Object wrappedParams;
+        if (params != null) {
+            wrappedParams = Context.javaToJS(params, scope);
+        } else {
+            wrappedParams = Context.javaToJS(new HashMap<String, String>(), scope);
+        }
+        ScriptableObject.defineProperty(scope, "params", wrappedParams, 0);
+
+        try {
+            cx.evaluateReader(scope, new FileReader(source), "<file>", 1, null);
+        } catch (IOException ex) {
+            logger.error("Failed to read " + source + ": " + ex.toString());
+        }
     }
 }

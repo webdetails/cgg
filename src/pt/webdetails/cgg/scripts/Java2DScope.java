@@ -16,35 +16,10 @@ import org.mozilla.javascript.ScriptableObject;
  *
  * @author pdpi
  */
-class Java2DScope extends ImporterTopLevel {
+class Java2DScope extends BaseScope {
 
-    private static final Log logger = LogFactory.getLog(Java2DScope.class);
-    
-    private boolean sealedStdLib = false;
-    boolean initialized;
-
-    public Java2DScope(){
-    super();
-    }
-    public void init(Context cx) {
-        // Define some global functions particular to the shell. Note
-        // that these functions are not part of ECMA.
-        initStandardObjects(cx, sealedStdLib);
-        String[] names = {
-            "print"};
-        defineFunctionProperties(names, Java2DScope.class,
-                ScriptableObject.DONTENUM);
-
-        initialized = true;
-    }
-
-    public static Object print(Context cx, Scriptable thisObj,
-            Object[] args, Function funObj) {
-
-        for (Object arg : args) {
-            String s = Context.toString(arg);
-            logger.info(s);
-        }
-        return Context.getUndefinedValue();
+    public Java2DScope() {
+        super();
+        sealedStdLib = false;
     }
 }

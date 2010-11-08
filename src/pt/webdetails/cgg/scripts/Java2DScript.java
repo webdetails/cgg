@@ -37,11 +37,9 @@ class Java2DScript extends BaseScript {
     }
 
     Java2DScript(String source, long width, long height) {
-        this();
+        super(source);
         this.width = width;
         this.height = height;
-        // sanitize slashes
-        this.source = source.replaceAll("\\\\", "/").replaceAll("/+", "/");
     }
 
     @Override
@@ -52,36 +50,16 @@ class Java2DScript extends BaseScript {
     @Override
     public Chart execute(Map<String, String> params) {
         Context cx = Context.getCurrentContext();
-        cx = cx != null ? cx : ContextFactory.getGlobal().enterContext();
         try {
-            // env.js has methods that pass the 64k Java limit, so we can't compile
-            // to bytecode. Interpreter mode to the rescue!
-            cx.setOptimizationLevel(-1);
-            cx.setLanguageVersion(Context.VERSION_1_5);
-            OutputStream bytes = new ByteArrayOutputStream();
-            Main.setErr(new PrintStream(bytes));
-
             getGraphics();
-            Object wrappedParams;
-            if (params != null) {
-                wrappedParams = Context.javaToJS(params, scope);
-            } else {
-                wrappedParams = Context.javaToJS(new HashMap<String, String>(), scope);
-            }
-            ScriptableObject.defineProperty(scope, "params", wrappedParams, 0);
-
-            try {
-                cx.evaluateReader(scope, new FileReader(source), "<file>", 1, null);
-            } catch (IOException ex) {
-                logger.error("Failed to read " + source + ": " + ex.toString());
-            }
-            bytes.flush();
-            logger.error(bytes.toString());
+            executeScript(params);
             return new Java2DChart(imageBuffer);
         } catch (Exception e) {
             logger.error(e);
         } finally {
-            Context.exit();
+            if (Context.getCurrentContext() != null) {
+                Context.exit();
+            }
         }
         return null;
     }
