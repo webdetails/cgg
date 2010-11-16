@@ -22,7 +22,7 @@ class BaseScope extends ImporterTopLevel {
     protected static final Log logger = LogFactory.getLog(BaseScope.class);
     protected boolean sealedStdLib = false;
     boolean initialized;
-    protected String basePath;
+    protected String basePath, systemPath;
 
     public BaseScope() {
         super();
@@ -33,7 +33,7 @@ class BaseScope extends ImporterTopLevel {
         // that these functions are not part of ECMA.
         initStandardObjects(cx, sealedStdLib);
         String[] names = {
-            "print", "load"};
+            "print", "load", "lib"};
         defineFunctionProperties(names, BaseScope.class,
                 ScriptableObject.DONTENUM);
 
@@ -64,11 +64,29 @@ class BaseScope extends ImporterTopLevel {
         return Context.toBoolean(true);
     }
 
+        public static Object lib(Context cx, Scriptable thisObj,
+            Object[] args, Function funObj) {
+
+        String file = args[0].toString();
+        try {
+            BaseScope scope = (BaseScope) thisObj;
+            cx.evaluateReader(scope, new FileReader(scope.systemPath + "/" + file), "<file>", 1, null);
+        } catch (Exception e) {
+            logger.error(e);
+            return Context.toBoolean(false);
+        }
+        return Context.toBoolean(true);
+    }
+
     public String getBasePath() {
         return basePath;
     }
 
     public void setBasePath(String basePath) {
         this.basePath = basePath;
+    }
+
+    public void setSystemPath(String systemPath) {
+        this.systemPath = systemPath;
     }
 }

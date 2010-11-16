@@ -4,9 +4,10 @@
  */
 package pt.webdetails.cgg.scripts;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -18,7 +19,6 @@ import org.pentaho.platform.api.engine.ISolutionFile;
 import org.pentaho.platform.api.repository.ISolutionRepository;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import pt.webdetails.cgg.CggContentGenerator;
 
 /**
  *
@@ -29,7 +29,8 @@ public class ScriptFactory {
     private static final Log logger = LogFactory.getLog(ScriptFactory.class);
     private static ScriptFactory instance;
     private Map<ScriptType, Scriptable> scopes;
-
+    private String systemPath;
+    
     public enum ScriptType {
 
         SVG, J2D
@@ -43,7 +44,7 @@ public class ScriptFactory {
     }
 
     private ScriptFactory() {
-        scopes = new HashMap<ScriptType, Scriptable>();
+        scopes = new EnumMap<ScriptType, Scriptable>(ScriptType.class);
     }
 
     public Script createScript(String path, String scriptType, long width, long height) {
@@ -53,17 +54,22 @@ public class ScriptFactory {
         } catch (IllegalArgumentException ex) {
             logger.error("No such script type: " + scriptType);
             return null;
+        } catch (FileNotFoundException ex) {
+            logger.error(ex.getMessage());
+            return null;
         }
     }
 
-    public Script createScript(String path, ScriptType scriptType, long width, long height) {
+    public Script createScript(String path, ScriptType scriptType, long width, long height) throws FileNotFoundException {
         String solutionRoot = PentahoSystem.getApplicationContext().getSolutionRootPath();
         // Get necessary Pentaho environment: session and repository
         IPentahoSession session = PentahoSessionHolder.getSession();
         final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
         // Get the paths ot the necessary files: dependencies and the main script.
         ISolutionFile solutionFile = solutionRepository.getSolutionFile(path, 0);
-
+        if (solutionFile == null) {
+            throw new FileNotFoundException("Couldn't find " + path);
+        }
         Script script;
         switch (scriptType) {
             case SVG:
@@ -101,13 +107,7 @@ public class ScriptFactory {
         Context cx = ContextFactory.getGlobal().enterContext();
         switch (type) {
             case SVG:
-                cx.setOptimizationLevel(-1);
-                cx.setLanguageVersion(Context.VERSION_1_5);
-                dependencies = new String[2];
-                ISolutionFile env = solutionRepository.getSolutionFile("/system/" + CggContentGenerator.PLUGIN_NAME + "/lib/env.js", 0),
-                 protovis = solutionRepository.getSolutionFile("/system/" + CggContentGenerator.PLUGIN_NAME + "/lib/protovis.js", 0);
-                dependencies[0] = (solutionRoot + "/" + env.getSolutionPath() + "/" + env.getFileName()).replaceAll("\\\\", "/").replaceAll("/+", "/");
-                dependencies[1] = (solutionRoot + "/" + protovis.getSolutionPath() + "/" + protovis.getFileName()).replaceAll("\\\\", "/").replaceAll("/+", "/");
+                dependencies = new String[0];
                 break;
             case J2D:
                 dependencies = new String[0];
@@ -117,6 +117,7 @@ public class ScriptFactory {
                 break;
         }
         BaseScope scope = new BaseScope();
+        scope.setSystemPath(systemPath);
         scope.init(cx);
         for (String file : dependencies) {
             try {
@@ -130,6 +131,10 @@ public class ScriptFactory {
     }
 
     public void clearCachedScopes() {
-        scopes = new HashMap<ScriptType, Scriptable>();
+        scopes = new EnumMap<ScriptType, Scriptable>(ScriptType.class);
+    }
+
+    public void setSystemPath(String systemPath) {
+        this.systemPath = systemPath.replaceAll("\\\\","/").replaceAll("/+", "/");
     }
 }

@@ -4,18 +4,35 @@
  */
 package pt.webdetails.cgg;
 
+import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import pt.webdetails.cgg.charts.Chart;
 import java.io.OutputStream;
+import java.lang.String;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.pentaho.platform.api.engine.IFileFilter;
 import org.pentaho.platform.api.engine.IParameterProvider;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.ISolutionFile;
+import org.pentaho.platform.api.repository.ISolutionRepository;
+import org.pentaho.platform.engine.core.solution.SimpleParameterProvider;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.services.solution.BaseContentGenerator;
-import pt.webdetails.cgg.datasources.CdaDatasource;
+import org.w3c.dom.Document;
 import pt.webdetails.cgg.scripts.ScriptFactory;
 import pt.webdetails.cgg.scripts.Script;
 
@@ -25,16 +42,18 @@ import pt.webdetails.cgg.scripts.Script;
  */
 public class CggContentGenerator extends BaseContentGenerator {
 
+    public static final String CDW_EXTENSION = "cdw";
+    public static final String PLUGIN_NAME = "cgg";
+    public static final String PLUGIN_PATH = "system/" + CggContentGenerator.PLUGIN_NAME + "/";
     private static final Log logger = LogFactory.getLog(CggContentGenerator.class);
-
-    private enum methods {
-
-        DRAW, REFRESH
-    }
     private static final String MIME_HTML = "text/html";
     private static final String MIME_SVG = "image/svg+xml";
     private static final String MIME_PNG = "image/png";
-    public static final String PLUGIN_NAME = "cgg";
+
+    private enum methods {
+
+        DRAW, REFRESH, DRAWCDW, LISTCDW
+    }
 
     @Override
     public Log getLogger() {
@@ -53,9 +72,17 @@ public class CggContentGenerator extends BaseContentGenerator {
                     case DRAW:
                         draw(requestParams, out);
                         break;
+                    case DRAWCDW:
+                        drawCdw(requestParams, out);
+                        break;
                     case REFRESH:
                         refresh(requestParams, out);
                         break;
+                    case LISTCDW:
+                        listCdw(requestParams, out);
+                        break;
+                    default:
+                        logger.error("No method passed to content generator");
                 }
             } catch (IllegalArgumentException ex) {
                 Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
@@ -77,12 +104,20 @@ public class CggContentGenerator extends BaseContentGenerator {
                     params.put(paramName.substring(5), requestParams.getStringParameter(paramName, ""));
                 }
             }
+
+            IPentahoSession session = PentahoSessionHolder.getSession();
+            final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
+            // Get the paths ot the necessary files: dependencies and the main script.
+            ISolutionFile systemPath = solutionRepository.getSolutionFile(PLUGIN_PATH, 0);
+            String solutionRoot = PentahoSystem.getApplicationContext().getSolutionRootPath();
             String scriptName = requestParams.getStringParameter("script", "");
             String scriptType = requestParams.getStringParameter("type", "svg");
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
             logger.debug("Starting:" + new Date().getTime());
-            Script script = ScriptFactory.getInstance().createScript(scriptName, scriptType, width, height);
+            ScriptFactory factory = ScriptFactory.getInstance();
+            factory.setSystemPath(solutionRoot + "/" + systemPath.getSolutionPath() + "/libs/");
+            Script script = factory.createScript(scriptName, scriptType, width, height);
             logger.debug("Script created:" + new Date().getTime());
             Chart chart = script.execute(params);
             logger.debug("Script executed:" + new Date().getTime());
@@ -93,8 +128,66 @@ public class CggContentGenerator extends BaseContentGenerator {
         }
     }
 
+    private void drawCdw(IParameterProvider requestParams, OutputStream out) {
+        final IPentahoSession session = PentahoSessionHolder.getSession();
+        final String scriptName = requestParams.getStringParameter("path", "");
+        final String scriptId = requestParams.getStringParameter("id", "");
+        final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
+
+        if (scriptName != null) {
+            try {
+                ISolutionFile cdw = solutionRepository.getSolutionFile(scriptName, 0);
+                if (cdw == null) {
+                    throw new FileNotFoundException(scriptName);
+                }
+                InputStream data = new ByteArrayInputStream(cdw.getData());
+                Map<String, String> paramsMap = new HashMap<String, String>();
+
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document doc = builder.parse(data);
+
+                XPath xpath = XPathFactory.newInstance().newXPath();
+                String scriptPath;
+                if (scriptId.equals("")) {
+                    scriptPath = (String) xpath.evaluate("/cdw/charts/chart[1]/script", doc, XPathConstants.STRING);
+                } else {
+                    scriptPath = (String) xpath.evaluate("/cdw/charts/chart[@id='" + scriptId + "']/script", doc, XPathConstants.STRING);
+                }
+                paramsMap.put("script", scriptPath);
+                paramsMap.put("type", requestParams.getStringParameter("type", "svg"));
+                paramsMap.put("width", "" + requestParams.getLongParameter("width", 0L));
+                paramsMap.put("width", "" + requestParams.getLongParameter("width", 0L));
+                IParameterProvider params = new SimpleParameterProvider(paramsMap);
+                draw(params,out);
+            } catch (Exception ex) {
+                logger.error("Failed to parse CDW file: " + ex.toString());
+            }
+        }
+    }
+
     private void refresh(IParameterProvider requestParams, OutputStream out) {
         ScriptFactory.getInstance().clearCachedScopes();
     }
 
+    private void listCdw(IParameterProvider requestParams, OutputStream out) {
+        final IPentahoSession session = PentahoSessionHolder.getSession();
+        final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
+        ISolutionFile solution = solutionRepository.getSolutionFile("", 0);
+        IFileFilter iff = new IFileFilter() {
+
+            public boolean accept(ISolutionFile isf) {
+                return isf.getExtension().toLowerCase().equals(CDW_EXTENSION);
+            }
+        };
+        ISolutionFile[] files = solution.listFiles(iff);
+
+        try {
+            for (ISolutionFile file : files) {
+                out.write(file.getFullPath().getBytes());
+            }
+        } catch (Exception e) {
+            logger.error(e);
+        }
+    }
 }
