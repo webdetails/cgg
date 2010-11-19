@@ -3,7 +3,8 @@
     lib("Base.js") &&
     lib("jquery.js") &&
     lib("tipsy.js") &&
-    lib("pvc-d1.0.js");
+    lib("pvc-d1.0.js") &&
+    lib("ccc-util.js");
 
 (function() {
   nativeCreateElementNS = document.createElementNS;

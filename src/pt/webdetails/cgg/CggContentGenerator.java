@@ -16,6 +16,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -23,7 +25,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.pentaho.platform.api.engine.IFileFilter;
 import org.pentaho.platform.api.engine.IParameterProvider;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.engine.ISolutionFile;
@@ -33,6 +34,7 @@ import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.services.solution.BaseContentGenerator;
 import org.w3c.dom.Document;
+import pt.webdetails.cgg.cdw.CdwFileNavigator;
 import pt.webdetails.cgg.scripts.ScriptFactory;
 import pt.webdetails.cgg.scripts.Script;
 
@@ -42,10 +44,11 @@ import pt.webdetails.cgg.scripts.Script;
  */
 public class CggContentGenerator extends BaseContentGenerator {
 
-    public static final String CDW_EXTENSION = "cdw";
+    public static final String CDW_EXTENSION = ".cdw";
     public static final String PLUGIN_NAME = "cgg";
     public static final String PLUGIN_PATH = "system/" + CggContentGenerator.PLUGIN_NAME + "/";
     private static final Log logger = LogFactory.getLog(CggContentGenerator.class);
+    private static final String MIME_XML = "text/xml";
     private static final String MIME_HTML = "text/html";
     private static final String MIME_SVG = "image/svg+xml";
     private static final String MIME_PNG = "image/png";
@@ -159,7 +162,7 @@ public class CggContentGenerator extends BaseContentGenerator {
                 paramsMap.put("width", "" + requestParams.getLongParameter("width", 0L));
                 paramsMap.put("width", "" + requestParams.getLongParameter("width", 0L));
                 IParameterProvider params = new SimpleParameterProvider(paramsMap);
-                draw(params,out);
+                draw(params, out);
             } catch (Exception ex) {
                 logger.error("Failed to parse CDW file: " + ex.toString());
             }
@@ -171,21 +174,15 @@ public class CggContentGenerator extends BaseContentGenerator {
     }
 
     private void listCdw(IParameterProvider requestParams, OutputStream out) {
-        final IPentahoSession session = PentahoSessionHolder.getSession();
-        final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
-        ISolutionFile solution = solutionRepository.getSolutionFile("", 0);
-        IFileFilter iff = new IFileFilter() {
 
-            public boolean accept(ISolutionFile isf) {
-                return isf.getExtension().toLowerCase().equals(CDW_EXTENSION);
-            }
-        };
-        ISolutionFile[] files = solution.listFiles(iff);
+        final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
+        response.setHeader("Content-Type", MIME_XML);
 
+        final String contextPath = ((HttpServletRequest) parameterProviders.get("path").getParameter("httprequest")).getContextPath();
+        final CdwFileNavigator nav = new CdwFileNavigator(userSession, contextPath);
         try {
-            for (ISolutionFile file : files) {
-                out.write(file.getFullPath().getBytes());
-            }
+            final String json = nav.getCdwFilelist("navigator", "metrics", "");
+            out.write(json.getBytes("UTF8"));
         } catch (Exception e) {
             logger.error(e);
         }

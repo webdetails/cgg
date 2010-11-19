@@ -21,6 +21,9 @@
                     rev="${dependency.bi-platform.revision}" changing="true"/>
         <dependency org="pentaho" name="pentaho-bi-platform-plugin-actions"
                     rev="${dependency.bi-platform.revision}" changing="true"/>
+        <dependency org="pentaho" name="pentaho-bi-platform-web-servlet"
+                    rev="${dependency.bi-platform.revision}" transitive="false"  changing="true"/>
+
 
 
 
