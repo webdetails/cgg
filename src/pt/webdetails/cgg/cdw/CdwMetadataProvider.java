@@ -5,6 +5,7 @@
 package pt.webdetails.cgg.cdw;
 
 import java.io.InputStream;
+import java.io.StringReader;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -19,6 +20,7 @@ import org.pentaho.platform.api.engine.ISolutionFile;
 import org.pentaho.platform.api.engine.SolutionFileMetaAdapter;
 import org.pentaho.platform.engine.core.solution.FileInfo;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 /**
  *
@@ -31,9 +33,17 @@ public class CdwMetadataProvider extends SolutionFileMetaAdapter {
     public IFileInfo getFileInfo(ISolutionFile solutionFile, InputStream in) {
         Document doc = null;
         try {
+
+            StringBuilder xmlBuilder = new StringBuilder();
+            int charRead;
+            while ((charRead = in.read()) != -1) {
+                xmlBuilder.appendCodePoint(charRead);
+            }
+            String xml = xmlBuilder.toString().trim().replaceFirst("^([\\W]+)<","<");
+            
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
-            doc = builder.parse(in);
+            doc = builder.parse(new InputSource(new StringReader(xml)));
 
             String result = "chart";
 

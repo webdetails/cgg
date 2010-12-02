@@ -7,12 +7,12 @@
     <content-type type="cdw" mime-type="text/html">
       <title>Widget</title>
       <description>Community Dashboard Widgets</description>
-      <icon-url>content/cgg/static/cdwFileType.png</icon-url>
+      <icon-url>content/cgg/static/CdwFileType.png</icon-url>
       <meta-provider>pt.webdetails.cgg.cdw.CdwMetadataProvider</meta-provider>
       <operations>
         <operation>
           <id>RUN</id>
-          <command>content/cgg/renderCdw?path={solution}/{path}/{name}</command>
+          <command>content/cgg/drawCdw?path={solution}/{path}/{name}</command>
         </operation>
       </operations>
     </content-type>
