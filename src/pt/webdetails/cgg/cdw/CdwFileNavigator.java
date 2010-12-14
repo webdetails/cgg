@@ -112,7 +112,7 @@ public class CdwFileNavigator extends PentahoBase {
 
                 final Node tree = navDoc.getRootElement();
                 final JSONArray array = processTree(tree, "/");
-                json.put("solution", array.get(0));
+                json.put("cdw", array);
 
                 jsonString = json.toString(2);
                 // Store in cache:
@@ -153,17 +153,17 @@ public class CdwFileNavigator extends PentahoBase {
             final String[] parentPathArray = parentPath.split("/");
             final String solutionName = parentPathArray.length > 2 ? parentPathArray[2] : "";
             final String solutionPath = parentPathArray.length > 3 ? parentPath.substring(parentPath.indexOf(solutionName) + solutionName.length() + 1, parentPath.length()) + "/" : "";
+            if (parentPathArray.length > 0) {
+                for (final Object node1 : nodes) {
 
-            for (final Object node1 : nodes) {
+                    final Node node = (Node) node1;
+                    final JSONObject json = new JSONObject();
+                    JSONObject jsonChild = new JSONObject();
+                    JSONArray children = null;
+                    JSONArray files = null;
+                    String name = node.valueOf("@name");
 
-                final Node node = (Node) node1;
-                final JSONObject json = new JSONObject();
-                JSONObject jsonChild = new JSONObject();
-                JSONArray children = null;
-                JSONArray files = null;
-                String name = node.valueOf("@name");
 
-                if (parentPathArray.length > 0) {
 
 
                     final String localizedName = node.valueOf("@localized-name");
@@ -184,7 +184,7 @@ public class CdwFileNavigator extends PentahoBase {
 
 
                     if (visible && isDirectory) {
-                        children = processTree(node, parentPath + "/" + name,flat);
+                        children = processTree(node, parentPath + "/" + name, flat);
                         files = new JSONArray();
 
                         //Process directory wcdf/xcdf files
@@ -210,25 +210,27 @@ public class CdwFileNavigator extends PentahoBase {
                         json.put("files", files);
                     }
 
-                } else {
-                    // root dir
-                    json.put("id", tree.valueOf("@path"));
-                    json.put("name", solutionName);
-                    json.put("path", solutionPath);
-                    json.put("visible", true);
-                    json.put("title", "Solution");
-                    children = processTree(tree, tree.valueOf("@path"),flat);
-                }
 
-                //System.out.println("  Processing getting children ");
-                if (children != null) {
-                    json.put("folders", children);
-                }
 
+                    //System.out.println("  Processing getting children ");
+                    if (children != null) {
+                        json.put("folders", children);
+                    }
+
+                    array.put(json);
+
+                }
+            } else {
+                // root dir
+                final JSONObject json = new JSONObject();
+                final JSONArray children = processTree(tree, tree.valueOf("@path"), flat);
+                json.put("id", tree.valueOf("@path"));
+                json.put("name", solutionName);
+                json.put("path", solutionPath);
+                json.put("visible", true);
+                json.put("title", "Solution");
                 array.put(json);
-
             }
-
         } catch (Exception e) {
             System.out.println("Error: " + e.getClass().getName() + " - " + e.getMessage());
             warn("Error: " + e.getClass().getName() + " - " + e.getMessage());
