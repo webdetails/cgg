@@ -44,4 +44,12 @@ public class SVGChart implements Chart {
             logger.error(ex);
         }
     }
+
+    public void toSVG(OutputStream out) {
+        try {
+            out.write(svgSource.getBytes("UTF-8"));
+        } catch (Exception e) {
+            
+        }
+    }
 }

@@ -40,6 +40,7 @@ import org.w3c.dom.Document;
 import pt.webdetails.cgg.cdw.CdwFileNavigator;
 import pt.webdetails.cgg.scripts.ScriptFactory;
 import pt.webdetails.cgg.scripts.Script;
+import pt.webdetails.cgg.charts.SVGChart;
 
 /**
  *
@@ -59,6 +60,11 @@ public class CggContentGenerator extends BaseContentGenerator {
     private enum methods {
 
         DRAW, REFRESH, DRAWCDW, LISTCDW, GETCDW
+    }
+
+    private enum outputTypes {
+
+        SVG, PNG, PDF
     }
 
     @Override
@@ -121,6 +127,7 @@ public class CggContentGenerator extends BaseContentGenerator {
             String solutionRoot = PentahoSystem.getApplicationContext().getSolutionRootPath();
             String scriptName = requestParams.getStringParameter("script", "");
             String scriptType = requestParams.getStringParameter("type", "svg");
+            String outputType = requestParams.getStringParameter("outputType", "png");
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
             logger.debug("Starting:" + new Date().getTime());
@@ -130,10 +137,34 @@ public class CggContentGenerator extends BaseContentGenerator {
             logger.debug("Script created:" + new Date().getTime());
             Chart chart = script.execute(params);
             logger.debug("Script executed:" + new Date().getTime());
-            chart.toPNG(out);
+            getOutput(chart, outputTypes.valueOf(outputType.toUpperCase()), out);
             logger.debug("Image exported:" + new Date().getTime());
         } catch (Exception ex) {
             Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void getOutput(Chart chart, outputTypes outputType, OutputStream out) {
+
+
+        switch (outputType) {
+            case PDF:
+                /*
+                if (chart instanceof pt.webdetails.cgg.charts.SVGChart) {
+                chart.toPDF(out);
+                }
+                 */
+                break;
+            case PNG:
+                chart.toPNG(out);
+                break;
+            case SVG:
+                outputHandler.getMimeTypeListener().setMimeType("application/svg+xml");
+                if (chart instanceof pt.webdetails.cgg.charts.SVGChart) {
+                    ((SVGChart) chart).toSVG(out);
+                }
+                break;
+            default:
         }
     }
 
