@@ -17,7 +17,7 @@ function convertExtensionPoints(extPoints) {
    return ep;
 }
 
-function renderCcccFromComponent(component, data) {
+function renderCccFromComponent(component, data) {
     component.chartDefinition.extensionPoints = convertExtensionPoints(component.chartDefinition.extensionPoints);
     var o = $.extend({},component.chartDefinition);
     var chartType = getCccType(component.type);
