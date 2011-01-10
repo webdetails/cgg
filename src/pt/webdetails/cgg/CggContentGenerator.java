@@ -161,63 +161,15 @@ public class CggContentGenerator extends BaseContentGenerator {
                 }
                  */
                 break;
-
-
-
-
-
-
-
-
             case PNG:
                 chart.toPNG(out);
-
-
-
-
-
-
-
-
                 break;
-
-
-
-
-
-
-
-
             case SVG:
                 setResponseHeaders(MIME_SVG, null);
-
-
-
-
-
-
-
-
                 if (chart instanceof pt.webdetails.cgg.charts.SVGChart) {
                     ((SVGChart) chart).toSVG(out);
-
-
-
-
-
-
-
-
                 }
                 break;
-
-
-
-
-
-
-
-
             default:
         }
     }

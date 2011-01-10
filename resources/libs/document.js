@@ -24,7 +24,8 @@ cgg.document = function(_doc){
     getElementById: function(id) {return new cgg.element(_doc.getElementById(id));},
     createElement: function(tagName) {return cgg.element(_doc.createElement(tagName));},
     createTextNode: function(text) {return cgg.element(_doc.createTextNode(text));},
-    createElementNS: function(nameSpace, qualifiedName) {return cgg.element(_doc.createElementNS(nameSpace, qualifiedName));}
+    createElementNS: function(nameSpace, qualifiedName) {return cgg.element(_doc.createElementNS(nameSpace, qualifiedName));},
+    removeChild: function(node) {_doc.removeChild(node._node? node._node:node);return node.node? node: new cgg.element(node);}
   };
   return doc;
 };
@@ -53,8 +54,8 @@ cgg.element = function(_el) {
     },
     setAttribute: function(attrName, value) {_el.setAttribute(attrName, value);},
     setAttributeNS: function(ns, attrName, value) {_el.setAttributeNS(ns,attrName, value);},
-    removeAttribute: function(attrName) {_el.removeAttribute(attrName);}
-
+    removeAttribute: function(attrName) {_el.removeAttribute(attrName);},
+    removeChild: function(node) {_el.removeChild(node._node? node._node:node);return (node.node? node: new cgg.element(node));}
   };
   return el;
 };

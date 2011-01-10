@@ -59,7 +59,7 @@ public abstract class BaseScript implements Script {
         if (params != null) {
             wrappedParams = Context.javaToJS(params, scope);
         } else {
-            wrappedParams = Context.javaToJS(new HashMap<String, String>(), scope);
+            wrappedParams = Context.javaToJS(new HashMap<String, Object>(), scope);
         }
         ScriptableObject.defineProperty(scope, "params", wrappedParams, 0);
 
