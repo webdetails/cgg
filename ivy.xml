@@ -24,9 +24,50 @@
         <dependency org="pentaho" name="pentaho-bi-platform-web-servlet"
                     rev="${dependency.bi-platform.revision}" transitive="false"  changing="true"/>
 
+		<!-- Excluding batik 1.6, adding 1.7-->
+
+		<!--  compile time batik -->
+		<dependency org="org.apache.xmlgraphics" name="batik-awt-util" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-dom" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-svggen" rev="1.7" />
+
+		<!--  runtime batik -->
+		<dependency org="org.apache.xmlgraphics" name="batik-anim" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-css" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-codec" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-ext" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-extension" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-gui-util" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-gvt" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-parser" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-script" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-svg-dom" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-svggen" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-swing" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-transcoder" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-util" rev="1.7" />
+		<dependency org="org.apache.xmlgraphics" name="batik-xml" rev="1.7" />
+
+		<exclude org="batik"/>
+
+		<!--exclude module="batik-awt-util"/>
+		<exclude module="batik-bridge"/>
+		<exclude module="batik-css"/>
+		<exclude module="batik-dom"/>
+		<exclude module="batik-ext"/>
+		<exclude module="batik-gui-util"/>
+		<exclude module="batik-gvt"/>
+		<exclude module="batik-parser"/>
+		<exclude module="batik-script"/>
+		<exclude module="batik-svg-dom"/>
+		<exclude module="batik-svggen"/>
+		<exclude module="batik-swing"/>
+		<exclude module="batik-util"/>
+		<exclude module="batik-xml"/-->
 
 
 
-    </dependencies>
+
+	</dependencies>
 
 </ivy-module>
