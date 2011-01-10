@@ -64,7 +64,7 @@ public abstract class BaseScript implements Script {
         ScriptableObject.defineProperty(scope, "params", wrappedParams, 0);
 
         try {
-            cx.evaluateReader(scope, new FileReader(source), "<file>", 1, null);
+            cx.evaluateReader(scope, new FileReader(source), this.source.replaceAll("(.*/)(.*)", "$2"), 1, null);
         } catch (IOException ex) {
             logger.error("Failed to read " + source + ": " + ex.toString());
         }
