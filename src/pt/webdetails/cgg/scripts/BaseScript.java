@@ -47,7 +47,7 @@ public abstract class BaseScript implements Script {
         initializeObjects();
     }
 
-    protected void executeScript(Map<String, String> params) {
+    protected void executeScript(Map<String, Object> params) {
         Context cx = Context.getCurrentContext();
         // env.js has methods that pass the 64k Java limit, so we can't compile
         // to bytecode. Interpreter mode to the rescue!

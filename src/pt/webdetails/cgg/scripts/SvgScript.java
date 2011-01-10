@@ -42,11 +42,11 @@ class SvgScript extends BaseScript {
 
     @Override
     public Chart execute() {
-        return execute((Map<String, String>) null);
+        return execute((Map<String, Object>) null);
     }
 
     @Override
-    public Chart execute(Map<String, String> params) {
+    public Chart execute(Map<String, Object> params) {
         Context cx = ContextFactory.getGlobal().enterContext();
         try {
             initDocument();

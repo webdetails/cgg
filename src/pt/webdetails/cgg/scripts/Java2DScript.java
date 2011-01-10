@@ -44,11 +44,11 @@ class Java2DScript extends BaseScript {
 
     @Override
     public Chart execute() {
-        return execute((Map<String, String>) null);
+        return execute((Map<String, Object>) null);
     }
 
     @Override
-    public Chart execute(Map<String, String> params) {
+    public Chart execute(Map<String, Object> params) {
         Context cx = Context.getCurrentContext();
         try {
             getGraphics();

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin title="Pentaho Community Graphics Generator">
+<plugin title="Pentaho Community Graphics Generator" >
   <static-paths>
     <static-path url="/cgg/static" localFolder="static"/>
   </static-paths>
