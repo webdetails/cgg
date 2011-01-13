@@ -19,5 +19,5 @@ public interface Script {
     public void setScope(Scriptable scope);
     
     public Chart execute();
-    public Chart execute(Map<String,String> params);
+    public Chart execute(Map<String,Object> params);
 }

@@ -13,6 +13,10 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.*;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IPluginManager;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import pt.webdetails.cgg.datasources.DatasourceFactory;
 
 /**
@@ -34,7 +38,7 @@ public abstract class BaseScript implements Script {
     }
 
     public void initializeObjects() {
-        ContextFactory.getGlobal().enterContext();
+        ContextFactory.getGlobal().enter();
         Object wrappedFactory = Context.javaToJS(new DatasourceFactory(), scope);
         ScriptableObject.putProperty(scope, "datasourceFactory", wrappedFactory);
     }
@@ -47,24 +51,24 @@ public abstract class BaseScript implements Script {
         initializeObjects();
     }
 
-    protected void executeScript(Map<String, String> params) {
+    protected void executeScript(Map<String, Object> params) {
         Context cx = Context.getCurrentContext();
         // env.js has methods that pass the 64k Java limit, so we can't compile
         // to bytecode. Interpreter mode to the rescue!
         cx.setOptimizationLevel(-1);
-        cx.setLanguageVersion(Context.VERSION_1_5);
+        cx.setLanguageVersion(Context.VERSION_1_7);
         OutputStream bytes = new ByteArrayOutputStream();
 
         Object wrappedParams;
         if (params != null) {
             wrappedParams = Context.javaToJS(params, scope);
         } else {
-            wrappedParams = Context.javaToJS(new HashMap<String, String>(), scope);
+            wrappedParams = Context.javaToJS(new HashMap<String, Object>(), scope);
         }
         ScriptableObject.defineProperty(scope, "params", wrappedParams, 0);
 
         try {
-            cx.evaluateReader(scope, new FileReader(source), "<file>", 1, null);
+            cx.evaluateReader(scope, new FileReader(source), this.source.replaceAll("(.*/)(.*)", "$2"), 1, null);
         } catch (IOException ex) {
             logger.error("Failed to read " + source + ": " + ex.toString());
         }

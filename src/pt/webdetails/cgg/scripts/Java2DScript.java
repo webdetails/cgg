@@ -5,18 +5,15 @@
 package pt.webdetails.cgg.scripts;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.mozilla.javascript.*;
-import org.mozilla.javascript.tools.shell.Main;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IPluginManager;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import pt.webdetails.cgg.charts.Chart;
 import pt.webdetails.cgg.charts.Java2DChart;
 
@@ -44,11 +41,18 @@ class Java2DScript extends BaseScript {
 
     @Override
     public Chart execute() {
-        return execute((Map<String, String>) null);
+        return execute((Map<String, Object>) null);
     }
 
     @Override
-    public Chart execute(Map<String, String> params) {
+    public Chart execute(Map<String, Object> params) {
+        try {
+            IPentahoSession session = PentahoSessionHolder.getSession();
+            IPluginManager pluginManager = PentahoSystem.get(IPluginManager.class, session);
+            pluginManager.getClassLoader("cgg").loadClass("org.mozilla.javascript.Context");
+        } catch (ClassNotFoundException cnfe) {
+            logger.error("failed to load Context");
+        }
         Context cx = Context.getCurrentContext();
         try {
             getGraphics();
