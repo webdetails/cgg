@@ -15,6 +15,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IPluginManager;
 import org.pentaho.platform.api.engine.ISolutionFile;
 import org.pentaho.platform.api.repository.ISolutionRepository;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
@@ -30,7 +31,7 @@ public class ScriptFactory {
     private static ScriptFactory instance;
     private Map<ScriptType, Scriptable> scopes;
     private String systemPath;
-    
+
     public enum ScriptType {
 
         SVG, J2D
@@ -64,13 +65,20 @@ public class ScriptFactory {
         String solutionRoot = PentahoSystem.getApplicationContext().getSolutionRootPath();
         // Get necessary Pentaho environment: session and repository
         IPentahoSession session = PentahoSessionHolder.getSession();
+        IPluginManager pluginManager = PentahoSystem.get(IPluginManager.class, session);
+        Script script = null;
+        try {
+          Thread.currentThread().getContextClassLoader().loadClass("org.mozilla.javascript.Context");
+        } catch (Exception e) {
+            logger.error(e);
+        }
         final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
         // Get the paths ot the necessary files: dependencies and the main script.
         ISolutionFile solutionFile = solutionRepository.getSolutionFile(path, 0);
         if (solutionFile == null) {
             throw new FileNotFoundException("Couldn't find " + path);
         }
-        Script script;
+
         switch (scriptType) {
             case SVG:
                 script = new SvgScript(solutionRoot + "/" + solutionFile.getSolutionPath() + "/" + solutionFile.getFileName());
@@ -84,6 +92,7 @@ public class ScriptFactory {
 
         }
         script.setScope(getScope(scriptType));
+
         return script;
     }
 
@@ -104,7 +113,7 @@ public class ScriptFactory {
         final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
         String[] dependencies;
 
-        Context cx = ContextFactory.getGlobal().enterContext();
+        Context cx = ContextFactory.getGlobal().enter();
         switch (type) {
             case SVG:
                 dependencies = new String[0];
@@ -135,6 +144,6 @@ public class ScriptFactory {
     }
 
     public void setSystemPath(String systemPath) {
-        this.systemPath = systemPath.replaceAll("\\\\","/").replaceAll("/+", "/");
+        this.systemPath = systemPath.replaceAll("\\\\", "/").replaceAll("/+", "/");
     }
 }

@@ -16,6 +16,10 @@ import pt.webdetails.cgg.charts.Chart;
 import pt.webdetails.cgg.charts.SVGChart;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.dom.svg.SVGOMDocument;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IPluginManager;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.w3c.dom.Document;
 
 /**
@@ -47,7 +51,7 @@ class SvgScript extends BaseScript {
 
     @Override
     public Chart execute(Map<String, Object> params) {
-        Context cx = ContextFactory.getGlobal().enterContext();
+        Context cx = ContextFactory.getGlobal().enter();
         try {
             initDocument();
             executeScript(params);
@@ -63,7 +67,7 @@ class SvgScript extends BaseScript {
     }
 
     private void initDocument() {
-        
+
         // Create an SVG document
         SVGDOMImplementation impl = (SVGDOMImplementation) SVGDOMImplementation.getDOMImplementation();
         String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
@@ -80,6 +84,4 @@ class SvgScript extends BaseScript {
         Object wrappedDocument = Context.javaToJS(document, scope);
         ScriptableObject.putProperty(scope, "_document", wrappedDocument);
     }
-
-    
 }

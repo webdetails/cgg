@@ -15,7 +15,6 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IParameterProvider;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IPluginManager;
 import org.pentaho.platform.api.engine.ISolutionFile;
 import org.pentaho.platform.api.repository.ISolutionRepository;
 import org.pentaho.platform.engine.core.solution.SimpleParameterProvider;
@@ -137,14 +137,18 @@ public class CggContentGenerator extends BaseContentGenerator {
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
             logger.debug("Starting:" + new Date().getTime());
-            ScriptFactory factory = ScriptFactory.getInstance();
-            factory.setSystemPath(solutionRoot + "/" + systemPath.getSolutionPath() + "/libs/");
-            Script script = factory.createScript(scriptName, scriptType, width, height);
-            logger.debug("Script created:" + new Date().getTime());
-            Chart chart = script.execute(params);
-            logger.debug("Script executed:" + new Date().getTime());
-            getOutput(chart, outputTypes.valueOf(outputType.toUpperCase()), out);
-            logger.debug("Image exported:" + new Date().getTime());
+            try {
+                ScriptFactory factory = ScriptFactory.getInstance();
+                factory.setSystemPath(solutionRoot + "/" + systemPath.getSolutionPath() + "/libs/");
+                Script script = factory.createScript(scriptName, scriptType, width, height);
+                logger.debug("Script created:" + new Date().getTime());
+                Chart chart = script.execute(params);
+                logger.debug("Script executed:" + new Date().getTime());
+                getOutput(chart, outputTypes.valueOf(outputType.toUpperCase()), out);
+                logger.debug("Image exported:" + new Date().getTime());
+            } catch (Exception e) {
+                logger.error(e);
+            }
         } catch (Exception ex) {
             Logger.getLogger(CggContentGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -179,26 +183,6 @@ public class CggContentGenerator extends BaseContentGenerator {
         final String scriptName = requestParams.getStringParameter("path", "").replaceAll("/+", "/");
         final String scriptId = requestParams.getStringParameter("id", "");
         final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         if (scriptName != null) {
             try {
@@ -241,14 +225,6 @@ public class CggContentGenerator extends BaseContentGenerator {
 
     private void refresh(IParameterProvider requestParams, OutputStream out) {
         ScriptFactory.getInstance().clearCachedScopes();
-
-
-
-
-
-
-
-
     }
 
     private void listCdw(IParameterProvider requestParams, OutputStream out) {
@@ -258,35 +234,11 @@ public class CggContentGenerator extends BaseContentGenerator {
 
         final String contextPath = ((HttpServletRequest) parameterProviders.get("path").getParameter("httprequest")).getContextPath();
         final CdwFileNavigator nav = new CdwFileNavigator(userSession, contextPath);
-
-
-
-
-
-
-
-
         try {
             final String json = nav.getCdwFilelist("navigator", "metrics", "");
             out.write(json.getBytes("UTF8"));
-
-
-
-
-
-
-
-
         } catch (Exception e) {
             logger.error(e);
-
-
-
-
-
-
-
-
         }
     }
 
@@ -294,34 +246,10 @@ public class CggContentGenerator extends BaseContentGenerator {
 
         String pathString = this.parameterProviders.get("path").getStringParameter("path", "");
         String resource;
-
-
-
-
-
-
-
-
         if (pathString.split("/").length > 2) {
             resource = pathString.replaceAll("^/.*?/", "");
-
-
-
-
-
-
-
-
         } else {
             resource = requestParams.getStringParameter("path", "");
-
-
-
-
-
-
-
-
         }
         resource = resource.startsWith("/") ? resource : "/" + resource;
 
@@ -332,35 +260,11 @@ public class CggContentGenerator extends BaseContentGenerator {
         String mimeType = "text/xml";
         final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
         response.setHeader("Content-Type", mimeType);
-
-
-
-
-
-
-
-
         if (resource.endsWith(".cdw")) {
             try {
                 getSolutionResource(out, resource);
-
-
-
-
-
-
-
-
             } catch (IOException e) {
                 logger.error("failed to read file: " + e.getMessage());
-
-
-
-
-
-
-
-
             }
         }
     }
@@ -373,97 +277,27 @@ public class CggContentGenerator extends BaseContentGenerator {
 
         String filePath = file.getAbsolutePath().replaceAll("\\\\", "/").replaceAll("/+", "/"),
                 solutionPath = PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\", "/").replaceAll("/+", "/");
-
-
-
-
-
-
-
-
         if (!filePath.startsWith(solutionPath)) {
             // File not inside solution! run away!
             throw new FileNotFoundException("Not allowed");
-
-
-
-
-
-
-
-
         }
         final InputStream in = new FileInputStream(file);
         final byte[] buff = new byte[4096];
-
-
-
-
-
-
-
-
-
         int n = in.read(buff);
-
-
-
-
-
-
-
-
         while (n != -1) {
             out.write(buff, 0, n);
             n = in.read(buff);
-
-
-
-
-
-
-
-
         }
         in.close();
-
-
-
-
-
-
-
-
     }
 
     private void setResponseHeaders(final String mimeType, final String attachmentName) {
         // Make sure we have the correct mime type
         final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
         response.setHeader("Content-Type", mimeType);
-
-
-
-
-
-
-
-
-
         if (attachmentName != null) {
             response.setHeader("content-disposition", "attachment; filename=" + attachmentName);
-
-
-
-
-
-
-
-
         } // We can't cache this requests
         response.setHeader("Cache-Control", "max-age=0, no-store");
-
-
-
-
     }
 }

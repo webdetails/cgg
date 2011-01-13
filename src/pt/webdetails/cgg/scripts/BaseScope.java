@@ -92,7 +92,7 @@ class BaseScope extends ImporterTopLevel {
         String file = args[0].toString();
         try {
             BaseScope scope = (BaseScope) thisObj;
-            String parser = XMLResourceDescriptor.getXMLParserClassName();
+            String parser = "org.apache.xerces.parsers.SAXParser";//XMLResourceDescriptor.getXMLParserClassName();
             SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
             String uri = "file:" + scope.basePath + "/" + file;
             Document doc = f.createDocument(uri);
@@ -107,6 +107,7 @@ class BaseScope extends ImporterTopLevel {
 
             return Context.javaToJS(doc, scope);
         } catch (Exception e) {
+            e.printStackTrace();
             logger.error(e);
             return Context.getUndefinedValue();
         }

@@ -13,6 +13,10 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.*;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IPluginManager;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import pt.webdetails.cgg.datasources.DatasourceFactory;
 
 /**
@@ -34,7 +38,7 @@ public abstract class BaseScript implements Script {
     }
 
     public void initializeObjects() {
-        ContextFactory.getGlobal().enterContext();
+        ContextFactory.getGlobal().enter();
         Object wrappedFactory = Context.javaToJS(new DatasourceFactory(), scope);
         ScriptableObject.putProperty(scope, "datasourceFactory", wrappedFactory);
     }
@@ -52,7 +56,7 @@ public abstract class BaseScript implements Script {
         // env.js has methods that pass the 64k Java limit, so we can't compile
         // to bytecode. Interpreter mode to the rescue!
         cx.setOptimizationLevel(-1);
-        cx.setLanguageVersion(Context.VERSION_1_5);
+        cx.setLanguageVersion(Context.VERSION_1_7);
         OutputStream bytes = new ByteArrayOutputStream();
 
         Object wrappedParams;
