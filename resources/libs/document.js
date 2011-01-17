@@ -13,7 +13,7 @@ cgg.document = function(_doc){
        * also need to return the wrapped element.
        * If the element wasn't wrapped to begin with, we must wrap it.
        */
-      if ((_e = typeof e._elem) !== "undefined") {
+      if (typeof (_e = e._node) !== "undefined") {
         _doc.appendChild(_e);
         return e;
       } else {
@@ -22,8 +22,8 @@ cgg.document = function(_doc){
       }
     },
     getElementById: function(id) {return new cgg.element(_doc.getElementById(id));},
-    createElement: function(tagName) {return cgg.element(_doc.createElement(tagName));},
-    createTextNode: function(text) {return cgg.element(_doc.createTextNode(text));},
+    createElement: function(tagName) {return new cgg.element(_doc.createElement(tagName));},
+    createTextNode: function(text) {return new cgg.element(_doc.createTextNode(text));},
     createElementNS: function(nameSpace, qualifiedName) {return cgg.element(_doc.createElementNS(nameSpace, qualifiedName));},
     removeChild: function(node) {_doc.removeChild(node._node? node._node:node);return node.node? node: new cgg.element(node);}
   };
@@ -62,7 +62,13 @@ cgg.element = function(_el) {
 
 cgg.style = function(_style) {
   var style = {
-    setProperty: function(name, value,prio) {_style.setProperty(name, value, (typeof prio === "undefined" ? null :prio));},
+    setProperty: function(name, value,prio) {
+      try {
+        _style.setProperty(name, value, (typeof prio === "undefined" ? null :prio));
+      } catch (e) {
+        if (!(e.javaException.getClass().getName() == "org.w3c.dom.DOMException")) { throw e;}
+      }
+    },
     removeProperty: function(name) {_style.removeProperty(name);}
   };
   return style;
