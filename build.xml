@@ -213,4 +213,14 @@
       <param name="publish.file" value="${dist.dir}/${plugin.solution.zipfile}"/>
     </antcall>
   </target>
+
+  <!-- Overriding resolve target so we can add resolve-dev -->
+  <target name="resolve"
+          depends="resolve-default, resolve-test, resolve-dev, ivy.check-releasable"
+          description="Retrieves all the dependent libraries" />
+
+  <target name="resolve-dev">
+    <ivy:resolve file="ivy.xml" conf="dev" />
+    <ivy:retrieve conf="dev" pattern="${devlib.dir}/[module]-[revision](-[classifier]).[ext]" />
+  </target>
 </project>
