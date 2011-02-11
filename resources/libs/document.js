@@ -5,7 +5,7 @@ var cgg = cgg || {};
 cgg.document = function(_doc){
   var doc = {
     get _node() {return _doc;},
-    get implementation() {return 'batik';},
+    get svgImplementation() {return 'batik';},
     get lastChild() {return new cgg.element(_doc.getLastChild());},
 
     appendChild: function(e) {
