@@ -1,4 +1,4 @@
-// ce027619ab4ce027dbba424fd7e946bcb85f0a3d
+// 28aa2f6959bf97053e57d7c66af648a78398d954
 /**
  * @class The built-in Array class.
  * @name Array
@@ -388,7 +388,7 @@ pv.listenForPageLoad = function(listener) {
  * 'svgweb' is if we identify svgweb is there.
  */
 pv.renderer = function() {
-    return (document.implementation !== "undefined") ? document.implementation:
+    return (typeof document.svgImplementation !== "undefined") ? document.svgImplementation:
      (typeof window.svgweb === "undefined") ? "nativesvg" : "svgweb";
 }
 
@@ -3267,27 +3267,27 @@ pv.Scale.quantitative = function() {
         precision = 31536e6;
         format = "%Y";
         /** @ignore */ increment = function(d) { d.setFullYear(d.getFullYear() + step); };
-      } else if (span >= 3 * 2592e6) {
+      } else if (span >= 5 * 2592e6) {
         precision = 2592e6;
         format = "%m/%Y";
         /** @ignore */ increment = function(d) { d.setMonth(d.getMonth() + step); };
-      } else if (span >= 3 * 6048e5) {
+      } else if (span >= 5 * 6048e5) {
         precision = 6048e5;
         format = "%m/%d";
         /** @ignore */ increment = function(d) { d.setDate(d.getDate() + 7 * step); };
-      } else if (span >= 3 * 864e5) {
+      } else if (span >= 5 * 864e5) {
         precision = 864e5;
         format = "%m/%d";
         /** @ignore */ increment = function(d) { d.setDate(d.getDate() + step); };
-      } else if (span >= 3 * 36e5) {
+      } else if (span >= 5 * 36e5) {
         precision = 36e5;
         format = "%I:%M %p";
         /** @ignore */ increment = function(d) { d.setHours(d.getHours() + step); };
-      } else if (span >= 3 * 6e4) {
+      } else if (span >= 5 * 6e4) {
         precision = 6e4;
         format = "%I:%M %p";
         /** @ignore */ increment = function(d) { d.setMinutes(d.getMinutes() + step); };
-      } else if (span >= 3 * 1e3) {
+      } else if (span >= 5 * 1e3) {
         precision = 1e3;
         format = "%I:%M:%S";
         /** @ignore */ increment = function(d) { d.setSeconds(d.getSeconds() + step); };
@@ -3311,7 +3311,7 @@ pv.Scale.quantitative = function() {
             break;
           }
           case 2592e6: {
-            step = 3; // seasons
+            step = (n > 24) ? 3 : ((n > 12) ? 2 : 1);
             date.setMonth(Math.floor(date.getMonth() / step) * step);
             break;
           }
