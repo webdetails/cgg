@@ -925,8 +925,6 @@ pvc.TimeseriesAbstract = pvc.Base.extend({
 
     this.base();
 
-    pvc.log("Prerendering in TimeseriesAbstract");
-
 
     // Do we have the timeseries panel? add it
 
@@ -1074,8 +1072,6 @@ pvc.CategoricalAbstract = pvc.TimeseriesAbstract.extend({
 
 
         this.base();
-
-        pvc.log("Prerendering in CategoricalAbstract");
 
         this.xScale = this.getXScale();
         this.yScale = this.getYScale();
@@ -1836,7 +1832,7 @@ pvc.PieChartPanel = pvc.BasePanel.extend({
     var colors = this.chart.colors(pv.range(this.chart.dataEngine.getCategoriesSize()));
     var colorFunc = function(d){
       // return colors(d.serieIndex)
-      return colors(myself.chart.dataEngine.getVisibleCategoriesIndexes()[this.index])
+      return colors(this.index)
     };
     
     this.data = this.chart.dataEngine.getVisibleValuesForSeriesIndex(0);
@@ -2369,8 +2365,6 @@ pvc.ScatterAbstract = pvc.CategoricalAbstract.extend({
 
     this.base();
 
-    pvc.log("Prerendering in ScatterAbstract");
-
 
     this.scatterChartPanel = new pvc.ScatterChartPanel(this, {
       stacked: this.options.stacked,
@@ -2810,7 +2804,7 @@ pvc.DataEngine = Base.extend({
 
     getSeries: function(){
         var res = this.series || this.translator.getColumns();
-	return res;
+        return res;
     },
 
     /*
@@ -2925,7 +2919,7 @@ pvc.DataEngine = Base.extend({
         var res = pv.range(this.getCategories().length).filter(function(v){
             return !myself.hiddenData.categories[v];
         });
-	return res;
+        return res;
     },
 
     /*
@@ -3157,7 +3151,7 @@ pvc.DataEngine = Base.extend({
         var res = this.getVisibleSeriesIndexes().map(function(idx){
             return cats[idx]
         });
-	return res;
+        return res;
     },
 
 
@@ -3209,7 +3203,7 @@ pvc.DataEngine = Base.extend({
         var max = pv.max(pv.range(0,this.getCategoriesSize()).map(function(idx){
             return pv.sum(myself.getVisibleValuesForCategoryIndex(idx).filter(pvc.nonEmpty))
         }));
-        pvc.log("getCategoriesMaxSumOfVisibleSeries: " + max);
+        //pvc.log("getCategoriesMaxSumOfVisibleSeries: " + max);
         return max;
     },
 
@@ -3226,7 +3220,7 @@ pvc.DataEngine = Base.extend({
         var max = pv.max(this.getVisibleSeriesIndexes().map(function(idx){
             return pv.sum(myself.getValuesForSeriesIndex(idx).filter(pvc.nonEmpty))
         }));
-        pvc.log("getVisibleSeriesMaxSum: " + max);
+        //pvc.log("getVisibleSeriesMaxSum: " + max);
         return max;
     },
 
@@ -3239,7 +3233,7 @@ pvc.DataEngine = Base.extend({
         var max = pv.max(this.getVisibleSeriesIndexes().map(function(idx){
             return pv.max(myself.getValuesForSeriesIndex(idx).filter(pvc.nonEmpty))
         }));
-        pvc.log("getVisibleSeriesAbsoluteMax: " + max);
+        //pvc.log("getVisibleSeriesAbsoluteMax: " + max);
         return max;
     },
 
@@ -3252,7 +3246,7 @@ pvc.DataEngine = Base.extend({
         var min = pv.min(this.getVisibleSeriesIndexes().map(function(idx){
             return pv.min(myself.getValuesForSeriesIndex(idx).filter(pvc.nonEmpty))
         }));
-        pvc.log("getVisibleSeriesAbsoluteMin: " + min);
+        //pvc.log("getVisibleSeriesAbsoluteMin: " + min);
         return min;
     },
 
@@ -3421,26 +3415,52 @@ pvc.RelationalTranslator = pvc.DataTranslator.extend({
             })
         }
 
+        /*
+        var seenSeries = [],
+        seenCategories = [],
+        crossTab = [];
+
+        for (r = 0; r < this.resultset.length;r ++) {
+            var row = this.resultset[r],
+            sIdx = ( idx = seenSeries.indexOf(row[0])) > -1 ? idx + 1: seenSeries.push(row[0]),
+            cIdx = ( idx = seenCategories.indexOf(row[1])) > -1 ? idx : seenCategories.push(row[1]) - 1;
+            //console.log(row);
+            if(!crossTab[cIdx]) crossTab[cIdx] = [];
+            crossTab[cIdx][sIdx] = (crossTab[cIdx][sIdx] || 0 ) + row[2];
+            crossTab[cIdx][0] = row[1];
+        }
+
+        this.values = crossTab;
+
+         */
+
         var tree = pv.tree(this.resultset).keys(function(d){
             return [d[0],d[1]]
         }).map();
-
+        
         // Now, get series and categories:
-        var numeratedSeries = pv.numerate(pv.keys(tree));
-        var numeratedCategories = pv.numerate(pv.uniq(pv.blend(pv.values(tree).map(function(d){
-            return pv.keys(d)
-        }))))
+
+        var series = pv.uniq(this.resultset.map(function(d){
+            return d[0];
+        }));
+        var numeratedSeries = pv.numerate(series);
+
+        var categories = pv.uniq(this.resultset.map(function(d){
+            return d[1];
+        }))
+        var numeratedCategories = pv.numerate(categories);
+
 
         // Finally, itetate through the resultset and build the new values
 
         this.values = [];
-        var categoriesLength = pv.keys(numeratedCategories).length;
-        var seriesLength = pv.keys(numeratedSeries).length;
+        var categoriesLength = categories.length;
+        var seriesLength = series.length;
 
         // Initialize array
         pv.range(0,categoriesLength).map(function(d){
             myself.values[d] = new Array(seriesLength + 1);
-            myself.values[d][0] = pv.keys(numeratedCategories)[d]
+            myself.values[d][0] = categories[d]
         })
 
         this.resultset.map(function(l){
@@ -3450,11 +3470,10 @@ pvc.RelationalTranslator = pvc.DataTranslator.extend({
         })
 
         // Create an inicial line with the categories
-        var l1 = pv.keys(numeratedSeries);
+        var l1 = series;
         l1.splice(0,0,"x");
         this.values.splice(0,0, l1)
-
-
+ 
     }
 
 
