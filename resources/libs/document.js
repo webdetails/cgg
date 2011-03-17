@@ -5,6 +5,7 @@ var cgg = cgg || {};
 cgg.document = function(_doc){
   var doc = {
     get _node() {return _doc;},
+    get implementation() {return _doc.getImplementation();},
     get svgImplementation() {return 'batik';},
     get lastChild() {return new cgg.element(_doc.getLastChild());},
 
@@ -14,7 +15,7 @@ cgg.document = function(_doc){
        * If the element wasn't wrapped to begin with, we must wrap it.
        */
       if (typeof (_e = e._node) !== "undefined") {
-        _doc.appendChild(_e);
+        _doc.appendChild(_e)
         return e;
       } else {
         _doc.appendChild(e);

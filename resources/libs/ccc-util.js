@@ -1,5 +1,6 @@
 // Shamelessly copied from jquery!
-$ = {};
+jQuery = $ = {};
+$.support = {};
 $.extend = function() {
 	 var options, name, src, copy, copyIsArray, clone,
 		target = arguments[0] || {},
