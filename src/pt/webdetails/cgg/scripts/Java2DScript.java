@@ -46,14 +46,7 @@ class Java2DScript extends BaseScript {
 
     @Override
     public Chart execute(Map<String, Object> params) {
-        try {
-            IPentahoSession session = PentahoSessionHolder.getSession();
-            IPluginManager pluginManager = PentahoSystem.get(IPluginManager.class, session);
-            pluginManager.getClassLoader("cgg").loadClass("org.mozilla.javascript.Context");
-        } catch (ClassNotFoundException cnfe) {
-            logger.error("failed to load Context");
-        }
-        Context cx = Context.getCurrentContext();
+        Context cx = ContextFactory.getGlobal().enter();
         try {
             getGraphics();
             executeScript(params);
