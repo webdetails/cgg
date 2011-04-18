@@ -14,9 +14,11 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IContentGenerator;
+import org.pentaho.platform.api.engine.IOutputHandler;
 import org.pentaho.platform.api.engine.IParameterProvider;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.engine.IPluginManager;
+import org.pentaho.platform.engine.core.output.SimpleOutputHandler;
 import org.pentaho.platform.engine.core.solution.SimpleParameterProvider;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
@@ -27,7 +29,7 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
  */
 public class CdaDatasource implements Datasource {
 
-    private Map<String, Object> paramsMap = new HashMap<String, Object>();
+    private Map<String, Object> requestMap = new HashMap<String, Object>();
     private static final Log logger = LogFactory.getLog(CdaDatasource.class);
 
     public CdaDatasource() {
@@ -46,12 +48,22 @@ public class CdaDatasource implements Datasource {
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        IParameterProvider params = new SimpleParameterProvider(paramsMap);
+        IOutputHandler outputHandler = new SimpleOutputHandler(outputStream, false);
+        IParameterProvider requestParams = new SimpleParameterProvider(requestMap);
+        Map<String,Object> pathMap = new HashMap<String,Object>();
+        pathMap.put("path", "/doQuery");
+        IParameterProvider pathParams = new SimpleParameterProvider(pathMap);
+        Map<String, IParameterProvider> paramProvider = new HashMap<String, IParameterProvider>();
+        paramProvider.put(IParameterProvider.SCOPE_REQUEST,requestParams);
+        paramProvider.put("path",pathParams);
+
         try {
             Method setSession = cda.getClass().getMethod("setSession", IPentahoSession.class);
             setSession.invoke(cda, userSession);
+            Method setOutputHandler = cda.getClass().getMethod("setOutputHandler", IOutputHandler.class);
+            setOutputHandler.invoke(cda, outputHandler);
             Method doQuery = cda.getClass().getMethod("doQuery", IParameterProvider.class, OutputStream.class);
-            doQuery.invoke(cda, params, outputStream);
+            doQuery.invoke(cda, requestParams, outputStream);
             return outputStream.toString();
         } catch (Exception e) {
             logger.error("Failed to execute query: " + e.toString());
@@ -64,22 +76,22 @@ public class CdaDatasource implements Datasource {
     }
 
     public void setParameter(String param, String val) {
-        paramsMap.put("param" + param, val);
+        requestMap.put("param" + param, val);
     }
 
     public void setParameter(String param, Date val) {
-        paramsMap.put("param" + param, val);
+        requestMap.put("param" + param, val);
     }
 
     public void setParameter(String param, List val) {
-        paramsMap.put("param" + param, val.toArray());
+        requestMap.put("param" + param, val.toArray());
     }
 
     public void setDataAccessId(String id) {
-        paramsMap.put("dataAccessId", id);
+        requestMap.put("dataAccessId", id);
     }
 
     public void setDefinitionFile(String file) {
-        paramsMap.put("path", file);
+        requestMap.put("path", file);
     }
 }
