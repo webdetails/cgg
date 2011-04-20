@@ -5,8 +5,6 @@
 package pt.webdetails.cgg.datasources;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -58,12 +56,10 @@ public class CdaDatasource implements Datasource {
         paramProvider.put("path",pathParams);
 
         try {
-            Method setSession = cda.getClass().getMethod("setSession", IPentahoSession.class);
-            setSession.invoke(cda, userSession);
-            Method setOutputHandler = cda.getClass().getMethod("setOutputHandler", IOutputHandler.class);
-            setOutputHandler.invoke(cda, outputHandler);
-            Method doQuery = cda.getClass().getMethod("doQuery", IParameterProvider.class, OutputStream.class);
-            doQuery.invoke(cda, requestParams, outputStream);
+            cda.setSession(userSession);
+            cda.setOutputHandler(outputHandler);
+            cda.setParameterProviders(paramProvider);
+            cda.createContent();
             return outputStream.toString();
         } catch (Exception e) {
             logger.error("Failed to execute query: " + e.toString());
