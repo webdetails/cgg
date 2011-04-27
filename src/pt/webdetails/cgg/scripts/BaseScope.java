@@ -75,7 +75,7 @@ class BaseScope extends ImporterTopLevel {
     public static Object load(Context cx, Scriptable thisObj,
             Object[] args, Function funObj) {
 
-        String file = args[0].toString();
+        String file = args[0] instanceof NativeJavaObject ? ((NativeJavaObject)args[0]).unwrap().toString(): args[0].toString();
         try {
             BaseScope scope = (BaseScope) thisObj;
             cx.evaluateReader(scope, new FileReader(scope.basePath + "/" + file), file, 1, null);
