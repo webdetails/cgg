@@ -16,10 +16,6 @@ import pt.webdetails.cgg.charts.Chart;
 import pt.webdetails.cgg.charts.SVGChart;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.dom.svg.SVGOMDocument;
-import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.engine.IPluginManager;
-import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
-import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.w3c.dom.Document;
 
 /**

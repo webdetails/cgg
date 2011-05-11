@@ -105,12 +105,6 @@ public class ScriptFactory {
     }
 
     private synchronized Scriptable createScope(ScriptType type) {
-
-
-        String solutionRoot = PentahoSystem.getApplicationContext().getSolutionRootPath();
-        // Get necessary Pentaho environment: session and repository
-        IPentahoSession session = PentahoSessionHolder.getSession();
-        final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
         String[] dependencies;
 
         Context cx = ContextFactory.getGlobal().enter();
