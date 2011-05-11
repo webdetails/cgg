@@ -73,7 +73,8 @@ function getCccType(type) {
         "cccLineChart": pvc.LineChart,
         "cccStackedLineChart": pvc.StackedLineChart,
         "cccStackedAreaChart": pvc.StackedAreaChart,
-        "cccPieChart": pvc.PieChart
+        "cccPieChart": pvc.PieChart,
+        "cccBulletChart": pvc.BulletChart
     }[type];
 };
 
