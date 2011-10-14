@@ -12,7 +12,7 @@
     <dependencies defaultconf="default->default">
 
         <!--  third party dependencies -->
-        <dependency org="commons-logging" name="commons-logging" rev="1.1" transitive="false"/>
+        <dependency org="commons-logging" name="commons-logging" rev="1.1.1" transitive="false"/>
         <dependency org="dom4j" name="dom4j" rev="1.6.1" transitive="false"/>
         <dependency org="commons-lang" name="commons-lang" rev="2.2"/>        
 
