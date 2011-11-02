@@ -134,6 +134,16 @@ public class CggContentGenerator extends BaseContentGenerator {
             String scriptName = requestParams.getStringParameter("script", "");
             String scriptType = requestParams.getStringParameter("type", "svg");
             String outputType = requestParams.getStringParameter("outputType", "png");
+
+
+            final String attachmentName = requestParams.getStringParameter("attachmentName", null);
+            if (attachmentName != null) {
+                final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
+                String filename = attachmentName.indexOf(".") > 0 ? attachmentName : attachmentName + "." + outputType;
+                response.setHeader("content-disposition", "attachment; filename=" + filename);
+            }
+
+
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
             logger.debug("Starting:" + new Date().getTime());
