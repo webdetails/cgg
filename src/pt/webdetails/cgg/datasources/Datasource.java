@@ -17,6 +17,8 @@ public interface Datasource {
 
     public void setParameter(String param, String val);
 
+    public void setParameter(String param, String[] val);
+
     public void setParameter(String param, Date val);
 
     public void setParameter(String param, List val);
