@@ -16,7 +16,7 @@
   </description>
 
   <!-- Import the common_build.xml file which contains all the default tasks -->
-  <import file="common_build.xml"/>
+  <import file="build-res/subfloor-pkg.xml"/>
 
   <!--
       AS STATED ABOVE, THE ONLY TASKS THAT SHOULD EXIST IN THIS BUILD FILE ARE
@@ -32,19 +32,6 @@
     </copy>
   </target>
 -->
-  <target name="compile.compile" depends="init" description="Performs the actual javac compile">
-    <javac destdir="${classes.dir}"
-           debug="${javac.debug}"
-           deprecation="${javac.deprecation}"
-           fork="true"
-           source="${javac.source}"
-           target="${javac.target}">
-      <classpath>
-        <path refid="classpath"/>
-      </classpath>
-      <src path="${src.dir}"/>
-    </javac>
-  </target>
 
   <property name="plugin.name"
             value="cgg"
@@ -64,6 +51,19 @@
 
 
   <tstamp/>
+
+  <path id="classpath">
+    <fileset dir="${devlib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${lib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="runtime-lib">
+      <include name="**/*.jar" />
+    </fileset>
+  </path>
+
 
   <!-- Build the project.revision property -->
   <condition property="distribution.version" value="${project.stage}-${DSTAMP}" else="${project.stage}-${project.version}">
@@ -86,6 +86,8 @@
 
               Creates a distribution of this project's plugin zip
               ====================================================================-->
+  <target name="assemble" depends="assemble.init,install-antcontrib, dist-plugin"/>
+
   <target name="dist-plugin" depends="jar" description="Creates a distribution">
 
     <!-- delete and re-create the plugin dist folder tree -->
@@ -98,7 +100,7 @@
       <fileset dir="${dist.dir}">
         <include name="${ivy.artifact.id}-${project.revision}.jar"/>
       </fileset>
-      <fileset dir="${devlib.dir}">
+      <fileset dir="runtime-lib">
         <include name="**/*.jar"/>
       </fileset>
     </copy>
@@ -184,9 +186,9 @@
 
           Publishes the jar and plugin zip package to the Maven repository
           ====================================================================-->
-  <target name="publish-pentaho-nojar"
+  <target name="publish-nojar"
           depends="install-antcontrib,create-pom,ivy.deliver">
-    <ant antfile="common_build.xml" target="publish-pentaho-nojar"/>
+    <ant antfile="common_build.xml" target="publish-nojar"/>
 
     <ivy:makepom ivyfile="package-ivy.xml" pomfile="plugin-pom.xml"/>
     <ivy:makepom ivyfile="package-ivy.xml" pomfile="samples-pom.xml"/>
@@ -216,11 +218,12 @@
 
   <!-- Overriding resolve target so we can add resolve-dev -->
   <target name="resolve"
-          depends="resolve-default, resolve-test, resolve-dev, ivy.check-releasable"
+          depends="resolve-default, resolve-test, resolve-codegen, resolve-runtime, ivy.check-releasable"
           description="Retrieves all the dependent libraries" />
 
-  <target name="resolve-dev">
-    <ivy:resolve file="ivy.xml" conf="dev" />
-    <ivy:retrieve conf="dev" pattern="${devlib.dir}/[module]-[revision](-[classifier]).[ext]" />
+  <target name="resolve-runtime" depends="resolve-init">
+    <ivy:resolve file="${ivyfile}" conf="runtime" />
+    <ivy:retrieve conf="runtime" pattern="runtime-lib/[module]-[revision](-[classifier]).[ext]" />
   </target>
+
 </project>
