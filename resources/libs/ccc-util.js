@@ -1,5 +1,65 @@
+var hasOwn = Object.prototype.hasOwnProperty;
 // Shamelessly copied from jquery!
 jQuery = $ = {};
+jQuery.isPlainObject = function(ele){
+
+  // Must be an Object.
+  // Because of IE, we also have to check the presence of the constructor property.
+  // Make sure that DOM nodes and window objects don't pass through, as well
+  if ( !obj || jQuery.type(obj) !== "object" || obj.nodeType || jQuery.isWindow( obj ) ) {
+     return false;
+  }
+  
+  // Not own constructor property must be Object
+  if ( obj.constructor &&
+     !hasOwn.call(obj, "constructor") &&
+     !hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
+     return false;
+  }
+  
+  // Own properties are enumerated firstly, so to speed up,
+  // if last one is own, then all properties are own.
+
+  var key;
+  for ( key in obj ) {}
+  
+  return key === undefined || hasOwn.call( obj, key );
+}
+jQuery.isArray = Array.isArray || function( obj ) {
+  return jQuery.type(obj) === "array";
+}
+jQuery.isWindow = function( obj ) {
+  return obj && typeof obj === "object" && "setInterval" in obj;
+}
+jQuery.type = function( obj ) {
+  return obj == null ?
+     String( obj ) :
+     "object";
+}
+
+jQuery.isPlainObject = function( obj ) {
+  // Must be an Object.
+  // Because of IE, we also have to check the presence of the constructor property.
+  // Make sure that DOM nodes and window objects don't pass through, as well
+  if ( !obj || jQuery.type(obj) !== "object" || obj.nodeType || jQuery.isWindow( obj ) ) {
+     return false;
+  }
+  
+  // Not own constructor property must be Object
+  if ( obj.constructor &&
+     !hasOwn.call(obj, "constructor") &&
+     !hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
+     return false;
+  }
+  
+  // Own properties are enumerated firstly, so to speed up,
+  // if last one is own, then all properties are own.
+
+  var key;
+  for ( key in obj ) {}
+  
+  return key === undefined || hasOwn.call( obj, key );
+}
 $.support = {};
 $.extend = function() {
 	 var options, name, src, copy, copyIsArray, clone,
@@ -65,6 +125,7 @@ $.extend = function() {
 	return target;
 };
 $.tipsy = function(){};
+pv.Behavior.tipsy = function(){};
 
 function getCccType(type) {
     return {
@@ -74,6 +135,7 @@ function getCccType(type) {
         "cccStackedLineChart": pvc.StackedLineChart,
         "cccStackedAreaChart": pvc.StackedAreaChart,
         "cccPieChart": pvc.PieChart,
+        "cccHeatGridChart": pvc.HeatGridChart,
         "cccBulletChart": pvc.BulletChart
     }[type];
 };
