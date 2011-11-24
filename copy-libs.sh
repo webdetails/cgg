@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 cgg_dir=`pwd`
 echo "using $cgg_dir as plugin origin"
