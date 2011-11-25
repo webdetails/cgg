@@ -155,7 +155,7 @@ function renderCccFromComponent(component, data) {
 		try{
 			data = component.postFetch(data);
 		}
-		catch(e){} // ignore
+		catch(e){print("Error in postfetch: " + e)} // ignore
 	}
     component.chartDefinition.extensionPoints = convertExtensionPoints(component.chartDefinition.extensionPoints);
     var o = $.extend({},component.chartDefinition);
