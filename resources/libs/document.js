@@ -38,7 +38,10 @@ cgg.element = function(_el) {
     get style(){
         return new cgg.style(_el.getStyle());
     },
-
+    get parentNode() {
+      if(_el.getParentNode() == null) { return null };
+      return new cgg.element(_el.getParentNode());
+    },
     addEventListener: function() {},
     appendChild: function(e) {
       /* We need to appendChild() the raw Java element, but
