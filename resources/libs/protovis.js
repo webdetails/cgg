@@ -312,10 +312,15 @@ pv.error = function(e) {
  * @param {function} the event handler callback.
  */
 pv.listen = function(target, type, listener) {
+  //if(pv.renderer() == 'batik') return;
   if (type == 'load' || type == 'onload')
       return pv.listenForPageLoad (pv.listener(listener));
 
   listener = pv.listener(listener);
+  
+  //TODO:
+  print(target + ', ' + type + ', ' + listener);
+  
   return target.addEventListener
       ? target.addEventListener(type, listener, false)
       : target.attachEvent("on" + type, listener);
@@ -3068,7 +3073,9 @@ pv.Scale.quantitative = function() {
       n = false, // whether the domain is negative
       f = pv.identity, // default forward transform
       g = pv.identity, // default inverse transform
-      tickFormat = String; // default tick formatting function
+      tickFormat = String, // default tick formatting function
+      dateTickFormat, //custom date tick format
+      dateTickPrecision; //custom date tick precision
 
   /** @private */
   function newDate(x) {
@@ -3262,32 +3269,34 @@ pv.Scale.quantitative = function() {
         }
       }
 
+      var nn = 5;
+
       var precision, format, increment, step = 1;
-      if (span >= 3 * 31536e6) {
+      if (span >= nn * 31536e6) {
         precision = 31536e6;
         format = "%Y";
         /** @ignore */ increment = function(d) { d.setFullYear(d.getFullYear() + step); };
-      } else if (span >= 5 * 2592e6) {
+      } else if (span >= nn * 2592e6) {
         precision = 2592e6;
         format = "%m/%Y";
         /** @ignore */ increment = function(d) { d.setMonth(d.getMonth() + step); };
-      } else if (span >= 5 * 6048e5) {
+      } else if (span >= nn * 6048e5) {
         precision = 6048e5;
         format = "%m/%d";
         /** @ignore */ increment = function(d) { d.setDate(d.getDate() + 7 * step); };
-      } else if (span >= 5 * 864e5) {
+      } else if (span >= nn * 864e5) {
         precision = 864e5;
         format = "%m/%d";
         /** @ignore */ increment = function(d) { d.setDate(d.getDate() + step); };
-      } else if (span >= 5 * 36e5) {
+      } else if (span >= nn * 36e5) {
         precision = 36e5;
         format = "%I:%M %p";
         /** @ignore */ increment = function(d) { d.setHours(d.getHours() + step); };
-      } else if (span >= 5 * 6e4) {
+      } else if (span >= nn * 6e4) {
         precision = 6e4;
         format = "%I:%M %p";
         /** @ignore */ increment = function(d) { d.setMinutes(d.getMinutes() + step); };
-      } else if (span >= 5 * 1e3) {
+      } else if (span >= nn * 1e3) {
         precision = 1e3;
         format = "%I:%M:%S";
         /** @ignore */ increment = function(d) { d.setSeconds(d.getSeconds() + step); };
@@ -3296,6 +3305,10 @@ pv.Scale.quantitative = function() {
         format = "%S.%Qs";
         /** @ignore */ increment = function(d) { d.setTime(d.getTime() + step); };
       }
+
+      precision = dateTickPrecision?dateTickPrecision:precision;
+      format = dateTickFormat?dateTickFormat:format;
+
       tickFormat = pv.Format.date(format);
 
       var date = new Date(min), dates = [];
@@ -3340,6 +3353,13 @@ pv.Scale.quantitative = function() {
         }
       }
 
+
+      if(dateTickPrecision){
+        step=1;
+        increment = function(d) { d.setSeconds(d.getSeconds() + step*dateTickPrecision/1000);};
+      }
+
+
       while (true) {
         increment(date);
         if (date > max) break;
@@ -3362,6 +3382,37 @@ pv.Scale.quantitative = function() {
     var ticks = pv.range(start, end + step, step);
     return reverse ? ticks.reverse() : ticks;
   };
+
+
+  /**
+   * Formats the specified tick with a well defined string for the date
+   * @function
+   * @name pv.Scale.quantitative.prototype.dateTickFormat
+   * @returns {string} a string with the desired tick format.
+   */
+  scale.dateTickFormat = function () {
+    if (arguments.length) {
+      dateTickFormat = arguments[0];
+      return this;
+    }
+    return dateTickFormat;  };
+
+
+
+  /**
+   * Formats the specified tick with a defined precision for the date
+   * @function
+   * @name pv.Scale.quantitative.prototype.dateTickPrecision
+   * @returns {string} a string with the desired tick format.
+   */
+  scale.dateTickPrecision = function () {
+    if (arguments.length) {
+      dateTickPrecision = arguments[0];
+      return this;
+    }
+    return dateTickPrecision;  };
+
+
 
   /**
    * Formats the specified tick value using the appropriate precision, based on
@@ -5144,10 +5195,9 @@ pv.SvgScene.append = function(e, scenes, index) {
 /**
  * Applies a title tooltip to the specified element <tt>e</tt>, using the
  * <tt>title</tt> property of the specified scene node <tt>s</tt>. Note that
- * this implementation does not create an SVG <tt>title</tt> element as a child
- * of <tt>e</tt>; although this is the recommended standard, it is only
- * supported in Opera. Instead, an anchor element is created around the element
- * <tt>e</tt>, and the <tt>xlink:title</tt> attribute is set accordingly.
+ * this implementation creates both the SVG <tt>title</tt> element (which
+ * is the recommended approach, but only works in more modern browsers) and
+ * the <tt>xlink:title</tt> attribute which works on more down-level browsers.
  *
  * @param e an SVG element.
  * @param s a scene node.
@@ -5158,6 +5208,8 @@ pv.SvgScene.title = function(e, s) {
   if (s.title) {
     if (!a) {
       a = this.create("a");
+      // for FF>=4 when showing non-title element tooltips
+      a.setAttributeNS(this.xlink, "xlink:href", "");
       if (e.parentNode) e.parentNode.replaceChild(a, e);
       a.appendChild(e);
     }
@@ -5824,7 +5876,8 @@ pv.SvgScene.dot = function(scenes) {
       "fill-opacity": fill.opacity || null,
       "stroke": stroke.color,
       "stroke-opacity": stroke.opacity || null,
-      "stroke-width": stroke.opacity ? s.lineWidth / this.scale : null
+      "stroke-width": stroke.opacity ? s.lineWidth / this.scale : null,
+      "stroke-dasharray": s.strokeDasharray || "none"
     };
     if (path) {
       svg.transform = "translate(" + s.left + "," + s.top + ")";
@@ -5988,7 +6041,8 @@ pv.SvgScene.line = function(scenes) {
       "stroke": stroke.color,
       "stroke-opacity": stroke.opacity || null,
       "stroke-width": stroke.opacity ? s.lineWidth / this.scale : null,
-      "stroke-linejoin": s.lineJoin
+      "stroke-linejoin": s.lineJoin,
+      "stroke-dasharray": s.strokeDasharray || "none"
     });
   return this.append(e, scenes, 0);
 };
@@ -6173,7 +6227,7 @@ pv.SvgScene.panel = function(scenes) {
                 * Until a better solution comes along, lets use this.
                 */
                 var me = this;
-                var callback = function () {
+                (function () {
                     if (complete) {
                         complete = false;
                         me.appendChild(frag);
@@ -6181,11 +6235,11 @@ pv.SvgScene.panel = function(scenes) {
                           me.addEventListener(pv.Scene.events[j], pv.SvgScene.dispatch, false);
                         }
                         scenes.$g = me;
+                        scenes.$g.__ready = true;
                     } else {
-                        setTimeout(callback, 10);
+                        setTimeout(arguments.callee, 10);
                     }
-                }
-                callback();
+                })();
 
             }, false);
 
@@ -6196,12 +6250,13 @@ pv.SvgScene.panel = function(scenes) {
               g.addEventListener(this.events[j], this.dispatch, false);
             }
             g = s.canvas.appendChild(g);
+            g.__ready = true;
         }
 
         e = g.firstChild;
       }
       scenes.$g = g;
-      if (pv.renderer() != 'svgweb') {
+      if (g.__ready) {
         g.setAttribute("width", s.width + s.left + s.right);
         g.setAttribute("height", s.height + s.top + s.bottom);
       }
@@ -6211,7 +6266,7 @@ pv.SvgScene.panel = function(scenes) {
     if (s.overflow == "hidden") {
       var id = pv.id().toString(36),
           c = this.expect(e, "g", {"clip-path": "url(#" + id + ")"});
-      if (!c.parentNode) g.appendChild(c);
+      if (!c.parentNode && g) g.appendChild(c);//TODO: & g vai fora!
       scenes.$g = g = c;
       e = c.firstChild;
 
@@ -8113,6 +8168,7 @@ pv.Dot.prototype = pv.extend(pv.Mark)
     .property("shapeSize", Number)
     .property("lineWidth", Number)
     .property("strokeStyle", pv.color)
+    .property("strokeDasharray", String)
     .property("fillStyle", pv.color);
 
 pv.Dot.prototype.type = "dot";
@@ -8208,7 +8264,8 @@ pv.Dot.prototype.defaults = new pv.Dot()
     .extend(pv.Mark.prototype.defaults)
     .shape("circle")
     .lineWidth(1.5)
-    .strokeStyle(pv.Colors.category10().by(pv.parent));
+    .strokeStyle(pv.Colors.category10().by(pv.parent))
+    .strokeDasharray("");
 
 /**
  * Constructs a new dot anchor with default properties. Dots support five
@@ -8481,6 +8538,7 @@ pv.Line.prototype = pv.extend(pv.Mark)
     .property("lineWidth", Number)
     .property("lineJoin", String)
     .property("strokeStyle", pv.color)
+    .property("strokeDasharray", String)
     .property("fillStyle", pv.color)
     .property("segmented", Boolean)
     .property("interpolate", String)
@@ -8596,6 +8654,7 @@ pv.Line.prototype.defaults = new pv.Line()
     .lineJoin("miter")
     .lineWidth(1.5)
     .strokeStyle(pv.Colors.category10().by(pv.parent))
+    .strokeDasharray("")
     .interpolate("linear")
     .eccentricity(0)
     .tension(.7);
