@@ -1,3 +1,4 @@
+    lib("compat.js") &&
     lib("document.js") &&
     lib("svg-utils.js") &&
     lib("protovis.js") && 
