@@ -150,6 +150,13 @@ function convertExtensionPoints(extPoints) {
 }
 
 function renderCccFromComponent(component, data) {
+
+	if(typeof component.postFetch === 'function'){
+		try{
+			data = component.postFetch(data);
+		}
+		catch(e){print("Error in postfetch: " + e)} // ignore
+	}
     component.chartDefinition.extensionPoints = convertExtensionPoints(component.chartDefinition.extensionPoints);
     var o = $.extend({},component.chartDefinition);
     o.showTooltips = false;

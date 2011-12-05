@@ -82,3 +82,8 @@ cgg.style = function(_style) {
   return style;
 }
 document = new cgg.document(_document);
+
+window.console = {};
+console.log = function() {
+print("LOG: " + Array.prototype.join.call(arguments,','));
+}
