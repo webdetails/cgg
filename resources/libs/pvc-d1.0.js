@@ -30,11 +30,11 @@ pvc.ev = function(x){
 
 pvc.sumOrSet = function(v1,v2){
     return typeof v1 == "undefined"?v2:v1+v2;
-}
+};
 
 pvc.nonEmpty = function(d){
     return typeof d != "undefined" && d !== null;
-}
+};
 
 pvc.padMatrixWithZeros = function(d){
     return d.map(function(v){
@@ -42,14 +42,53 @@ pvc.padMatrixWithZeros = function(d){
             return typeof a == "undefined"?0:a;
         })
     })
-}
+};
 
 pvc.cloneMatrix = function(m){
     return m.map(function(d){
         return d.slice();
     });
-}
+};
 
+    /**
+     *ex.: arrayStartsWith(['EMEA','UK','London'], ['EMEA']) -> true
+     *     arrayStartsWith(a, a) -> true
+     **/
+pvc.arrayStartsWith = function(array, base)
+{
+    if(array.length < base.length) { return false; }
+    
+    for(var i=0; i<base.length;i++){
+        if(base[i] != array[i]) {
+            return false;
+        }
+    }
+    return true;
+};
+
+/**
+ * Equals for two arrays
+ * func - needed if not flat array of comparables
+ **/
+pvc.arrayEquals = function(array1, array2, func)
+{
+  if(array1 == null){return array2 == null;}
+  
+  var useFunc = typeof(func) == 'function';
+  
+  for(var i=0;i<array1.length;i++)
+  {
+    if(useFunc){
+        if(!func(array1[i],array2[i])){
+            return false;
+        }
+    }
+    else if(array1[i]!=array2[i]){
+        return false;   
+    }
+  }
+  return true;
+};
 
 /**
  *
@@ -288,7 +327,7 @@ pvc.Base = Base.extend({
             }
         } catch (e) {
             if(e instanceof NoDataException) {
-        
+
                 if (!this.basePanel) {
                     pvc.log("No panel");
                     this.basePanel = new pvc.BasePanel(this); // Base panel, no parent
@@ -1871,7 +1910,8 @@ pvc.AxisPanel = pvc.BasePanel.extend({
         }
         
         var maxDepth = pv.max(elements, function(col){
-            return $.isArray(col) ? col.length : 1;
+            //return $.isArray(col) ? col.length : 1;
+            return (col != null && col[0] !== undefined) ? col.length : 1;
         });
         
         var layout = this.getLayoutSingleCluster(tree, this.anchor, maxDepth);
@@ -1917,10 +1957,10 @@ pvc.AxisPanel = pvc.BasePanel.extend({
         
         //label space (left transparent)
         var lblBar = layout.node.add(pv.Bar)
-            .fillStyle('rgba(127,127,127,.01)')
+            .fillStyle('rgba(127,127,127,.001)')
             .strokeStyle( function(d){
                 if(d.maxDepth == 1 || d.maxDepth ==0 ) {return null;}
-                else {return "rgba(127,127,127,0.1)";} //non-terminal items, so grouping is visible
+                else {return "rgba(127,127,127,0.3)";} //non-terminal items, so grouping is visible
             })
             .lineWidth( function(d){
                 if(d.maxDepth == 1 || d.maxDepth ==0 ) { return 0; }
@@ -2027,7 +2067,7 @@ pvc.AxisPanel = pvc.BasePanel.extend({
     
     getTextSizePlaceholder : function()
     {
-        var TEXT_SIZE_PHOLDER_APPEND='_textSizeHtmlObj';//TODO:check renderer 'batik'
+        var TEXT_SIZE_PHOLDER_APPEND='_textSizeHtmlObj';
         if(!this.textSizeTestHolder || this.textSizeTestHolder.parent().length == 0)
         {
             var chartHolder = $('#' + this.chart.options.canvas);
@@ -2046,58 +2086,64 @@ pvc.AxisPanel = pvc.BasePanel.extend({
         }
         return this.textSizeTestHolder;
     },
-    getTextSizePlaceholderCGG : function()
-    {
-        var TEXT_SIZE_PHOLDER_APPEND='_textSizeHtmlObj';
-       // this.textSizeTestHolder = document.getElementById(this.chart.options.canvas + TEXT_SIZE_PHOLDER_APPEND);
-        if(!this.textSizeTestHolder)// || this.textSizeTestHolder.parent().length == 0)
-        {
-            var chartHolder = document.getElementById(this.chart.options.canvas);
-            this.textSizeTestHolderId = this.chart.options.canvas + TEXT_SIZE_PHOLDER_APPEND;
-            this.textSizeTestHolder = document.createElementNS("http://www.w3.org/2000/svg", 'g');
-             this.textSizeTestHolder.setAttribute('id', this.textSizeTestHolderId);
-            document.lastChild.appendChild(this.textSizeTestHolder);
-        }
-        return this.textSizeTestHolder;
-    },
 
     getTextSizePvLabel: function(text, font)
     {
-        var holder = this.getTextSizePlaceholder();
-        var holderId = holder.attr('id');
-        var panel = new pv.Panel();
-        panel.canvas(holderId);
-        var lbl = panel.add(pv.Label).text(text);
-        if(font){
-            lbl.font(font);
+        if(!this.textSizePvLabel || this.textSizeLabelFont != font){
+            var holder = this.getTextSizePlaceholder();
+            var holderId = holder.attr('id');
+            var panel = new pv.Panel();
+            panel.canvas(holderId);
+            var lbl = panel.add(pv.Label).text(text);
+            if(font){
+                lbl.font(font);
+            }
+            panel.render();
+            this.textSizePvLabel = $('#' + holderId + ' text');
+            this.textSizeLabelFont = font;
         }
-        return lbl;
+        else {
+            this.textSizePvLabel.text(text);
+        }
+        
+        return this.textSizePvLabel[0];
     },
     
     getTextLength: function(text, font){
-      //TODO:
-      switch(pv.renderer()){
-        case 'batik':
-            return getTextLenCGG(text, font);
-        case 'vml':
-            return this.getTextLenVML(text, font);
-        case 'svg':
-        default:
-            return this.getTextLenSVG(text, font);        
-      }
+        
+        switch(pv.renderer()){
+            case 'vml':
+                return this.getTextLenVML(text, font);
+            case 'batik':
+                font = this.splitFontCGG(font);
+                return getTextLenCGG(text, font.fontFamily, font.fontSize);
+            case 'svg':
+            default:
+                return this.getTextLenSVG(text, font);
+        }
+      //  
       //return (pv.renderer() != 'vml')?//TODO: support svgweb? defaulting to svg
       //  this.getTextLenSVG(text, font) :
       //  this.getTextLenVML(text, font) ;
     },
     
+    splitFontCGG: function(font){
+        var el = document.createElementNS('http://www.w3.org/2000/svg','text');
+        var sty = el.style;
+        sty.setProperty('font',font);
+        var result = {};
+        result.fontFamily = sty.getProperty('font-family');
+        if(!result.fontFamily){
+            result.fontFamily = 'sans-serif';
+        }
+        result.fontSize = sty.getProperty('font-size');
+        result.fontStyle = sty.getProperty('font-style');
+        return result;
+    },
+    
     getTextLenSVG: function(text, font){
-        var holder = this.getTextSizePlaceholder();
-        var holderId = holder.attr('id');
-        var lbl = this.getTextSizePvLabel(text, font);// panel.add(pv.Label).text(text);//.textBaseline("middle");
-        lbl.root.render();
-        //get generated label
-        var elem = $('#' + holderId + ' text')[0];
-        var box = elem.getBBox();//bounding box
+        var lbl = this.getTextSizePvLabel(text, font);
+        var box = lbl.getBBox();
         return box.width;
     },
     
@@ -2107,16 +2153,17 @@ pvc.AxisPanel = pvc.BasePanel.extend({
     
     //TODO: if not in px?..
     getFontSize: function(font){
-        //TODO:batik
         if(pv.renderer() == 'batik'){
-            return 15;//TODO:!
+            var sty = document.createElementNS('http://www.w3.org/2000/svg','text').style;
+            sty.setProperty('font',font);
+            return parseInt(sty.getProperty('font-size'));
         }
-        
-        var holder = this.getTextSizePlaceholder();
-        holder.css('font', font);
-        return parseInt(holder.css('font-size'));//.slice(0,-2);
+        else {
+            var holder = this.getTextSizePlaceholder();
+            holder.css('font', font);
+            return parseInt(holder.css('font-size'));//.slice(0,-2);
+        }
     },
-
     
     getFitInfo: function(w, h, text, font, diagMargin)
     {    
@@ -2129,48 +2176,55 @@ pvc.AxisPanel = pvc.BasePanel.extend({
             v: len <= h,
             d: len <= Math.sqrt(w*w + h*h) - diagMargin
         };
-
         return fitInfo;
     },
     
-    trimToWidthSVGDiag: function(w,h,text,font,angle, trimTerminator){//TODO:discard?
-        
-        if(!pv.have_SVG){
-            return this.trimToWidth(Math.sqrt(w*w + h*h -2),text,font);
-        }
-        
-        var lbl = this.getTextSizePvLabel(text, font);
-        var holder = this.getTextSizePlaceholder();
-        var holderId = holder.attr('id'); 
-        var trimmed = false;
-        lbl.textAngle(angle);
-        lbl.root.render();
-        var elem = $('#' + holderId + ' text').parent()[0];
-        
-        for(var box =  elem.getBBox();
-            box.width > w ||
-            box.height > h;
-            text = text.slice(0,text.length -1))
-        {
-            trimmed = true;
-            lbl.text(text + trimTerminator);
-            lbl.root.render();
-           // elem = $('#' + holderId + ' text').parent()[0];
-            box = elem.getBBox();
-        }
-        return text + (trimmed? trimTerminator: '');
+    trimToWidth: function(len,text,font,trimTerminator){
+      if(text == '') return text;
+      var textLen = this.getTextLength(text, font);
+      
+      if(textLen <= len){
+        return text;
+      }
+      
+      if(textLen > len * 1.5){//cutoff for using other algorithm
+        return this.trimToWidthBin(len,text,font,trimTerminator);
+      }
+      
+      while(textLen > len){
+        text = text.slice(0,text.length -1);
+        textLen = this.getTextLength(text, font);
+      }
+      return text + trimTerminator;
     },
     
-    trimToWidth: function(len, text, font, trimTerminator){//TODO:perf?
+    trimToWidthBin :function(len,text,font,trimTerminator){
         
-        if(text == '') return text;
-        var trimmed = false;
+        var high = text.length-2;
+        var low = 0;
+        var mid;
+        var fits=false;
+        var textLen;
         
-        for(var textLen = this.getTextLength(text, font); textLen > len; text = text.slice(0,text.length -1)){
-            textLen = this.getTextLength(text, font);
-            trimmed = true;
+        while(low <= high && high > 0){
+            
+            mid = Math.ceil((low + high)/2);
+            //text = text.slice(0,mid);
+            textLen = this.getTextLength(text.slice(0,mid), font);
+            
+            if(textLen > len){
+                high = mid-1;
+            }
+            else {
+                if( this.getTextLength(text.slice(0,mid+1), font) < len ){
+                    low = mid+1;
+                }
+                else return text.slice(0,mid) + trimTerminator;
+            }
+            
         }
-        return text + (trimmed? trimTerminator: '');
+        
+        return text.slice(0,high) + trimTerminator; 
     },
     
     //TODO: use for IE if non-svg option kept
@@ -3074,7 +3128,7 @@ pvc.DataEngine = Base.extend({
             pvc.log("Creating RelationalTranslator");
             this.translator = new pvc.RelationalTranslator();
         }
-
+        
         this.translator.setData(this.metadata, this.resultset);
         this.translator.prepare(this);
 
@@ -3642,6 +3696,13 @@ pvc.DataEngine = Base.extend({
 });
 
 
+///*
+// * DataEngine that deals with multiple measures
+// */
+//pvc.MultiValuedDataEngine = pvc.DataEngine.extend({
+//    
+//    
+//});
 
 pvc.DataTranslator = Base.extend({
 
@@ -3754,6 +3815,7 @@ pvc.CrosstabTranslator = pvc.DataTranslator.extend({
         this.values = pvc.cloneMatrix(this.resultset);
         this.values.splice(0,0,a1);
 
+        
     }
   
 });
@@ -4071,9 +4133,8 @@ pvc.MultiValueTranslator = pvc.DataTranslator.extend({
         }
     },
     
-    //TODO: remake
     sumOrSetVect: function(v1, v2){
-        if (v1 == null || !$.isArray(v1)) {return v2;}
+         if (v1 == null || v1[0] === undefined) { return v2; }
         //TODO: check
         var res = [];
         for(var i=0;i<v1.length;i++){
@@ -4181,8 +4242,8 @@ pvc.HeatGridChart = pvc.CategoricalAbstract.extend({
             normPerBaseCategory: true,
             orthoAxisOrdinal: true,
             numSD: 2,                 // width (only for normal distribution)
-            minColor: "white",
-            maxColor: "darkgreen",
+            //minColor: "white",
+            //maxColor: "darkgreen",
             nullColor:  "#efc5ad",  // white with a shade of orange
             rubberBandFill: 'rgba(203, 239, 163, 0.6)',
             rubberBandLine: '#86fe00',
@@ -4195,7 +4256,8 @@ pvc.HeatGridChart = pvc.CategoricalAbstract.extend({
                 self.heatGridChartPanel.selectAxisValue('y', item, event.ctrlKey);
                 self.heatGridChartPanel.pvPanel.render();
                 self.heatGridChartPanel.triggerSelectionChange();
-            }
+            },
+            colorRange: ['red', 'yellow','green']
         };
         
         // Apply options
@@ -4205,6 +4267,10 @@ pvc.HeatGridChart = pvc.CategoricalAbstract.extend({
         this.options.orthoAxisOrdinal = true;
         this.options.legend = false;
         this.options.orginIsZero = true;
+        
+        if(this.options.useCompositeAxis){//force array support
+            this.options.isMultiValued = true;
+        }
 
     },
 
@@ -4214,7 +4280,6 @@ pvc.HeatGridChart = pvc.CategoricalAbstract.extend({
 
         pvc.log("Prerendering in heatGridChart");
         
-
 
         this.heatGridChartPanel = new pvc.HeatGridChartPanel(this, {
             stacked: this.options.stacked,
@@ -4274,7 +4339,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
     defaultValIdx:0,
     shape: "square",
     nullShape: "cross",
-    defaultBorder: 0,
+    defaultBorder: 1,
     nullBorder: 2,
     selectedBorder: 2,
     //function to be invoked when a selection occurs
@@ -4291,8 +4356,8 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
     },
 
     getValue: function(d, i){
-        if($.isArray(d)) {
-            if(i != null) return d[i];
+        if(d!=null && d[0] !== undefined){
+            if(i != null && d[i] !== undefined) return d[i];//TODO:
             else return d[0];
         }
         else return d;
@@ -4304,7 +4369,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
 
 
     valuesToText: function(vals){
-        if($.isArray(vals)){
+        if(vals != null && vals[0] !== undefined){// $.isArray(vals)){
             return vals.join(', ');
         }
         else return vals;
@@ -4321,7 +4386,11 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         this.sizeValIdx = opts.sizeValIdx;
         this.selectNullValues = opts.nullShape != null;
         
-        //TODO:
+        //colors
+        opts.nullColor = pv.color(opts.nullColor);
+        if(opts.minColor != null) opts.minColor = pv.color(opts.minColor);
+        if(opts.maxColor != null) opts.maxColor = pv.color(opts.maxColor);
+        
         if(opts.shape != null) {this.shape = opts.shape;}
         
         //event triggering
@@ -4341,7 +4410,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
 
         var origData = this.chart.dataEngine.getVisibleTransposedValues();
         // create a mapping of the data that shows the columns (rows)
-        data = origData.map(function(d){
+        var data = origData.map(function(d){
             return pv.dict(cols, function(){
                 return  d[this.index];
             });
@@ -4354,7 +4423,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         var w = (xScale.max - xScale.min)/xScale.domain().length;
         var h = (yScale.max - yScale.min)/yScale.domain().length;
 
-        if (anchor != "bottom") {//TODO: remove and change composite axis labels!
+        if (anchor != "bottom") {
             var tmp = w;
             w = h;
             h = tmp;
@@ -4371,14 +4440,13 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
             [pvc.BasePanel.parallelLength[anchor]](w)
             .add(pv.Panel)
             .data(data)
-            //[pvc.BasePanel.oppositeAnchor[anchor]]
             [anchor]
             (function(){
                 return this.index * h;
             })
             [pvc.BasePanel.orthogonalLength[anchor]](h)
             .antialias(false)
-            .strokeStyle(null)//TODO: issue with categorical axis default label
+            .strokeStyle(null)
             .lineWidth(0)
             .overflow('hidden'); //overflow important if showValues=true
         
@@ -4390,12 +4458,12 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         //set coloring and shape / sizes if enabled
        if(opts.useShapes)
        {
-            this.createHeatMap(w,h, opts, fill);
+            this.createHeatMap(data, w,h, opts, fill);
        }
        else
        {//no shapes, apply color map to panel iself
         this.pvHeatGrid.fillStyle(function(dat, col){
-            return  (dat[col] != null) ? fill[col](dat[col]) : opts.nullColor;
+             return  (dat[col] != null) ? fill[col](dat[col]) : opts.nullColor;
          });
        }
 
@@ -4412,7 +4480,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         if (opts.clickable) {//custom clickAction
             this.pvHeatGrid
             .cursor("pointer")
-            .event("click",function(row, rowCol){//TODO: mouse event?
+            .event("click",function(row, rowCol){
                 var s = myself.chart.dataEngine.getSeries()[myself.stacked?this.parent.index:this.index]
                 var c = myself.chart.dataEngine.getCategories()[myself.stacked?this.index:this.parent.index]
                 var d = row[rowCol];
@@ -4444,7 +4512,447 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         this.extend(this.pvPanel,"chart_");
     },
     
-    inRubberBandSelection: function(x,y){
+    //creates new version
+    createHeatMap: function(data, w, h, opts, fill)
+    {
+        var myself = this;
+        //total max in data
+        var maxVal = pv.max(data, function(datum){// {col:value ..}
+            return pv.max( pv.values(datum).map(
+                function(d){ return myself.getValue(d, myself.sizeValIdx);})) ;
+        });
+    
+        var maxRadius = Math.min(w,h) / 2 -2;
+        var maxArea = maxRadius * maxRadius ;// apparently treats as square area even if circle, triangle is different
+        
+        var valueToRadius = function(value){
+            return value != null ? value/maxVal * maxRadius : Math.min(maxRadius,5) ;//TODO:hcoded
+        };
+        
+        var valueToArea =  function(value){//
+            return value != null ? value/maxVal * maxArea :  Math.max(4,maxArea/16);//TODO:hcoded
+        }
+        
+        var valueToColor = function(value, i){
+            return  (value != null) ? fill[i](value) : opts.nullColor;
+        };
+        
+        var getLineWidth = function(value, isSelected){
+            if(myself.sizeValIdx == null ||
+               !myself.isNullShapeLineOnly() ||
+               myself.getValue(value, myself.sizeValIdx) != null)
+            {
+                return isSelected?
+                    myself.selectedBorder:
+                    myself.defaultBorder;
+            }
+            else 
+            {//is null and needs border to show up
+                if(isSelected){
+                 return (myself.selectedBorder == null || myself.selectedBorder == 0 )?
+                    myself.nullBorder:
+                    myself.selectedBorder;
+                }
+                else
+                {
+                    return (myself.defaultBorder > 0)?
+                        myself.defaultBorder:
+                        myself.nullBorder;
+                }
+            }
+        };
+        
+        var getBorderColor = function(value,i,selected){
+            return getFillColor(value,i,selected).darker();
+        };
+        
+        var toGreyScale = function(color){
+            //convert to greyscale using YCbCr luminance conv
+            var avg = Math.round( 0.299 * color.r + 0.587 * color.g + 0.114 * color.b);
+          //  var avg = Math.round( (color.r + color.g + color.b)/3);
+            
+            return pv.rgb(avg,avg,avg);
+        };
+        
+        var getFillColor = function(value,i, isSelected){
+           var color = opts.nullColor;
+           if(myself.colorValIdx != null && myself.getColorValue(value) != null)
+           {
+               color =  fill[i](myself.getColorValue(value));
+           }
+           if(myself.getSelectCount() > 0 && !isSelected)
+           {//non-selected items
+               //return color.alpha(0.5);
+               return toGreyScale(color);
+           }
+           return color;
+        }
+        
+        this.shapes =
+            this.pvHeatGrid
+                .add(pv.Dot)
+                .def("selected", function(){
+                    var s = myself.chart.dataEngine.getSeries()[this.parent.index];
+                    var c = myself.chart.dataEngine.getCategories()[this.parent.parent.index];
+                    return  myself.isSelected(s,c);
+                })
+                .shape( function(r, ra ,i){
+                    if(opts.sizeValIdx == null){
+                        return myself.shape;
+                    }
+                    return myself.getValue(r[i]) != null ? myself.shape : opts.nullShape;
+                })
+                .shapeSize(function(r,ra, i) {
+                    if(myself.sizeValIdx == null){
+                        return maxArea;
+                    }
+                    var val = myself.getValue(r[i], myself.sizeValIdx);
+                    return (val == null && opts.nullShape == null)?
+                        0 :
+                        valueToArea(myself.getValue(r[i], myself.sizeValIdx));
+                })
+                .fillStyle(function(r, ra, i)
+                {
+                    return getFillColor(r[i],i,this.selected());
+                })
+                .cursor("pointer")
+                .lineWidth(function(r, ra, i)
+                {
+                    return getLineWidth(r[i], this.selected());
+                })
+                .strokeStyle(function(r, ra, i){
+                    
+                    if( !(getLineWidth(r[i], this.selected()) > 0) ){//null|<0
+                        return null;//no style
+                    }
+                    //has width
+                    return (myself.getValue(r[i], myself.sizeValIdx) != null )?
+                                    getBorderColor(r[i],i,this.selected()) :
+                                     getFillColor(r[i],i,this.selected());
+                })
+                .text(function(r,ra,i){
+                    return myself.valuesToText(r[i]);
+                })
+                .event("click", function(r,ra,i) {
+                    var s = myself.chart.dataEngine.getSeries()[this.parent.index];
+                    var c = myself.chart.dataEngine.getCategories()[this.parent.parent.index];
+                    var d = r[i];
+                    if(pv.event.ctrlKey){
+                        myself.toggleSelection(s,c);
+                    } else {//hard select
+                        myself.clearSelections();
+                        myself.addSelection(s,c);
+                    }
+                    myself.triggerSelectionChange();
+                    //classic clickAction
+                    if(typeof(myself.chart.options.clickAction) == 'function'){
+                        if(d!= null && d[0] !== undefined){ d= d[0]; }
+                        myself.chart.options.clickAction(s,c,d);
+                    }
+                    myself.pvPanel.render();
+                });
+        if(opts.isMultiValued && pv.renderer() != 'batik')
+        {
+            this.createSelectOverlay(w,h);
+        }
+    },
+    
+    isNullShapeLineOnly: function(){
+      return this.nullShape == 'cross';  
+    },
+    
+    /***********************
+     * SELECTIONS (start)
+     */
+    
+    /**
+     * init with default (bool)
+     **/
+    initSelections:function(defaultValue){
+      this.selections = {};
+      var series = this.chart.dataEngine.getSeries();
+      var cats = this.chart.dataEngine.getCategories();
+        for(var i = 0; i < series.length; i++ ){
+            this.selections[series[i]] = {};
+            for(var j = 0; j < cats.length; j++ ){
+                this.selections[series[i]][cats[j]] = defaultValue;
+            }
+      }
+    },
+    
+    //makes none selected
+    clearSelections: function(){
+        this.selections = {};
+        this.selectCount = null;
+    },
+    
+    isSelected: function(s,c){
+      return this.selections[s] ?
+        this.selections[s][c] :
+        false;
+    },
+    
+    isValueNull: function(s,c){
+      var sIdx = this.chart.dataEngine.getSeries().indexOf(s);
+      var cIdx = this.chart.dataEngine.getCategories().indexOf(c);
+      var val = this.chart.dataEngine.getValues()[cIdx][sIdx];
+      return val == null || val[0] == null;
+    },
+    
+    addSelection: function(s,c){
+      if(!this.selectNullValues)
+      {//check if null
+        if(this.isValueNull(s,c)){ return; }
+      }
+    
+      if(!this.selections[s]) this.selections[s] = {};
+      this.selections[s][c] = {'series': s, 'category' : c};
+      this.selectCount = null;
+    },
+    
+    removeSelection: function(s,c){
+      if(this.selections[s]){
+        this.selections[s][c] = true;//TODO: delete?
+      }
+      this.selectCount = false;
+    },
+    
+    toggleSelection: function(s,c){
+        if(this.isSelected(s,c)) {
+            this.removeSelection(s,c);
+        }
+        else {
+            this.addSelection(s,c);
+        }
+    },
+    
+    getSelections: function(){
+        var selections = [];
+        for(var s in this.selections){
+          if(this.selections.hasOwnProperty(s) )
+          {
+              for(var c in this.selections[s]){
+               if(this.selections[s].hasOwnProperty(c))
+               {
+                    if(this.selections[s][c]){
+                        selections.push(this.selections[s][c]);
+                    }
+               }
+              }
+          }
+        }
+        return selections;
+    },
+    
+    setSelections: function(selections){
+        this.selections = {};
+        for(var i=0;i<selections.length;i++){
+            this.addSelection(selections[i].series, selections[i].category);
+        }
+    },
+    
+    selectSeries: function(s){
+        var cats = this.chart.dataEngine.getCategories();
+        for(var i = 0; i < cats.length; i++ ){
+            this.selections[s][cats[i]] = true;
+        }
+    },
+    
+    selectCategories: function(c){
+        var series = this.chart.dataEngine.getSeries();
+        for(var i = 0; i < series.length; i++ ){
+            this.addSelection(series[i],c);
+        }
+    },
+    
+    selectAxisValue: function(axis, axisValue, toggle)
+    {
+        var type = (this.orientation == 'horizontal')?
+            ((axis == 'x')? 's' : 'c') :
+            ((axis == 'x')? 'c' : 's')
+            
+        if(this.chart.options.useCompositeAxis)
+        {
+            if(!toggle){
+                this.clearSelections();
+            }
+            if(type =='c'){
+                if(!toggle){
+                    this.selectCategoriesHierarchy(axisValue);
+                }
+                else {
+                    this.toggleCategoriesHierarchy(axisValue);
+                }
+            }
+            else {
+                if(!toggle){
+                    this.selectSeriesHierarchy(axisValue);
+                }
+                else{
+                    this.toggleSeriesHierarchy(axisValue);
+                }
+            }
+        }
+        else
+        {//??
+            if(type =='c'){ this.toggleCategories(axisValue); }
+            else { this.toggleSeries(axisValue); }
+        }
+    },
+    
+    /**
+     *ex.: arrayStartsWith(['EMEA','UK','London'], ['EMEA']) -> true
+     *     arrayStartsWith(a, a) -> true
+     **/
+    arrayStartsWith: function(array, base)
+    {
+        if(array.length < base.length) { return false; }
+        
+        for(var i=0; i<base.length;i++){
+            if(base[i] != array[i]) {
+                return false;
+            }
+        }
+        return true;
+    },
+    
+    toggleCategoriesHierarchy: function(cbase){
+        if(this.selectCategoriesHierarchy(cbase)){
+            this.deselectCategoriesHierarchy(cbase);
+        }
+    },
+    
+    toggleSeriesHierarchy: function(sbase){
+        if(this.selectSeriesHierarchy(sbase)){
+            this.deselectSeriesHierarchy(sbase);
+        }
+    },
+    
+    /**
+     *returns bool wereAllSelected
+     **/
+    selectCategoriesHierarchy: function(cbase){
+        var categories = this.chart.dataEngine.getCategories();
+        var selected = true;
+        for(var i =0; i< categories.length ; i++){
+            var c = categories[i];
+            if( this.arrayStartsWith(c, cbase) ){
+                selected &= this.selectCategory(c);
+            }
+        }
+        return selected;
+    },
+    
+    selectSeriesHierarchy: function(sbase){
+        var series = this.chart.dataEngine.getSeries();
+        var selected = true;
+        for(var i =0; i< series.length ; i++){
+            var s = series[i];
+            if( this.arrayStartsWith(s, sbase) ){
+                selected &= this.selectSeries(s);
+            }
+        }
+        return selected;
+    },
+    
+    deselectCategoriesHierarchy: function(cbase){
+        var categories = this.chart.dataEngine.getCategories();
+        for(var i =0; i< categories.length ; i++){
+            var c = categories[i];
+            if( this.arrayStartsWith(c, cbase) ){
+                this.deselectCategory(c);
+            }
+        }
+    },
+
+    deselectSeriesHierarchy: function(sbase){
+        var series = this.chart.dataEngine.getSeries();
+        for(var i =0; i< series.length ; i++){
+            var s = series[i];
+            if( this.arrayStartsWith(s, sbase) ){
+                this.deselectSeries(s);
+            }
+        }
+    },
+    
+    /**
+     *returns bool wereAllSelected
+     **/
+    selectCategory: function(c){
+        var series = this.chart.dataEngine.getSeries();
+        var wereAllSelected = true;
+        for(var i = 0; i < series.length; i++ ){
+            var s = series[i];
+            wereAllSelected &= this.isSelected(s,c);
+            this.addSelection(s,c);
+        }
+        return wereAllSelected;
+    },
+    
+    selectSeries: function(s){
+        var categories = this.chart.dataEngine.getCategories();
+        var wereAllSelected = true;
+        for(var i = 0; i < categories.length; i++ ){
+            var c = categories[i];
+            wereAllSelected &= this.isSelected(s,c);
+            this.addSelection(s,c);
+        }
+        return wereAllSelected;
+    },
+    
+    deselectCategory: function(c){
+        var series = this.chart.dataEngine.getSeries();
+        for(var i = 0; i < series.length; i++ ){
+            this.removeSelection(series[i],c);
+        }
+    },
+
+    deselectSeries: function(s){
+        var categories = this.chart.dataEngine.getCategories();
+        for(var i = 0; i < categories.length; i++ ){
+            this.removeSelection(s, categories[i]);
+        }
+    },
+    
+    /**
+     *pseudo-toggle elements with category c:
+     *deselect all if all selected, otherwise select all
+     **/
+    toggleCategories: function(c){
+        var series = this.chart.dataEngine.getSeries();
+        var selected = this.selectCategory(c);
+        if(selected){
+            this.deselectCategory(c);
+        }
+    },
+    
+    /**
+     *pseudo-toggle elements with series s:
+     *deselect all if all selected, otherwise select all
+     **/
+    toggleSeries: function(s){
+        var categories = this.chart.dataEngine.getCategories();
+        var selected = this.selectSeries(s);
+        if(selected){
+            this.deselectSeries(s);
+        }
+    },
+    
+    getSelectCount: function(){
+        if(this.selectCount == null){
+          this.selectCount = this.getSelections().length;
+        }
+        return this.selectCount;
+    },
+    
+    triggerSelectionChange: function(){
+        if(typeof(this.onSelectionChange) == 'function'){
+            var selections = this.getSelections();
+            this.onSelectionChange(selections);
+        }
+    },
+    
+        inRubberBandSelection: function(x,y){
         if(!this.rubberBand) { return false; }
         
         var r = this.rubberBand;
@@ -4463,6 +4971,13 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         this.rubberBand = {x:0, y:0, dx:4, dy:4};
         var myself = this;
         
+        if(opts.orientation == 'horizontal')
+        {//switch back w,h
+            var tmp = w;
+            w=h;
+            h=tmp;
+        }
+        
         var dMin= Math.min(w,h) /2;
         
         var isSelecting = false;
@@ -4471,7 +4986,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         var selectStroke =  opts.rubberBandLine;//'rgb(255,127,0)';
         var invisibleFill = 'rgba(127,127,127,0.01)';
         
-        
+        //callback to handle end of rubber band selection
         var dispatchRubberBandSelection = function(rb, ev)
         {//do the rubber band
             var xAxis = myself.chart.xAxisPanel;
@@ -4495,7 +5010,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
             
             //get offsets
             var titleOffset;
-            if(opts.title){
+            if(opts.title != null){
                 titleOffset = setPositions(opts.titlePosition, myself.chart.titlePanel.titleSize);
             }
             else {
@@ -4506,7 +5021,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
             
             var y = 0, x=0;   
             //1) x axis
-            var xSelections = []
+            var xSelections = [];
             if(opts.useCompositeAxis){
                 y = rb.y - titleOffset['top'] ;
                 if(opts.xAxisPosition == 'bottom'){//chart
@@ -4537,7 +5052,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
                 var categories = myself.chart.dataEngine.getCategories();
                 var selectedSeries = [], selectedCategories = [],
                     sSelections, cSelections;
-                if(this.orientation == 'horizontal'){
+                if(opts.orientation == 'horizontal'){
                     sSelections = xSelections;
                     cSelections = ySelections;
                 }
@@ -4592,11 +5107,9 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
             {
                 for(var i=0; i<xSelections.length; i++){
                     myself.selectAxisValue('x', xSelections[i], true);
-                    //myself.chart.heatGridChartPanel.selectAxisValue('x', xSelections[i]);
                 }
                 for(var i=0; i<ySelections.length; i++){
                     myself.selectAxisValue('y', ySelections[i], true);
-                    //myself.chart.heatGridChartPanel.selectAxisValue('y', ySelections[i]);
                 }
             }
 
@@ -4624,12 +5137,12 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
         }
         
         this.pvPanel.root
-           // .data([this.rubberBand])
             .data([myself.rubberBand])
             .event("click", function(d) {
                 if(!pv.event.ctrlKey){
                     myself.clearSelections();
                     myself.shapes.render();
+                    myself.triggerSelectionChange();
                 }
             })
             .event('mousedown', pv.Behavior.selector(false))
@@ -4650,7 +5163,7 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
                     //translate top to bottom
                     if(checkSelections){
                         checkSelections = false;
-                        myself.selectBar.render();//TODO: update coordinates
+                        myself.selectBar.render();
                         dispatchRubberBandSelection(rb, pv.event);
                     }
                 }
@@ -4659,429 +5172,61 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
     
     setRubberbandSelections: function(rb,w,h)
     {
-        var series = this.chart.dataEngine.getSeries();
-        var categories = this.chart.dataEngine.getCategories();
+        var orient = (this.orientation == 'horizontal')? 'h' : 'v';
         
-        var sSel = [];
-        var cSel = [];
+        var yValues = (orient == 'h')?
+            this.chart.dataEngine.getCategories() :
+            this.chart.dataEngine.getSeries();
+        var xValues = (orient == 'h')?
+            this.chart.dataEngine.getSeries() :    
+            this.chart.dataEngine.getCategories();
+        
+        var ySel = [];
+        var xSel = [];
         
         //find included series/categories
-        for(var i=0; i< series.length; i++){
+        for(var i=0; i< yValues.length; i++){
             var y = i*h + h/2;
             if(y > rb.y && y < rb.y + rb.dy){
-                sSel.push(series[i]);
+                ySel.push(yValues[i]);
             }
         }
-        for(var i=0; i< categories.length; i++){
+        for(var i=0; i< xValues.length; i++){
             var x = i*w + w/2;
             if(x > rb.x && x < rb.x + rb.dx){
-                cSel.push(categories[i]);
+                xSel.push(xValues[i]);
             }
+        }
+        
+        var sSel, cSel;
+        if(orient == 'h'){
+            sSel = xSel;
+            cSel = ySel;
+        }
+        else {
+            sSel = ySel;
+            cSel = xSel;            
         }
         
         //select shapes in intersection
-        for(var i=0; i< sSel.length; i++){
+        for(var i=0; i< sSel.length; i++)
+        {
             var s = sSel[i];
-            for(var j=0; j<cSel.length; j++){
+            for(var j=0; j<cSel.length; j++)
+            {
                 var c = cSel[j];
-                //if(this.chart.options.nullShape != null || //TODO: select or not null values
-                //   )
                 this.addSelection(s,c);
             }
         }
     },
     
-    //creates new version
-    createHeatMap: function(w, h, opts, fill)
-    {
-        var myself = this;
-        //total max in data
-        var maxVal = pv.max(data, function(datum){// {col:value ..}
-            return pv.max( pv.values(datum).map(
-                function(d){ return myself.getValue(d, myself.sizeValIdx);})) ;
-        });
-    
-        var maxRadius = Math.min(w,h) / 2 -2;
-        var maxArea = maxRadius * maxRadius ;// apparently treats as square area even if circle, triangle is different
-        
-        var valueToRadius = function(value){
-            return value != null ? value/maxVal * maxRadius : Math.min(maxRadius,5) ;//TODO:hcoded
-        };
-        
-        var valueToArea =  function(value){//
-            return value != null ? value/maxVal * maxArea :  Math.max(4,maxArea/16);//TODO:hcoded
-        }
-        
-        var valueToColor = function(value, i){
-            return  (value != null) ? fill[i](value) : opts.nullColor;
-        };
-        
-        var toGreyScale = function(color){
-            //convert to greyscale using YCbCr luminance conv
-           // var avg = Math.round( 0.299 * color.r + 0.587 * color.g + 0.114 * color.b);
-            
-            var avg = Math.round( (color.r + color.g + color.b)/3);
-            
-            return pv.rgb(avg,avg,avg);
-        };
-        
-        this.shapes =
-            this.pvHeatGrid
-                .add(pv.Dot)
-                .def("selected", function(){
-                    var s = myself.chart.dataEngine.getSeries()[this.parent.index];
-                    var c = myself.chart.dataEngine.getCategories()[this.parent.parent.index];
-                    return  myself.isSelected(s,c);
-                })
-                .shape( function(r, ra ,i){
-                    if(opts.sizeValIdx == null){
-                        return myself.shape;
-                    }
-                    return myself.getValue(r[i]) != null ? myself.shape : opts.nullShape;
-                })
-                .shapeSize(function(r,ra, i) {
-                    if(myself.sizeValIdx == null){
-                        return maxArea;
-                    }
-                    var val = myself.getValue(r[i], myself.sizeValIdx);
-                    return (val == null && opts.nullShape == null)?
-                        0 :
-                        valueToArea(myself.getValue(r[i], myself.sizeValIdx));
-                })
-                .fillStyle(function(r, ra, i){
-                    //return valueToColor(r[i], i);
-                    var color = opts.nullColor;
-                    if(myself.colorValIdx != null ){
-                        if(myself.getColorValue(r[i]) == null) return opts.nullColor;
-                        color =  fill[i](myself.getColorValue(r[i]));
-                        var s = myself.chart.dataEngine.getSeries()[this.parent.index];
-                        var c = myself.chart.dataEngine.getCategories()[this.parent.parent.index]; 
-                        if(myself.getSelectCount() > 0 && !this.selected()){
-                            //return color.alpha(0.5);
-                            return toGreyScale(color);
-                        }
-                    }
-                    return color;
-                })
-                .cursor("pointer") //TODO:
-                .lineWidth(function(r, ra, i)
-                {
-                    return this.selected()? myself.selectedBorder :
-                                            ( (myself.sizeValIdx == null ||
-                                               myself.getValue(r[i], myself.sizeValIdx) != null )?
-                                                    myself.defaultBorder : //0 hcoded?
-                                                    myself.nullBorder);
-                })
-                .strokeStyle(function(r, ra, i){
-                    return (this.selected() ||
-                            myself.sizeValIdx == null ||
-                            myself.getValue(r[i], myself.sizeValIdx) != null )?
-                                     null ://"black" :
-                                     (myself.colorValIdx != null)?
-                                        (myself.getColorValue(r[i]))?
-                                            fill[i](myself.getColorValue(r[i])) :
-                                            opts.nullColor :
-                                        opts.nullColor;
-                })
-                .text(function(r,ra,i){
-                    return myself.valuesToText(r[i]);
-                })
-                .event("click", function(r,ra,i) {
-                    var s = myself.chart.dataEngine.getSeries()[this.parent.index];
-                    var c = myself.chart.dataEngine.getCategories()[this.parent.parent.index];
-                    var d = r[i];
-                    if(pv.event.ctrlKey){
-                        myself.toggleSelection(s,c);
-                    } else {//hard select
-                        myself.clearSelections();
-                        myself.addSelection(s,c);
-                    }
-                    myself.triggerSelectionChange();
-                    //classic clickAction
-                    if(typeof(myself.chart.options.clickAction) == 'function'){
-                        if($.isArray(d)) d= d[0];
-                        myself.chart.options.clickAction(s,c,d);
-                    }
-                    myself.pvPanel.render();
-                });
-        if(pv.renderer() != 'batik'){
-            this.createSelectOverlay(w,h);
-        }
-    },
     
     /*
-     *selections - testing (start)
-     *TODO: transient, will have to change selection storage
-     */
-    
-    initSelections:function(defaultValue){
-      this.selections = {};
-      var series = this.chart.dataEngine.getSeries();
-      var cats = this.chart.dataEngine.getCategories();
-        for(var i = 0; i < series.length; i++ ){
-            this.selections[series[i]] = {};
-            for(var j = 0; j < cats.length; j++ ){
-                this.selections[series[i]][cats[j]] = defaultValue;
-            }
-      }
-    },
-    
-    //makes none selected
-    clearSelections: function(){
-        this.selections = {};
-        this.selectCount = null;
-    },
-    
-    isSelected: function(s,c){
-      return this.selections[s] ?
-        this.selections[s][c] :
-        false;
-    },
-    
-    isValueNull: function(s,c){
-      var sIdx = this.chart.dataEngine.getSeries().indexOf(s);
-      var cIdx = this.chart.dataEngine.getCategories().indexOf(c);
-      var val = this.chart.dataEngine.getValues()[cIdx][sIdx];
-      return val == null || val[0] == null;
-    },
-    
-    addSelection: function(s,c){
-      if(!this.selectNullValues)
-      {//check if null
-        if(this.isValueNull(s,c)){ return; }
-      }
-    
-      if(!this.selections[s]) this.selections[s] = {};
-      this.selections[s][c] = true;
-      this.selectCount = null;
-    },
-    
-    removeSelection: function(s,c){
-      if(this.selections[s]){
-        this.selections[s][c] = false;
-      }
-      this.selectCount = null;
-    },
-    
-    toggleSelection: function(s,c){
-        if(this.isSelected(s,c)) {
-            this.removeSelection(s,c);
-        }
-        else {
-            this.addSelection(s,c);
-        }
-    },
-    
-    getSelections: function(){
-        return pv.flatten(this.selections).key("series").key("category").key("selected")
-            .array().filter(function(d) { return d.selected; });
-    },
-    
-    setSelections: function(selections){
-        this.selections = {};
-        for(var i=0;i<selections.length;i++){
-            this.addSelection(selections[i].series, selections[i].category);
-        }
-    },
-    
-    selectSeries: function(s){
-        var cats = this.chart.dataEngine.getCategories();
-        for(var i = 0; i < cats.length; i++ ){
-            this.selections[s][cats[i]] = true;
-        }
-    },
-    
-    selectCategories: function(c){
-        var series = this.chart.dataEngine.getSeries();
-        for(var i = 0; i < series.length; i++ ){
-            //this.selections[series[i]][c] = true;
-            this.addSelection(series[i],c);
-        }
-    },
-    
-    selectAxisValue: function(axis, axisValue, toggle)
-    {
-        var type = (this.orientation == 'horizontal')?
-            ((axis == 'x')? 's' : 'c') :
-            ((axis == 'x')? 'c' : 's')
-            
-        if(this.chart.options.useCompositeAxis)
-        {
-            if(!toggle){
-                this.clearSelections();
-            }
-            if(type =='c'){
-                if(!toggle){
-                    this.selectCategoriesHierarchy(axisValue);
-                }
-                else {
-                    this.toggleCategoriesHierarchy(axisValue);
-                }
-            }
-            else {
-                if(!toggle){
-                    this.selectSeriesHierarchy(axisValue);
-                }
-                else{
-                    this.toggleSeriesHierarchy(axisValue);
-                }
-            }
-        }
-        else
-        {//??
-            if(type =='c'){ this.toggleCategories(axisValue); }
-            else { this.toggleSeries(axisValue); }
-        }
-    },
-    
-    //ex.: arrayStartsWith(['EMEA','UK','London'], ['EMEA']) -> true
-    //     arrayStartsWith(a, a) -> true
-    arrayStartsWith: function(array, base)
-    {
-        if(array.length < base.length) { return false; }
-        
-        for(var i=0; i<base.length;i++){
-            if(base[i] != array[i]) {
-                return false;
-            }
-        }
-        return true;
-    },
-    
-    toggleCategoriesHierarchy: function(cbase){
-        if(this.selectCategoriesHierarchy(cbase)){
-            this.deselectCategoriesHierarchy(cbase);
-        }
-    },
-    
-    toggleSeriesHierarchy: function(sbase){
-        if(this.selectSeriesHierarchy(sbase)){
-            this.deselectSeriesHierarchy(sbase);
-        }
-    },
-    
-    //returns bool wereAllSelected
-    selectCategoriesHierarchy: function(cbase){
-        var categories = this.chart.dataEngine.getCategories();
-        var selected = true;
-        for(var i =0; i< categories.length ; i++){
-            var c = categories[i];
-            if( this.arrayStartsWith(c, cbase) ){
-                selected &= this.selectCategory(c);
-            }
-        }
-        return selected;
-    },
-    
-    selectSeriesHierarchy: function(sbase){
-        var series = this.chart.dataEngine.getSeries();
-        var selected = true;
-        for(var i =0; i< series.length ; i++){
-            var s = series[i];
-            if( this.arrayStartsWith(s, sbase) ){
-                selected &= this.selectSeries(s);
-            }
-        }
-        return selected;
-    },
-    
-    deselectCategoriesHierarchy: function(cbase){
-        var categories = this.chart.dataEngine.getCategories();
-        for(var i =0; i< categories.length ; i++){
-            var c = categories[i];
-            if( this.arrayStartsWith(c, cbase) ){
-                this.deselectCategory(c);
-            }
-        }
-    },
-    
-    deselectSeriesHierarchy: function(sbase){
-        var series = this.chart.dataEngine.getSeries();
-        for(var i =0; i< series.length ; i++){
-            var s = series[i];
-            if( this.arrayStartsWith(s, sbase) ){
-                this.deselectSeries(s);
-            }
-        }
-    },
-    
-    //returns bool wereAllSelected
-    selectCategory: function(c){
-        var series = this.chart.dataEngine.getSeries();
-        var wereAllSelected = true;
-        for(var i = 0; i < series.length; i++ ){
-            var s = series[i];
-            wereAllSelected &= this.isSelected(s,c);
-            this.addSelection(s,c);
-        }
-        return wereAllSelected;
-    },
-    
-    selectSeries: function(s){
-        var categories = this.chart.dataEngine.getCategories();
-        var wereAllSelected = true;
-        for(var i = 0; i < categories.length; i++ ){
-            var c = categories[i];
-            wereAllSelected &= this.isSelected(s,c);
-            this.addSelection(s,c);
-        }
-        return wereAllSelected;
-    },
-    
-    deselectCategory: function(c){
-        var series = this.chart.dataEngine.getSeries();
-        for(var i = 0; i < series.length; i++ ){
-            this.removeSelection(series[i],c);
-        }
-    },
-
-    deselectSeries: function(s){
-        var categories = this.chart.dataEngine.getCategories();
-        for(var i = 0; i < categories.length; i++ ){
-            this.removeSelection(s, categories[i]);
-        }
-    },
-    
-    //pseudo-toggle elements with category c:
-    // deselect all if all selected, otherwise select all
-    toggleCategories: function(c){
-        var series = this.chart.dataEngine.getSeries();
-        var selected = this.selectCategory(c);
-        if(selected){
-            this.deselectCategory(c);
-        }
-    },
-    
-    //pseudo-toggle elements with series s:
-    // deselect all if all selected, otherwise select all
-    toggleSeries: function(s){
-        var categories = this.chart.dataEngine.getCategories();
-        var selected = this.selectSeries(s);
-        if(selected){
-            this.deselectSeries(s);
-        }
-    },
-    
-    getSelectCount: function(){
-        if(this.selectCount == null){
-          this.selectCount = this.getSelections().length;
-        }
-        return this.selectCount;
-    },
-    
-    triggerSelectionChange: function(){
-        if(typeof(this.onSelectionChange) == 'function'){
-            var selections = this.getSelections();
-            this.onSelectionChange(selections);
-        }
-    },
-    
-    /*
-     *selections - testing (end)
-     */
+     *selections (end)
+     **********************/
     
     /**
-     * Get label color that will contrast with given bg color
+     * TODO: Get label color that will contrast with given bg color
      */
     getLabelColor: function(r, g, b){
         var brightness = (r*299 + g*587 + b*114) / 1000;
@@ -5104,53 +5249,106 @@ pvc.HeatGridChartPanel = pvc.BasePanel.extend({
    ********/
   getColorScale: function(data, cols) {
       switch (this.chart.options.scalingType) {
-      case "normal": return this.getNormalColorScale(data, cols, this.colorValIdx);//TODO:
-      case "linear": return this.getLinearColorScale(data, cols, this.colorValIdx);
-      default:
-        throw "Invalid option " + this.scaleType + " in HeatGrid";
+        case "normal":
+          return this.getNormalColorScale(data, cols, this.colorValIdx);//TODO:
+        case "linear":
+          return this.getLinearColorScale(data, cols, this.colorValIdx);
+        //TODO: case "external":
+        default:
+          throw "Invalid option " + this.scaleType + " in HeatGrid";
     }
   },
+  
+  
+  getLinearColorScale: function(data, cols, colorIdx){
 
-  getLinearColorScale: function (data, cols, colorIdx){
-    var fill;
     var opts = this.chart.options;
-    // compute the mean and standard-deviation for each column
     var myself = this;
-    var min = pv.dict(cols, function(f){
-      return pv.min(data, function(d){
-        return myself.getValue(d[f],colorIdx);
-      });
-    });
-    var max = pv.dict(cols, function(f){
-      return pv.max(data, function(d){
-        return myself.getValue(d[f], colorIdx);
-      });
-    });
 
-    if (opts.normPerBaseCategory)  //  compute a scale-function for each column (each key
-      fill = pv.dict(cols, function(f){
-        return pv.Scale.linear()
-          .domain(min[f], max[f])
-          .range(opts.minColor, opts.maxColor);
-      });
-    else {   // normalize over the whole array
-      var theMin = min[cols[0]];
-      for (var i=1; i<cols.length; i++) {
-        if (min[cols[i]] < theMin) theMin = min[cols[i]];
-      }
-      var theMax = max[cols[0]];
-      for (var i=1; i<cols.length; i++){
-        if (max[cols[i]] > theMax) theMax = max[cols[i]];
-      }
-      var scale = pv.Scale.linear()
-        .domain(theMin, theMax)
-        .range(opts.minColor, opts.maxColor);
-      fill = pv.dict(cols, function(f){
-        return scale;
-      });
+    var rangeArgs = opts.colorRange;
+    if(opts.minColor != null && opts.maxColor != null){
+        rangeArgs = [opts.minColor,opts.maxColor];
     }
-
-    return fill;  // run an array of values to compute the colors per column
+    else if (opts.minColor != null){
+        rangeArgs.splice(0,1,opts.minColor);
+    }
+    else if (opts.maxColor != null){
+        rangeArgs.splice(rangeArgs.length-1,1,opts.maxColor);
+    }
+    
+    var domainArgs = opts.colorRangeInterval;
+    if(domainArgs != null && domainArgs.length > rangeArgs.length){
+        domainArgs = domainArgs.slice(0, rangeArgs.length);
+    }
+    if(domainArgs == null){
+        domainArgs = [];
+    }
+    
+    if(domainArgs.length < rangeArgs.length || opts.normPerBaseCategory){
+        
+        var min = pv.dict(cols, function(f){
+          return pv.min(data, function(d){
+            return myself.getValue(d[f],colorIdx);
+          });
+        });
+        var max = pv.dict(cols, function(f){
+          return pv.max(data, function(d){
+            return myself.getValue(d[f], colorIdx);
+          });
+        });
+        
+        if (opts.normPerBaseCategory){  //  compute a scale-function for each column (each key
+          //overrides colorRangeIntervals
+            return pv.dict(cols, function(f){
+                var fMin = min[f],
+                    fMax = max[f];
+                if(fMax == fMin)
+                {
+                    if(fMax >=1){
+                        fMin = fMax -1;
+                    } else {
+                        fMax = fMin +1;    
+                    }
+                }
+                var step = (fMax - fMin)/( rangeArgs.length -1);
+                var scale = pv.Scale.linear();
+                scale.domain.apply(scale, pv.range(fMin,fMax + step, step));
+                scale.range.apply(scale,rangeArgs);
+                return scale;
+            });
+        }
+        else {   // normalize over the whole array
+          var theMin = min[cols[0]];
+          for (var i=1; i<cols.length; i++) {
+            if (min[cols[i]] < theMin) theMin = min[cols[i]];
+          }
+          var theMax = max[cols[0]];
+          for (var i=1; i<cols.length; i++){
+            if (max[cols[i]] > theMax) theMax = max[cols[i]];
+          }
+          //use supplied numbers
+          var toPad =
+                domainArgs == null ?
+                rangeArgs.length :
+                rangeArgs.length - domainArgs.length;
+          switch(toPad){
+            case 1:
+                //TODO: should adapt to represent middle?
+                domainArgs.push(theMax);
+                break;
+            case 2:
+                domainArgs = [theMin].concat(domainArgs).concat(theMax);
+                break;
+            default:
+                var step = (theMax - theMin)/(rangeArgs.length -1);
+                domainArgs = pv.range(theMin, theMax + step, step);
+          }
+        }
+    }
+    var scale = pv.Scale.linear();
+    scale.domain.apply(scale,domainArgs)
+    scale.range.apply(scale,rangeArgs);
+    return pv.dict(cols,function(f){ return scale;});
   },
 
   getNormalColorScale: function (data, cols){

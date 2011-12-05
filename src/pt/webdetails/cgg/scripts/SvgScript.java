@@ -68,11 +68,14 @@ class SvgScript extends BaseScript {
         SVGDOMImplementation impl = (SVGDOMImplementation) SVGDOMImplementation.getDOMImplementation();
         String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
         document = impl.createDocument(svgNS, "svg", null);
+        document.getDocumentElement().setAttribute("preserveAspectRatio", "none");
 
         // Initialize the CSS Engine for the document
         UserAgent userAgent = new UserAgentAdapter();
         DocumentLoader loader = new DocumentLoader(userAgent);
         BridgeContext ctx = new BridgeContext(userAgent, loader);
+        ctx.setDynamic(true);
+        ctx.setDynamicState(BridgeContext.DYNAMIC);
         CSSEngine eng = impl.createCSSEngine((SVGOMDocument) document, ctx);
         ((SVGOMDocument) document).setCSSEngine(eng);
 

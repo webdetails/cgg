@@ -4,8 +4,14 @@
  */
 package pt.webdetails.cgg.scripts;
 
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Toolkit;
 import java.io.FileReader;
 import java.io.StringWriter;
+
+import javax.swing.JLabel;
+import javax.swing.text.AttributeSet.FontAttribute;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -23,6 +29,9 @@ import org.apache.batik.css.engine.CSSEngine;
 import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.dom.svg.SVGOMDocument;
+import org.apache.batik.gvt.font.FontFamilyResolver;
+import org.apache.batik.gvt.font.GVTFontFamily;
+import org.apache.batik.gvt.font.UnresolvedFontFamily;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
@@ -31,6 +40,7 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.pentaho.reporting.libraries.libsparklines.util.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -54,7 +64,7 @@ class BaseScope extends ImporterTopLevel {
         // that these functions are not part of ECMA.
         initStandardObjects(cx, sealedStdLib);
         String[] names = {
-            "print", "load", "lib", "_loadSvg", "_xmlToString"};
+            "print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG"};
         defineFunctionProperties(names, BaseScope.class,
                 ScriptableObject.DONTENUM);
 
@@ -84,6 +94,54 @@ class BaseScope extends ImporterTopLevel {
         }
         return Context.toBoolean(true);
     }
+    
+    public static Object getTextLenCGG(Context cx, Scriptable thisObj,
+    Object[] args, Function funObj) 
+    {
+      String text = Context.toString(args[0]);
+      String fontFamily = Context.toString(args[1]);
+      String fontSize = Context.toString(args[2]).trim();
+      
+      //get size unit
+      boolean convert = false;
+      if(fontSize.endsWith("px")){
+        convert = true;
+        fontSize = fontSize.substring(0, fontSize.length() -2);
+      }
+      else if(fontSize.endsWith("pt")){
+        fontSize = fontSize.substring(0, fontSize.length() -2);
+      }
+      
+      //parse size
+      float size = 15;
+      try
+      {
+        size = Integer.parseInt(fontSize);
+      }
+      catch (NumberFormatException nfe) {};
+      
+      //size conversion
+      if(convert){//px->pt
+        float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+        size = size / dpi * 72; //1pt~=1/72"
+      }
+      
+      //try direct font instantiation
+      String capFontFamily = fontFamily.substring(0,1).toUpperCase() + fontFamily.substring(1,fontFamily.length());
+      Font ffont = Font.decode( capFontFamily + ' ' +  Math.round(size));
+      if(ffont.getFamily().equals(Font.DIALOG) && !fontFamily.equals("dialog"))
+      {//defaulted, try family
+        GVTFontFamily awtFamily =  FontFamilyResolver.resolve(fontFamily);
+        if(awtFamily == null) awtFamily = FontFamilyResolver.defaultFont;
+
+        ffont = new Font(awtFamily.getFamilyName(), Font.PLAIN, Math.round(size));
+      }
+      JLabel label = new JLabel();
+      FontMetrics fMetric =  label.getFontMetrics(ffont);
+      
+      int width = fMetric.stringWidth(text);
+      return Context.toNumber(width);
+    }
 
     public static Object _loadSvg(Context cx, Scriptable thisObj,
             Object[] args, Function funObj) {
@@ -92,9 +150,9 @@ class BaseScope extends ImporterTopLevel {
         try {
             BaseScope scope = (BaseScope) thisObj;
             String parser = "org.apache.xerces.parsers.SAXParser";//XMLResourceDescriptor.getXMLParserClassName();
-            SAXSVGDocumentFactory f = new SAXSVGDocumentFactory(parser);
+            SAXSVGDocumentFactory factory = new SAXSVGDocumentFactory(parser);
             String uri = "file:" + scope.basePath + "/" + file;
-            Document doc = f.createDocument(uri);
+            Document doc = factory.createDocument(uri);
 
             // Initialize the CSS Engine for the document
             SVGDOMImplementation impl = (SVGDOMImplementation) SVGDOMImplementation.getDOMImplementation();

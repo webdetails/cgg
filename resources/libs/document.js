@@ -59,7 +59,8 @@ cgg.element = function(_el) {
     setAttribute: function(attrName, value) {_el.setAttribute(attrName, value);},
     setAttributeNS: function(ns, attrName, value) {_el.setAttributeNS(ns,attrName, value);},
     removeAttribute: function(attrName) {_el.removeAttribute(attrName);},
-    removeChild: function(node) {_el.removeChild(node._node? node._node:node);return (node.node? node: new cgg.element(node));}
+    removeChild: function(node) {_el.removeChild(node._node? node._node:node);return (node.node? node: new cgg.element(node));},
+    getBBox: function() {return _el.getBBox();}
   };
   return el;
 };
@@ -73,7 +74,10 @@ cgg.style = function(_style) {
         if (!(e.javaException.getClass().getName() == "org.w3c.dom.DOMException")) { throw e;}
       }
     },
-    removeProperty: function(name) {_style.removeProperty(name);}
+    removeProperty: function(name) {_style.removeProperty(name);},
+    getProperty: function(name) {
+     return _style.getPropertyValue(name); 
+    }
   };
   return style;
 }
