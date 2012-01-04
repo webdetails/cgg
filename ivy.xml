@@ -1,60 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
 
-    <info organisation="pentaho" module="pentaho-cdf" revision="${project.revision}"/>
+  <info organisation="pentaho" module="cgg" revision="${project.revision}"/>
 
-    <configurations>
-        <conf name="default"/>
-        <conf name="test" visibility="private"/>
-          <conf name="codegen" visibility="private"/>
-          <conf name="runtime" visibility="private"/>
-          <conf name="dev" visibility="private"/>
-    </configurations>
-
-    <dependencies defaultconf="default->default">
-
-        <!--  third party dependencies -->
-        <dependency org="commons-logging" name="commons-logging" rev="1.1.1" transitive="false"/>
-        <dependency org="dom4j" name="dom4j" rev="1.6.1" transitive="false"/>
-        <dependency org="commons-lang" name="commons-lang" rev="2.2"/>        
-
-        <!--  pentaho dependencies -->
-        <!--  internal dependencies -->
-        <dependency org="pentaho" name="pentaho-bi-platform-plugin-services"
-                    rev="${dependency.bi-platform.revision}" changing="true"/>
-        <dependency org="pentaho" name="pentaho-bi-platform-plugin-actions"
-                    rev="${dependency.bi-platform.revision}" changing="true"/>
-        <dependency org="pentaho" name="pentaho-bi-platform-web-servlet"
-                    rev="${dependency.bi-platform.revision}" transitive="false"  changing="true"/>
-
-		<!-- Excluding batik 1.6, adding 1.7-->
-
-		<!--  compile time batik -->
-		<dependency org="org.apache.xmlgraphics" name="batik-awt-util" rev="1.7" conf='codegen->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-dom" rev="1.7" conf='codegen->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-svggen" rev="1.7" conf='codegen->default' transitive="false"/>
+  <configurations>
+    <conf name="default"/>
+    <conf name="test" visibility="private"/>
+    <conf name="codegen" visibility="private"/>
+    <conf name="runtime" visibility="private"/>
+    <conf name="dev" visibility="private"/>
+    <conf name="zip" visibility="private"/>
+  </configurations>
 
 
-		<!--  runtime batik -->
-		<dependency org="org.apache.xmlgraphics" name="batik-anim" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-css" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-codec" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-ext" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-extension" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-gui-util" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-gvt" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-parser" rev="1.7" conf='runtime->default' transitive="false"/>
-		<!--<dependency org="org.apache.xmlgraphics" name="batik-script" rev="1.7" conf='codegen->default' />-->
-		<dependency org="org.apache.xmlgraphics" name="batik-svg-dom" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-swing" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-transcoder" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-util" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-xml" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-xml" rev="1.7" conf='runtime->default' transitive="false"/>
-		<dependency org="org.apache.xmlgraphics" name="batik-bridge" rev="1.7" conf='runtime->default' transitive="false"/>
+  <publications>
+    <artifact name="${ivy.artifact.id}" type="jar" conf="default" />
+    <artifact name="${package.id}" type="zip" conf="zip" />
+  </publications>
+
+  <dependencies defaultconf="default->default">
+
+    <!--  third party dependencies -->
+    <dependency org="commons-logging" name="commons-logging" rev="1.1.1" transitive="false"/>
+    <dependency org="dom4j" name="dom4j" rev="1.6.1" transitive="false"/>
+    <dependency org="commons-lang" name="commons-lang" rev="2.2"/>
+
+    <!--  pentaho dependencies -->
+    <!--  internal dependencies -->
+    <dependency org="pentaho" name="pentaho-bi-platform-plugin-services"
+                rev="${dependency.bi-platform.revision}" changing="true"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-plugin-actions"
+                rev="${dependency.bi-platform.revision}" changing="true"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-web-servlet"
+                rev="${dependency.bi-platform.revision}" transitive="false"  changing="true"/>
+
+    <!-- Excluding batik 1.6, adding 1.7-->
+
+    <!--  compile time batik -->
+    <dependency org="org.apache.xmlgraphics" name="batik-awt-util" rev="1.7" conf='codegen->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-dom" rev="1.7" conf='codegen->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-svggen" rev="1.7" conf='codegen->default' transitive="false"/>
+
+
+    <!--  runtime batik -->
+    <dependency org="org.apache.xmlgraphics" name="batik-anim" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-css" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-codec" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-ext" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-extension" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-gui-util" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-gvt" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-parser" rev="1.7" conf='runtime->default' transitive="false"/>
+    <!--<dependency org="org.apache.xmlgraphics" name="batik-script" rev="1.7" conf='codegen->default' />-->
+    <dependency org="org.apache.xmlgraphics" name="batik-svg-dom" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-swing" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-transcoder" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-util" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-xml" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-xml" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-bridge" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="xmlgraphics-commons" rev="1.2" conf='runtime->default' transitive="false"/>
 
-		<dependency org="xml-apis" name="xml-apis" rev="1.3.04" conf='runtime->default' transitive="false"/>
+    <dependency org="xml-apis" name="xml-apis" rev="1.3.04" conf='runtime->default' transitive="false"/>
     <dependency org="xml-apis" name="xml-apis-ext" rev="1.3.04" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="xmlgraphics-commons" rev="1.2" transitive="false"/>
     <dependency org="xalan" name="xalan" rev="2.6.0" conf='runtime->default' transitive="false"/>
@@ -63,6 +70,6 @@
     <dependency org="org.apache.avalon.framework" name="avalon-framework-api" rev="4.3.1" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.avalon.framework" name="avalon-framework-impl" rev="4.3.1" conf='runtime->default' transitive="false"/>
 
-	</dependencies>
+  </dependencies>
 
 </ivy-module>
