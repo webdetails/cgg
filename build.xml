@@ -238,6 +238,7 @@
           description="Retrieves all the dependent libraries" />
 
   <target name="resolve-runtime" depends="resolve-init">
+   <delete file="${devlib.dir}/batik-js-1.7.jar"/>
     <ivy:resolve file="${ivyfile}" conf="runtime" />
     <ivy:retrieve conf="runtime" pattern="runtime-lib/[module]-[revision](-[classifier]).[ext]" />
   </target>
