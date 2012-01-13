@@ -102,6 +102,7 @@
       </fileset>
       <fileset dir="runtime-lib">
         <include name="**/*.jar"/>
+        <exclude name="**/batik-js-1.7.jar"/>
       </fileset>
     </copy>
 
@@ -129,7 +130,10 @@
          includes="${plugin.name}/**/*"
          excludes="**/Thumbs.db"/>
 
+
     <copy tofile="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip" file="${dist.dir}/${plugin.zipfile}"/>
+    
+    
   </target>
 
   <!--=======================================================================
