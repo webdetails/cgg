@@ -43,15 +43,17 @@
 
 
     <!--  runtime batik -->
+	<dependency org="org.apache.xmlgraphics" name="batik-awt-util" rev="1.7" conf='runtime->default' transitive="false"/>    
     <dependency org="org.apache.xmlgraphics" name="batik-anim" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-css" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-codec" rev="1.7" conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics" name="batik-dom" rev="1.7" conf='runtime->default' transitive="false"/>        
     <dependency org="org.apache.xmlgraphics" name="batik-ext" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-extension" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-gui-util" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-gvt" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-parser" rev="1.7" conf='runtime->default' transitive="false"/>
-    <!--<dependency org="org.apache.xmlgraphics" name="batik-script" rev="1.7" conf='codegen->default' />-->
+    <dependency org="org.apache.xmlgraphics" name="batik-script" rev="1.7" conf='runtime->default' />
     <dependency org="org.apache.xmlgraphics" name="batik-svg-dom" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-swing" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-transcoder" rev="1.7" conf='runtime->default' transitive="false"/>
