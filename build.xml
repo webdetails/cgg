@@ -202,10 +202,17 @@
 
     <replace file="plugin-pom.xml" token="jar" value="zip"/>
     <replace file="plugin-pom.xml" token="%artifact-name%" value="${plugin.artifact.id}"/>
+    
+  
+    <if>
+		<available file="${dist.dir}/${plugin.zipfile}" />
+		<then>    
     <antcall target="maven-publish-artifact">
       <param name="publish.pomFile" value="plugin-pom.xml"/>
       <param name="publish.file" value="${dist.dir}/${plugin.zipfile}"/>
     </antcall>
+    	</then>
+    </if>
     
     
     <if>
