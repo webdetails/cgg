@@ -796,10 +796,15 @@ TYPICAL TARGET SEQUENCE
       <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}-sources.jar" />
     </antcall>
 
-    <antcall target="maven-publish-artifact">
-      <param name="publish.pomFile" value="${ivy.artifact.pomfile}" />
-      <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
-    </antcall>
+	<if>
+		<available file="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
+		<then>
+    		<antcall target="maven-publish-artifact">
+      			<param name="publish.pomFile" value="${ivy.artifact.pomfile}" />
+      			<param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}.jar" />
+    		</antcall>
+    	</then>
+    </if>
   </target>
 
 
