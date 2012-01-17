@@ -47,7 +47,8 @@
     <dependency org="org.apache.xmlgraphics" name="batik-anim" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-css" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-codec" rev="1.7" conf='runtime->default' transitive="false"/>
-    <dependency org="org.apache.xmlgraphics" name="batik-dom" rev="1.7" conf='runtime->default' transitive="false"/>        
+    <dependency org="org.apache.xmlgraphics" name="batik-dom" rev="1.7" conf='runtime->default' transitive="false"/>   
+    <dependency org="org.apache.xmlgraphics" name="batik-svggen" rev="1.7" conf='runtime->default' transitive="false"/>    
     <dependency org="org.apache.xmlgraphics" name="batik-ext" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-extension" rev="1.7" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-gui-util" rev="1.7" conf='runtime->default' transitive="false"/>
