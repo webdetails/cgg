@@ -102,6 +102,7 @@
       </fileset>
       <fileset dir="runtime-lib">
         <include name="**/*.jar"/>
+        <exclude name="**/batik-js-1.7.jar"/>
       </fileset>
     </copy>
 
@@ -129,7 +130,10 @@
          includes="${plugin.name}/**/*"
          excludes="**/Thumbs.db"/>
 
-    <copy tofile="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip" file="${dist.dir}/${plugin.zipfile}"/>
+
+    <move tofile="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip" file="${dist.dir}/${plugin.zipfile}"/>
+    
+    
   </target>
 
   <!--=======================================================================
@@ -198,15 +202,28 @@
 
     <replace file="plugin-pom.xml" token="jar" value="zip"/>
     <replace file="plugin-pom.xml" token="%artifact-name%" value="${plugin.artifact.id}"/>
+    
+  
+    <if>
+		<available file="${dist.dir}/${plugin.zipfile}" />
+		<then>    
     <antcall target="maven-publish-artifact">
       <param name="publish.pomFile" value="plugin-pom.xml"/>
       <param name="publish.file" value="${dist.dir}/${plugin.zipfile}"/>
     </antcall>
-
-    <antcall target="maven-publish-artifact">
-      <param name="publish.pomFile" value="plugin-pom.xml"/>
-      <param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip"/>
-    </antcall>
+    	</then>
+    </if>
+    
+    
+    <if>
+		<available file="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip" />
+		<then>
+    		<antcall target="maven-publish-artifact">
+	      		<param name="publish.pomFile" value="plugin-pom.xml"/>
+      			<param name="publish.file" value="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip"/>
+    		</antcall>
+    	</then>
+    </if>
 
     <if>
       <available file="${dist.dir}/${plugin.samples.zipfile}" />
