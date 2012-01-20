@@ -136,7 +136,13 @@ function getCccType(type) {
         "cccStackedAreaChart": pvc.StackedAreaChart,
         "cccPieChart": pvc.PieChart,
         "cccHeatGridChart": pvc.HeatGridChart,
-        "cccBulletChart": pvc.BulletChart
+        "cccBulletChart": pvc.BulletChart,
+        "cccMetricDotChart": pvc.MetricDotChart,
+        "cccMetricLineChart": pvc.MetricLineChart,
+        "cccStackedLineChart": pvc.mStackedLineChart,
+        "cccStackedAreaChart": pvc.mStackedAreaChart,
+        "cccWaterfallChart": pvc.WaterfallChart,
+        "cccBoxplotChart": pvc.BoxplotChart        
     }[type];
 };
 
@@ -171,3 +177,11 @@ function renderCccFromComponent(component, data) {
     chart.render();
 }
 
+
+var Dashboards = Dashboards || {};
+Dashboards.log = function(m,type){ 
+	if (type)
+		print(type + ": " + m);
+	else
+		print("LOG: " + m);
+}
