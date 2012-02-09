@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120207
+//VERSION TRUNK-20120209
 
 // ECMAScript 5 shim
 if(!Object.keys) {
@@ -6327,8 +6327,9 @@ pvc.ScatterChartPanel = pvc.CategoricalAbstractPanel.extend({
 
         if(options.showTooltips || this._shouldHandleClick()){
             this.pvPanel
+              // Receive events even if in a transparent panel (default is "painted")
               .events("all")
-              .event("mousemove", pv.Behavior.point(Infinity));
+              .event("mousemove", pv.Behavior.point(40));
         }
 
         var isVertical = this.isOrientationVertical(),
@@ -7590,11 +7591,11 @@ pvc.MetricScatterChartPanel = pvc.CategoricalAbstractPanel.extend({
             options = this.chart.options,
             dataEngine = this.chart.dataEngine;
 
-        // TODO: what's this?
         if(options.showTooltips || this._shouldHandleClick()){
             this.pvPanel
+                // Receive events even if in a transparent panel (default is "painted")
                 .events("all")
-                .event("mousemove", pv.Behavior.point(Infinity));
+                .event("mousemove", pv.Behavior.point(40));
         }
 
         var anchor = this.isOrientationVertical() ? "bottom" : "left";
