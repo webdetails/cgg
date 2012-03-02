@@ -122,7 +122,7 @@
 
     <!-- create the version file -->
     <echo file="${stage.dir}/${plugin.name}/VERSION.txt">${distribution.version}</echo>
-	<echo file="${stage.dir}/${plugin.name}/version.xml" message="&lt;version branch='TRUNK'>${distribution.version}&lt;/version>"/>		       
+	<echo file="${stage.dir}/${plugin.name}/version.xml" message="&lt;version branch='TRUNK' buildId='${sequential.build.id}'>${distribution.version}&lt;/version>"/>		       
 
 
     <!-- create a zip file -->
