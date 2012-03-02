@@ -64,7 +64,7 @@ class BaseScope extends ImporterTopLevel {
         // that these functions are not part of ECMA.
         initStandardObjects(cx, sealedStdLib);
         String[] names = {
-            "print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG"};
+            "print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG"};
         defineFunctionProperties(names, BaseScope.class,
                 ScriptableObject.DONTENUM);
 
@@ -95,54 +95,82 @@ class BaseScope extends ImporterTopLevel {
         return Context.toBoolean(true);
     }
     
-    public static Object getTextLenCGG(Context cx, Scriptable thisObj,
-    Object[] args, Function funObj) 
+	public static Object getTextLenCGG(Context cx, Scriptable thisObj,
+    		Object[] args, Function funObj) 
     {
-      String text = Context.toString(args[0]);
+    	String text = Context.toString(args[0]);
+        String fontFamily = Context.toString(args[1]);
+        String fontSize = Context.toString(args[2]).trim();
+        
+        Font ffont = getFont(fontFamily, fontSize);
+        
+        JLabel label = new JLabel();
+        
+        FontMetrics fMetric = label.getFontMetrics(ffont);
+        
+        int width = fMetric.stringWidth(text);
+        
+        return Context.toNumber(width);
+    }
+    
+    public static Object getTextHeightCGG(Context cx, Scriptable thisObj,
+    		Object[] args, Function funObj) 
+    {
+      // String text = Context.toString(args[0]);
       String fontFamily = Context.toString(args[1]);
       String fontSize = Context.toString(args[2]).trim();
       
-      //get size unit
-      boolean convert = false;
-      if(fontSize.endsWith("px")){
-        convert = true;
-        fontSize = fontSize.substring(0, fontSize.length() -2);
-      }
-      else if(fontSize.endsWith("pt")){
-        fontSize = fontSize.substring(0, fontSize.length() -2);
-      }
+      Font ffont = getFont(fontFamily, fontSize);
       
-      //parse size
-      float size = 15;
-      try
-      {
-        size = Integer.parseInt(fontSize);
-      }
-      catch (NumberFormatException nfe) {};
-      
-      //size conversion
-      if(convert){//px->pt
-        float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-        size = size / dpi * 72; //1pt~=1/72"
-      }
-      
-      //try direct font instantiation
-      String capFontFamily = fontFamily.substring(0,1).toUpperCase() + fontFamily.substring(1,fontFamily.length());
-      Font ffont = Font.decode( capFontFamily + ' ' +  Math.round(size));
-      if(ffont.getFamily().equals(Font.DIALOG) && !fontFamily.equals("dialog"))
-      {//defaulted, try family
-        GVTFontFamily awtFamily =  FontFamilyResolver.resolve(fontFamily);
-        if(awtFamily == null) awtFamily = FontFamilyResolver.defaultFont;
-
-        ffont = new Font(awtFamily.getFamilyName(), Font.PLAIN, Math.round(size));
-      }
       JLabel label = new JLabel();
-      FontMetrics fMetric =  label.getFontMetrics(ffont);
       
-      int width = fMetric.stringWidth(text);
-      return Context.toNumber(width);
+      FontMetrics fMetric = label.getFontMetrics(ffont);
+      
+      int height = fMetric.getHeight();
+      
+      return Context.toNumber(height);
     }
+    
+    private static Font getFont(String fontFamily, String fontSize){
+    	// Get size unit
+        boolean convert = false;
+        if(fontSize.endsWith("px")){
+          convert = true;
+          fontSize = fontSize.substring(0, fontSize.length() -2);
+        } else if(fontSize.endsWith("pt")){
+          fontSize = fontSize.substring(0, fontSize.length() -2);
+        }
+        
+        //parse size
+        float size = 15;
+        try
+        {
+          size = Integer.parseInt(fontSize);
+        }
+        catch (NumberFormatException nfe) 
+        {
+        }
+        
+        //size conversion
+        if(convert){//px->pt
+          float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
+          size = size / dpi * 72; //1pt~=1/72"
+        }
+        
+        //try direct font instantiation
+        String capFontFamily = fontFamily.substring(0,1).toUpperCase() + fontFamily.substring(1,fontFamily.length());
+        Font ffont = Font.decode( capFontFamily + ' ' +  Math.round(size));
+        if(ffont.getFamily().equals(Font.DIALOG) && !fontFamily.equals("dialog"))
+        {//defaulted, try family
+          GVTFontFamily awtFamily =  FontFamilyResolver.resolve(fontFamily);
+          if(awtFamily == null) awtFamily = FontFamilyResolver.defaultFont;
 
+          ffont = new Font(awtFamily.getFamilyName(), Font.PLAIN, Math.round(size));
+        }
+        
+        return ffont;
+    }
+ 
     public static Object _loadSvg(Context cx, Scriptable thisObj,
             Object[] args, Function funObj) {
 
