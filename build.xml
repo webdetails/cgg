@@ -133,6 +133,16 @@
          excludes="**/Thumbs.db"/>
 
 
+       
+	<echo file="${dist.dir}/marketplace.xml">&lt;version branch="TRUNK">
+		&lt;version>${distribution.version}&lt;/version>
+		&lt;name>Trunk&lt;/name>
+		&lt;downloadUrl>http://ci.analytical-labs.com/job/Webdetails-CGG/lastSuccessfulBuild/artifact/dist/cgg-TRUNK-SNAPSHOT.zip&lt;/downloadUrl>
+		&lt;description>Trunk snapshot. install at your own risk...&lt;/description>
+		&lt;buildId>${sequential.build.id}&lt;/buildId>
+		&lt;/version>	</echo>         
+
+
     <move tofile="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip" file="${dist.dir}/${plugin.zipfile}"/>
     
     
