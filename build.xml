@@ -138,7 +138,7 @@
 		&lt;version>${distribution.version}&lt;/version>
 		&lt;name>Stable&lt;/name>
 		&lt;downloadUrl>http://ci.analytical-labs.com/job/Webdetails-CGG-Release/lastSuccessfulBuild/artifact/dist/cgg-${distribution.version}.zip&lt;/downloadUrl>
-		&lt;description>Release ${distribution.version}/description>
+		&lt;description>Release ${distribution.version}&lt;/description>
 		&lt;buildId>&lt;/buildId>
 		&lt;/version>	</echo>         
 
