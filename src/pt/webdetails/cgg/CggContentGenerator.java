@@ -37,7 +37,6 @@ import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.services.solution.BaseContentGenerator;
 import org.w3c.dom.Document;
-import pt.webdetails.cgg.cdw.CdwFileNavigator;
 import pt.webdetails.cgg.scripts.ScriptFactory;
 import pt.webdetails.cgg.scripts.Script;
 import pt.webdetails.cgg.charts.SVGChart;
@@ -84,17 +83,8 @@ public class CggContentGenerator extends BaseContentGenerator {
                     case DRAW:
                         draw(requestParams, out);
                         break;
-                    case DRAWCDW:
-                        drawCdw(requestParams, out);
-                        break;
                     case REFRESH:
                         refresh(requestParams, out);
-                        break;
-                    case LISTCDW:
-                        listCdw(requestParams, out);
-                        break;
-                    case GETCDW:
-                        getCdw(requestParams, out);
                         break;
                     default:
                         logger.error("No method passed to content generator");
@@ -188,118 +178,12 @@ public class CggContentGenerator extends BaseContentGenerator {
         }
     }
 
-    private void drawCdw(IParameterProvider requestParams, OutputStream out) {
-        final IPentahoSession session = PentahoSessionHolder.getSession();
-        final String scriptName = requestParams.getStringParameter("path", "").replaceAll("/+", "/");
-        final String scriptId = requestParams.getStringParameter("id", "");
-        final ISolutionRepository solutionRepository = PentahoSystem.get(ISolutionRepository.class, session);
-
-        if (scriptName != null) {
-            try {
-                ISolutionFile cdw = solutionRepository.getSolutionFile(scriptName, 0);
-                if (cdw == null) {
-                    throw new FileNotFoundException(scriptName);
-                }
-                InputStream data = new ByteArrayInputStream(cdw.getData());
-                Map<String, String> paramsMap = new HashMap<String, String>();
-
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                DocumentBuilder builder = factory.newDocumentBuilder();
-                Document doc = builder.parse(data);
-
-                XPath xpath = XPathFactory.newInstance().newXPath();
-                String scriptPath;
-                if (scriptId.equals("")) {
-                    scriptPath = (String) xpath.evaluate("/cdw/charts/chart[1]/script", doc, XPathConstants.STRING);
-                } else {
-                    scriptPath = (String) xpath.evaluate("/cdw/charts/chart[@id='" + scriptId + "']/script", doc, XPathConstants.STRING);
-                }
-                paramsMap.put("script", scriptPath);
-                paramsMap.put("type", requestParams.getStringParameter("type", "svg"));
-                paramsMap.put("width", "" + requestParams.getLongParameter("width", 0L));
-                paramsMap.put("width", "" + requestParams.getLongParameter("width", 0L));
-                IParameterProvider params = new SimpleParameterProvider(paramsMap);
-                Iterator inputParams = requestParams.getParameterNames();
-                while (inputParams.hasNext()) {
-                    String paramName = inputParams.next().toString();
-                    if (paramName.startsWith("param")) {
-                        paramsMap.put(paramName, requestParams.getStringParameter(paramName, ""));
-                    }
-                }
-                draw(params, out);
-            } catch (Exception ex) {
-                logger.error("Failed to parse CDW file: " + ex.toString());
-            }
-        }
-    }
 
     private void refresh(IParameterProvider requestParams, OutputStream out) {
         ScriptFactory.getInstance().clearCachedScopes();
     }
 
-    private void listCdw(IParameterProvider requestParams, OutputStream out) {
-
-        final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
-        response.setHeader("Content-Type", MIME_XML);
-
-        final String contextPath = ((HttpServletRequest) parameterProviders.get("path").getParameter("httprequest")).getContextPath();
-        final CdwFileNavigator nav = new CdwFileNavigator(userSession, contextPath);
-        try {
-            final String json = nav.getCdwFilelist("navigator", "metrics", "");
-            out.write(json.getBytes("UTF8"));
-        } catch (Exception e) {
-            logger.error(e);
-        }
-    }
-
-    private void getCdw(IParameterProvider requestParams, OutputStream out) {
-
-        String pathString = this.parameterProviders.get("path").getStringParameter("path", "");
-        String resource;
-        if (pathString.split("/").length > 2) {
-            resource = pathString.replaceAll("^/.*?/", "");
-        } else {
-            resource = requestParams.getStringParameter("path", "");
-        }
-        resource = resource.startsWith("/") ? resource : "/" + resource;
-
-        String[] path = resource.split("/");
-        String[] fileName = path[path.length - 1].split("\\.");
-
-
-        String mimeType = "text/xml";
-        final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
-        response.setHeader("Content-Type", mimeType);
-        if (resource.endsWith(".cdw")) {
-            try {
-                getSolutionResource(out, resource);
-            } catch (IOException e) {
-                logger.error("failed to read file: " + e.getMessage());
-            }
-        }
-    }
-
-    private void getSolutionResource(final OutputStream out, final String resource) throws IOException {
-
-        final String path = PentahoSystem.getApplicationContext().getSolutionPath(resource); //$NON-NLS-1$ //$NON-NLS-2$
-
-        final File file = new File(path);
-
-        String filePath = file.getAbsolutePath().replaceAll("\\\\", "/").replaceAll("/+", "/"),
-                solutionPath = PentahoSystem.getApplicationContext().getSolutionPath("").replaceAll("\\\\", "/").replaceAll("/+", "/");
-        if (!filePath.startsWith(solutionPath)) {
-            // File not inside solution! run away!
-            throw new FileNotFoundException("Not allowed");
-        }
-        final InputStream in = new FileInputStream(file);
-        final byte[] buff = new byte[4096];
-        int n = in.read(buff);
-        while (n != -1) {
-            out.write(buff, 0, n);
-            n = in.read(buff);
-        }
-        in.close();
-    }
+ 
 
     private void setResponseHeaders(final String mimeType, final String attachmentName) {
         // Make sure we have the correct mime type
