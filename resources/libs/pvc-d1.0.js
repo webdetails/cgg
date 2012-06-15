@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120215-patched-20120508
+//VERSION TRUNK-20120215-patched-20120615
 
 
 // ECMAScript 5 shim
@@ -4801,7 +4801,10 @@ pvc.CategoricalAbstractPanel = pvc.BasePanel.extend({
 
         // Overflow
         var options = this.chart.options;
-        if ((options.orthoFixedMin != null) || (options.orthoFixedMax != null)){
+        // PATCH 20120615 stacked bars with line: clipping would cut dots
+        if ((options.orthoFixedMin != null && 
+            (options.orthoFixedMin != 0 || !options.stacked)) || 
+            (options.orthoFixedMax != null)){
             this.pvPanel["overflow"]("hidden");
         }
         
@@ -9194,6 +9197,11 @@ pvc.BulletChart = pvc.BaseChart.extend({
       tipsySettings: {
         gravity: "s",
         fade: true
+      },
+      
+      // PATCH - Backwards compatible default tooltip format
+      tooltipFormat: function(s, c, v) {
+        return this.chart.options.valueFormat(v);
       }
     }
 });
@@ -9330,6 +9338,25 @@ pvc.BulletChartPanel = pvc.BasePanel.extend({
 
 
     if(this.showTooltips){
+      // PATCH - bullets tooltip support
+      this.pvBulletMeasure
+            .localProperty('tooltip')
+            .tooltip(function(v, d){
+                var s = d.title;
+                var c = d.subtitle;
+                return myself.chart.options.tooltipFormat.call(myself,s,c,v);
+            })
+            ;
+        
+      this.pvBulletMarker
+            .localProperty('tooltip')
+            .tooltip(function(v, d){
+                var s = d.title;
+                var c = d.subtitle;
+                return myself.chart.options.tooltipFormat.call(myself,s,c,v);
+            })
+            ;
+      
       // Extend default
       this.extend(this.tipsySettings,"tooltip_");
       this.pvBulletMeasure.event("mouseover", pv.Behavior.tipsy(this.tipsySettings));
