@@ -1,4 +1,5 @@
 //VERSION TRUNK-20120620\n
+
 var def = (function(){
 if(!Object.keys) {
     /** @ignore */
