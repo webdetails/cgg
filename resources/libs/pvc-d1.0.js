@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120622\n
+//VERSION TRUNK-20120624\n
 var def = (function(){
 if(!Object.keys) {
     /** @ignore */
@@ -889,8 +889,7 @@ def.create = function(/* [deep, ] baseProto, mixin1, mixin2, ...*/){
 // -----------------------
 
 def.scope(function(){
-    var shared = def.shared(),
-        rootProto = Object.prototype;
+    var shared = def.shared();
 
     /** @private */
     function typeLocked(){
@@ -900,24 +899,46 @@ def.scope(function(){
     /** @ignore */
     var typeProto = /** lends def.type# */{
         init: function(init){
+            /*jshint expr:true */
+            
+            init || def.fail.argumentRequired('init');
+            
             var state = shared(this.safe);
             
-            /*jshint expr:true */
             !state.locked || def.fail(typeLocked());
-
+            
+            // NOTE: access to init inherits baseState's init! 
+            // Before calling init or postInit, baseState.initOrPost is inherited as well. 
+            var baseInit = state.init;
+            if(baseInit){
+                init = override(init, baseInit);
+            }
+            
             state.init = init;
-            state.initOrPost = !!(state.init || state.post);
+            state.initOrPost = true;
+            
             return this;
         },
 
         postInit: function(postInit){
+            /*jshint expr:true */
+            
+            postInit || def.fail.argumentRequired('postInit');
+            
             var state = shared(this.safe);
             
-            /*jshint expr:true */
             !state.locked || def.fail(typeLocked());
-
+            
+            // NOTE: access to post inherits baseState's post! 
+            // Before calling init or postInit, baseState.initOrPost is inherited as well.
+            var basePostInit = state.post;
+            if(basePostInit){
+                postInit = override(postInit, basePostInit);
+            }
+            
             state.post = postInit;
-            state.initOrPost = !!(state.init || state.post);
+            state.initOrPost = true;
+            
             return this;
         },
         
@@ -927,26 +948,31 @@ def.scope(function(){
             /*jshint expr:true */
             !state.locked || def.fail(typeLocked());
 
-            var proto = this.prototype,
-                baseState = state.base;
+            var proto = this.prototype;
+            var baseState = state.base;
 
             def.eachOwn(mixin.prototype || mixin, function(value, p){
-                if(value !== undefined){
-                    var method = asMethod(value), 
-                        baseMethod;
+                if(value){
+                    // Try to convert to method
+                    var method = asMethod(value);
                     if(method) {
                         state.methods[p] = method;
                         
-                        if(baseState && 
-                           (baseMethod = baseState.methods[p]) &&
+                        // Check if it is an override
+                        var baseMethod;
+                        if(baseState && (baseMethod = baseState.methods[p]) &&
                            // Exclude inherited stuff from Object.prototype
                            (baseMethod instanceof Method)){
+                            
+                            // Replace value with an override function 
+                            // that intercepts the call and sets the correct
+                            // 'base' property before calling the original value function
                             value = baseMethod.override(method);
                         }
                     }
-                    
-                    proto[p] = value;
                 }
+                
+                proto[p] = value;
             });
 
             return this;
@@ -992,29 +1018,21 @@ def.scope(function(){
     def.copyOwn(Method.prototype, {
         isAbstract: false,
         override: function(method){
+            // *this* is the base method
             if(this.isAbstract) {
+                // Abstract base methods do not maintain 'base' property.
+                // Interception is not needed.
                 return method.fun;
             }
             
             var fun2 = override(method.fun, this.fun);
+            // replacing the original function with the wrapper function
+            // makes sure that multiple (> 1) overrides work
             method.fun = fun2;
+            
             return fun2;
         }
     });
-    
-    /** @private */
-    function override(method, base){
-        
-        return function(){
-            var prevBase = this.base;
-            this.base = base;
-            try{
-                return method.apply(this, arguments);
-            } finally {
-                this.base = prevBase;
-            }
-        };
-    }
     
     /** @private */
     function asMethod(fun) {
@@ -1044,38 +1062,73 @@ def.scope(function(){
         return asMethod(fun) || def.fail.argumentInvalid('fun');
     }
     
+    // -----------------
+    
+    function rootType(){
+    }
+    
+    var rootProto = rootType.prototype;
+    rootProto.base = undefined;
+    
+    var rootState = {
+        locked:      true,
+        init:        undefined,
+        postInit:    undefined,
+        initOrPost:  false,
+        methods:     {},
+        constructor: rootType
+    };
+    
+    rootType.safe = shared.safe(rootState);
+    
+    // -----------------
+    
     /** @private */
-    function createConstructor(state) {
+    function override(method, base){
         
-        function constructor(){
-            if(!state.initOrPost){
-                return;
-            }
-            
-            var prevBase = this.base;
+        return function(){
+            var prevBase = rootProto.base;
+            rootProto.base = base;
             try{
-                var method = state.init;
-                if(method) {
-                    this.base = state.base.init;
-                    method.apply(this, arguments);
-                }
-                
-                method = state.post;
-                if(method) {
-                    this.base = state.base.post;
-                    method.apply(this, arguments);
-                }
+                return method.apply(this, arguments);
             } finally {
-                this.base = prevBase;
+                rootProto.base = prevBase;
+            }
+        };
+    }
+    
+    function overrideMethod(mname, method){
+        this[mname] = override(method, this[mname]);
+        return this;
+    }
+    
+    // -----------------
+    
+    /** @private */
+    function inherits(type, base){
+     // Inherit
+        var proto = type.prototype = Object.create(base.prototype);
+        proto.constructor = type;
+        
+        return proto;
+    }
+    
+    // -----------------
+    
+    /** @private */
+    function createConstructor(state){
+         
+        function constructor(){
+            /*jshint expr:true */
+            var method;
+            if(state.initOrPost){
+                (method = state.init) && method.apply(this, arguments);
+                (method = state.post) && method.apply(this, arguments);
             }
         }
         
         return constructor;
     }
-    
-    var rootState = {
-        methods: {}
-    };
     
     /**
      * Constructs a type with the specified name in the current namespace.
@@ -1085,58 +1138,59 @@ def.scope(function(){
      * The type is not published in any namespace.
      *  
      * @param {object} [baseType] The base type.
-     * @param {object} [baseSpace] The base namespace.
+     * @param {object} [space] The namespace where to define a named type.
      * The default namespace is the current namespace.
      */
-    function type(name, baseType, baseSpace){
+    function type(name, baseType, space){
         
-        var baseState = baseType && baseType.safe ? shared(baseType.safe) : rootState,
-            state = Object.create(baseState),
-            constructor = createConstructor(state),
-            typeName  = new TypeName(name);
+        var typeName = new TypeName(name);
         
-        // ----
+        // ---------------
         
-        state.locked      = false;
-        state.constructor = constructor;
-        state.base        = baseState;
-        state.methods     = Object.create(baseState.methods);
+        var baseState;
+        if(baseType){
+            baseState = (baseType.safe && shared(baseType.safe)) ||
+                         def.fail.operationInvalid("Invalid \"foreign\" base type.");
+            baseState.locked = true;
+        } else {
+            baseType  = rootType;
+            baseState = rootState;
+        }
         
-        // ----
+        // ---------------
         
-        baseState.locked = true;
+        var state = Object.create(baseState);
+        state.locked  = false;
+        state.base    = baseState;
+        state.methods = Object.create(baseState.methods);
         
-        // ----
+        // ---------------
+        
+        var constructor = createConstructor(state);
+        
+        def.copyOwn(constructor, typeProto);
+        
         constructor.name     = typeName.name;
         constructor.typeName = typeName;
         constructor.safe     = shared.safe(state);
-        def.copyOwn(constructor, typeProto);
         
-        // ----
+        var proto = inherits(constructor, baseType);
         
-        var proto;
-        if(baseType) {
-            proto = constructor.prototype = Object.create(baseType.prototype);
-            proto.constructor = constructor;
-        } else {
-            proto = constructor.prototype;
-        }
+        state.constructor = constructor;
         
-        if(!('override' in proto)) {
-            proto.override = function(name2, method){
-                this[name2] = override(method, this[name2]);
-                return this;
-            };
-        }
+        // ---------------
+        // Default methods (can be overwritten with Type#add)
         
-        constructor.prototype.toString = function(){
+        proto.override = overrideMethod;
+        
+        proto.toString = function(){
             return "[" + typeName + "]";
         };
         
-        // ----
+        // ---------------
         
         if(typeName.name){
-            defineName(def.space(typeName.namespace, baseSpace), 
+            defineName(def.space(typeName.namespace, space), 
                        typeName.name, 
                        constructor);
         }
@@ -1146,7 +1200,6 @@ def.scope(function(){
     
     def.type   = type;
     def.method = method;
-    def.override = override;
 });
 
 // ----------------------
@@ -15926,7 +15979,13 @@ pvc.TitlePanel = pvc.BasePanel.extend({
                 }
             }
         }
-
+    },
+    
+    /**
+     * @override
+     */
+    applyExtensions: function(){
+        
         // Extend title label
         this.extend(this.pvLabel, "titleLabel_");
     }
@@ -17049,8 +17108,8 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
                 var ao  = aoMap[a];
                 var al  = alMap[a];
                 var aol = aolMap[a];
-                var length      = child[al];
-                var olength     = remSize[aol];
+                var length      = remSize[al];
+                var olength     = child[aol];
                 var childSizeII = new pvc.Size(def.set({}, al, length, aol, olength));
                 
                 child.layout(childSizeII, childReferenceSize, childKeyArgs);
@@ -18637,13 +18696,17 @@ pvc.PieChartPanel = pvc.BasePanel.extend({
             .visible(this.showValues)
             // .textAngle(0)
             .text(function(catGroup) {
-                var value;
+                // No text on 0-width slices... // TODO: ideally the whole slice would be visible=false; when scenes are added this is easily done
+                var value = myself.pvPie.value();
+                if(!value){
+                    return null;
+                }
+                
                 if(options.showValuePercentage) {
                     value = catGroup.dimensions(valueDimName).percentOverParent(visibleKeyArgs);
                     return options.valueFormat.call(null, Math.round(value * 1000) / 10) + "%";
                 }
                 
-                value = myself.pvPie.value();
                 return " " + valueDim.format(value);
              })
             .textMargin(10);
