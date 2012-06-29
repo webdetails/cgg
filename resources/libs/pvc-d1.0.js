@@ -1983,7 +1983,7 @@ var pvc = def.globalSpace('pvc', {
     // 4 - verbose
     // 5 - trash
     // ...
-    debug: 1
+    debug: 0
 });
 
 // Begin private scope
@@ -2137,26 +2137,38 @@ pvc.createColorScheme = function(colors){
 };
 
 // Convert to Grayscale using YCbCr luminance conv.
-pvc.toGrayScale = function(color, alpha, maxGrayLevel){
+pvc.toGrayScale = function(color, alpha, maxGrayLevel, minGrayLevel){
     color = pv.color(color);
     
-    var avg = Math.round( 0.299 * color.r + 0.587 * color.g + 0.114 * color.b);
+    var avg = 0.299 * color.r + 0.587 * color.g + 0.114 * color.b;
     // Don't let the color get near white, or it becomes unperceptible in most monitors
     if(maxGrayLevel === undefined) {
         maxGrayLevel = 200;
+    } else if(maxGrayLevel == null){
+        maxGrayLevel = 255; // no effect
     }
     
-    if(maxGrayLevel != null && avg > maxGrayLevel) {
+    if(minGrayLevel === undefined){
+        minGrayLevel = 30;
+    } else if(minGrayLevel == null){
+        minGrayLevel = 0; // no effect
+    }
+    
+    var delta = (maxGrayLevel - minGrayLevel);
+    if(delta <= 0){
         avg = maxGrayLevel;
+    } else {
+        // Compress
+        avg = minGrayLevel + (avg / 255) * delta;
     }
     
     if(alpha == null){
         alpha = color.opacity;
-        //alpha = 0.6;
     }
     
-    //var avg = Math.round( (color.r + color.g + color.b)/3);
-    return pv.rgb(avg, avg, avg, alpha != null ? alpha : 0.6);//.brighter();
+    avg = Math.round(avg);
+    
+    return pv.rgb(avg, avg, avg, alpha);
 };
 
 pvc.removeTipsyLegends = function(){
@@ -2956,6 +2968,12 @@ pv.Mark.prototype.getInstanceShape = function(instance){
             instance.height);
 };
 
+pv.Mark.prototype.getInstanceCenterPoint = function(instance){
+    return new Point(
+                instance.left + (instance.width  || 0) / 2,
+                instance.top +  (instance.height || 0) / 2);
+};
+
 pv.Label.prototype.getInstanceShape = function(instance){
     // TODO
     return new Rect(
@@ -2965,13 +2983,22 @@ pv.Label.prototype.getInstanceShape = function(instance){
             10);
 };
 
-pv.Wedge.prototype.getInstanceShape = function(instance){
+pv.Wedge.prototype.getInstanceCenterPoint = function(instance){
     var midAngle  = instance.startAngle + (instance.angle / 2);
     var midRadius = (instance.outerRadius + instance.innerRadius) / 2;
     var dotLeft   = instance.left + midRadius * Math.cos(midAngle);
     var dotTop    = instance.top  + midRadius * Math.sin(midAngle);
     
-    return new Circle(dotLeft, dotTop, 10);
+    return new Point(dotLeft, dotTop);
+};
+
+pv.Wedge.prototype.getInstanceShape = function(instance){
+    var center = this.getInstanceCenterPoint(instance);
+
+    // TODO: at a minimum, improve calculation of circle radius
+    // to match the biggest circle within the wedge at that point
+    
+    return new Circle(center.x, center.y, 10);
 };
 
 pv.Dot.prototype.getInstanceShape = function(instance){
@@ -2999,9 +3026,20 @@ pv.Dot.prototype.getInstanceShape = function(instance){
     return new Circle(cx, cy, radius);
 };
 
+pv.Dot.prototype.getInstanceCenterPoint = function(instance){
+    return new Point(instance.left, instance.top);
+};
+
 pv.Area.prototype.getInstanceShape =
 pv.Line.prototype.getInstanceShape = function(instance, nextInstance){
     return new Line(instance.left, instance.top, nextInstance.left, nextInstance.top);
+};
+
+pv.Area.prototype.getInstanceCenterPoint =
+pv.Line.prototype.getInstanceCenterPoint = function(instance, nextInstance){
+    return new Point(
+            (instance.left + nextInstance.left) / 2, 
+            (instance.top  + nextInstance.top ) / 2);
 };
 
 
@@ -3127,6 +3165,40 @@ var Shape = def.type('pvc.Shape')
 
 // --------------------
 
+var Point = def.type('pvc.Point', Shape)
+.init(function(x, y){
+    this.set(x, y);
+})
+.add({
+    set: function(x, y){
+        this.x  = x  || 0;
+        this.y  = y  || 0;
+    },
+
+    clone: function(){
+        return new Point(this.x, this.y);
+    },
+
+    apply: function(t){
+        this.x  = t.transformHPosition(this.x);
+        this.y  = t.transformVPosition(this.y);
+        return this;
+    },
+
+    intersectsRect: function(rect){
+        // Does rect contain the point
+        var minX = Math.min(rect.x, rect.x2),
+            maxX = Math.max(rect.x, rect.x2),
+            minY = Math.min(rect.y, rect.y2),
+            maxY = Math.max(rect.y, rect.y2);
+
+        return (this.x >= minX) && (this.x <= maxX) &&
+               (this.y >= minY) && (this.y <= maxY);
+    }
+});
+
+// --------------------
+
 var Rect = def.type('pvc.Rect', Shape)
 .init(function(x, y, dx, dy){
     this.set(x, y, dx, dy);
@@ -3173,13 +3245,10 @@ var Rect = def.type('pvc.Rect', Shape)
             minY = Math.min(rect.y, rect.y2),
             maxY = Math.max(rect.y, rect.y2);
 
-        return rect &&
-                // Some intersection on X
-                (this.x2 > minX) &&
-                (this.x  < maxX) &&
-                // Some intersection on Y
-                (this.y2 > minY ) &&
-                (this.y  < maxY);
+        return (this.x2 > minX ) &&  // Some intersection on X
+               (this.x  < maxX ) &&
+               (this.y2 > minY ) &&  // Some intersection on Y
+               (this.y  < maxY);
     },
 
     getSides: function(){
@@ -13901,7 +13970,38 @@ pvc.BaseChart = pvc.Abstract.extend({
     _initLegendGroups: function(){
         var partValues = this._partValues() || [null],
             me = this;
-
+        
+        var isOn, onClick;
+        
+        switch(this.options.legendClickMode){
+            case 'toggleSelected':
+                isOn = function(){
+                    return !this.group.owner.selectedCount() || 
+                           this.group.datums(null, {selected: true}).any();
+                };
+                
+                onClick = function(){
+                    pvc.data.Data.toggleSelected(this.group.datums());
+    
+                    me.updateSelections();
+                };
+                break;
+                
+            default: 
+           // 'toggleVisible'
+                isOn = function(){
+                    return this.group.datums(null, {visible: true}).any();
+                };
+                
+                onClick = function(){
+                    pvc.data.Data.toggleVisible(this.group.datums());
+    
+                    // Re-render chart
+                    me.render(true, true, false);
+                };
+                break;
+        }
+        
         partValues.forEach(function(partValue){
             var partData = this._legendData(partValue);
             if(partData){
@@ -13927,15 +14027,8 @@ pvc.BaseChart = pvc.Abstract.extend({
                             color:    partColorScale(itemData.value),
                             useRule:  undefined,
                             shape:    partShape,
-                            isOn: function(){
-                                return this.group.datums(null, {visible: true}).any();
-                            },
-                            click: function(){
-                                pvc.data.Data.toggleVisible(this.group.datums());
-
-                                // Re-render chart
-                                me.render(true, true, false);
-                            }
+                            isOn:     isOn,
+                            click:    onClick
                         });
                     }, this);
 
@@ -14234,6 +14327,8 @@ pvc.BaseChart = pvc.Abstract.extend({
                 return;
             }
             
+            pvc.removeTipsyLegends();
+            
             // Reentry control
             this._inUpdateSelections = true;
             try {
@@ -14335,6 +14430,8 @@ pvc.BaseChart = pvc.Abstract.extend({
         legendMargins:    undefined,
         legendPaddings:   undefined,
         
+        legendClickMode:  'toggleVisible', // toggleVisible || toggleSelected
+        
         colors: null,
 
         secondAxis: false,
@@ -14354,7 +14451,7 @@ pvc.BaseChart = pvc.Abstract.extend({
         
         tipsySettings: {
             gravity: "s",
-            delayIn:  400,
+            delayIn:  200,
             offset:   2,
             opacity:  0.7,
             html:     true,
@@ -15764,6 +15861,10 @@ pvc.BasePanel = pvc.Abstract.extend({
             }
         }
         
+        // center, partial and total (not implemented)
+        var selectionMode = def.get(mark, 'rubberBandSelectionMode', 'partial');
+        var shapeMethod = (selectionMode === 'center') ? 'getInstanceCenterPoint' : 'getInstanceShape';
+        
         if(mark.type === 'area' || mark.type === 'line'){
             var instancePrev;
             
@@ -15773,7 +15874,7 @@ pvc.BasePanel = pvc.Abstract.extend({
                     instancePrev = null;
                 } else {
                     if(instancePrev){
-                        var shape = mark.getInstanceShape(instancePrev, instance).apply(toScreen);
+                        var shape = mark[shapeMethod](instancePrev, instance).apply(toScreen);
                         processShape(shape, instancePrev);
                     }
     
@@ -15783,7 +15884,7 @@ pvc.BasePanel = pvc.Abstract.extend({
         } else {
             mark.forEachSignumInstance(function(instance, toScreen){
                 if(!instance.isBreak && instance.visible) {
-                    var shape = mark.getInstanceShape(instance).apply(toScreen);
+                    var shape = mark[shapeMethod](instance).apply(toScreen);
                     processShape(shape, instance);
                 }
             }, this);
@@ -16668,8 +16769,18 @@ pvc.LegendPanel = pvc.BasePanel.extend({
           })
           .font(this.font)
           .textMargin(this.textMargin)
-          .textDecoration(function(){ return this.parent.isOn() ? ""      : "line-through"; })
-          .textStyle     (function(){ return this.parent.isOn() ? "black" : "#ccc";         });
+          .textDecoration(function(){ return this.parent.isOn() ? "" : "line-through"; })
+          .intercept(
+                'textStyle',
+                labelTextStyleInterceptor,
+                this._getExtension('legendLabel', 'textStyle'));
+          
+      function labelTextStyleInterceptor(getTextStyle, args) {
+          var baseTextStyle = getTextStyle ? getTextStyle.apply(this, args) : "black";
+          return this.parent.isOn() ? 
+                      baseTextStyle : 
+                      pvc.toGrayScale(baseTextStyle, null, undefined, 150); 
+      }
     },
 
     applyExtensions: function(){
@@ -22405,6 +22516,8 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
             ;
             
         this.pvDot = dot.pvMark;
+        
+        this.pvDot.rubberBandSelectionMode = 'center';
         
         // -- COLOR --
         // When no lines are shown, dots are shown with transparency,
