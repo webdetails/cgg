@@ -94,15 +94,25 @@ class BaseScope extends ImporterTopLevel {
         }
         return Context.toBoolean(true);
     }
-    
-	public static Object getTextLenCGG(Context cx, Scriptable thisObj,
+
+    public static Object getTextLenCGG(Context cx, Scriptable thisObj,
     		Object[] args, Function funObj) 
     {
     	String text = Context.toString(args[0]);
         String fontFamily = Context.toString(args[1]);
         String fontSize = Context.toString(args[2]).trim();
-        
-        Font ffont = getFont(fontFamily, fontSize);
+        String fontStyle = "normal";
+        String fontWeight = "normal";
+
+        if(args.length > 3){
+            fontStyle = Context.toString(args[3]);
+            
+            if(args.length > 4){
+                fontWeight = Context.toString(args[4]);
+            }
+        }
+
+        Font ffont = getFont(fontFamily, fontSize, fontStyle, fontWeight);
         
         JLabel label = new JLabel();
         
@@ -119,8 +129,18 @@ class BaseScope extends ImporterTopLevel {
       // String text = Context.toString(args[0]);
       String fontFamily = Context.toString(args[1]);
       String fontSize = Context.toString(args[2]).trim();
-      
-      Font ffont = getFont(fontFamily, fontSize);
+      String fontStyle = "normal";
+      String fontWeight = "normal";
+
+      if(args.length > 3){
+        fontStyle = Context.toString(args[3]);
+
+        if(args.length > 4){
+          fontWeight = Context.toString(args[4]);
+        }
+      }
+
+      Font ffont = getFont(fontFamily, fontSize, fontStyle, fontWeight);
       
       JLabel label = new JLabel();
       
@@ -131,7 +151,7 @@ class BaseScope extends ImporterTopLevel {
       return Context.toNumber(height);
     }
     
-    private static Font getFont(String fontFamily, String fontSize){
+    private static Font getFont(String fontFamily, String fontSize, String fontStyle, String fontWeight){
     	// Get size unit
         boolean convert = false;
         if(fontSize.endsWith("px")){
@@ -153,24 +173,95 @@ class BaseScope extends ImporterTopLevel {
         
         //size conversion
         if(convert){//px->pt
-          float dpi = Toolkit.getDefaultToolkit().getScreenResolution();
-          size = size / dpi * 72; //1pt~=1/72"
+          // pt = (3/4) * css_pixel
+          // 3 / 4 = 72 /96
+          // (see: http://static.zealous-studios.co.uk/projects/web_tests/PPI%20tests.html)
+          size = 0.75f * size;
         }
         
-        //try direct font instantiation
-        String capFontFamily = fontFamily.substring(0,1).toUpperCase() + fontFamily.substring(1,fontFamily.length());
-        Font ffont = Font.decode( capFontFamily + ' ' +  Math.round(size));
-        if(ffont.getFamily().equals(Font.DIALOG) && !fontFamily.equals("dialog"))
-        {//defaulted, try family
-          GVTFontFamily awtFamily =  FontFamilyResolver.resolve(fontFamily);
-          if(awtFamily == null) awtFamily = FontFamilyResolver.defaultFont;
+        // java on windows point size correction
+        // (see: http://www.3rd-evolution.de/tkrammer/docs/java_font_size.html)
+        int screenDpi = Toolkit.getDefaultToolkit().getScreenResolution();
+        int isize = Math.round(size * screenDpi / 72.0f);
+        
+        int javaFontStyle = parseCssFontStyleAndWeight(fontStyle, fontWeight);
 
-          ffont = new Font(awtFamily.getFamilyName(), Font.PLAIN, Math.round(size));
+        return decodeFont(fontFamily, javaFontStyle, isize);
+    }
+
+    private static int parseCssFontStyleAndWeight(String fontStyle, String fontWeight)
+    {
+       //Font.ITALIC
+       //Font.BOLD
+       //Font.PLAIN
+        boolean isItalic = false;
+        boolean isBold = false;
+
+        if(fontStyle != null)
+        {
+            fontStyle = fontStyle.toLowerCase();
+
+            if(fontStyle.equals("italic") || fontStyle.equals("oblique")){
+                isItalic = true;
+            }
         }
-        
+
+        if(fontWeight != null)
+        {
+            fontWeight = fontWeight.toLowerCase();
+
+            if(fontWeight.equals("bold")  ||
+               fontWeight.equals("bolder") ||
+               fontWeight.equals("700") ||
+               fontWeight.equals("800") ||
+               fontWeight.equals("900")){
+                isBold = true;
+            }
+        }
+
+        if(isItalic)
+        {
+            return isBold ? (Font.ITALIC | Font.BOLD) : Font.ITALIC;
+        }
+
+        return isBold ? Font.BOLD : Font.PLAIN;
+    }
+
+    private static Font decodeFont(String fontFamily, int fontStyle, int isize)
+    {
+        String fontStyleText = "";
+        switch(fontStyle)
+        {
+            case Font.BOLD:
+                fontStyleText = "BOLD ";
+                break;
+
+            case Font.ITALIC:
+                fontStyleText = "ITALIC ";
+                break;
+
+            case (Font.ITALIC | Font.BOLD):
+                fontStyleText = "BOLDITALIC ";
+                break;
+        }
+
+        String capFontFamily = fontFamily.substring(0,1).toUpperCase() + fontFamily.substring(1,fontFamily.length());
+
+        Font ffont = Font.decode(capFontFamily + " " + fontStyleText  + isize);
+        if(ffont.getFamily().equals(Font.DIALOG) && !fontFamily.equals("dialog"))
+        {
+            // defaulted, try family
+            GVTFontFamily awtFamily =  FontFamilyResolver.resolve(fontFamily);
+            if(awtFamily == null) {
+                awtFamily = FontFamilyResolver.defaultFont;
+            }
+
+            ffont = new Font(awtFamily.getFamilyName(), fontStyle, isize);
+        }
+
         return ffont;
     }
- 
+
     public static Object _loadSvg(Context cx, Scriptable thisObj,
             Object[] args, Function funObj) {
 
