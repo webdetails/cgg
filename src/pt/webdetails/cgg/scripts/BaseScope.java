@@ -40,7 +40,7 @@ import org.mozilla.javascript.ImporterTopLevel;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
-import org.pentaho.reporting.libraries.libsparklines.util.StringUtils;
+//import org.pentaho.reporting.libraries.libsparklines.util.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -120,7 +120,7 @@ class BaseScope extends ImporterTopLevel {
         
         int width = fMetric.stringWidth(text);
         
-        return Context.toNumber(width);
+        return Context.toNumber(width); 
     }
     
     public static Object getTextHeightCGG(Context cx, Scriptable thisObj,
@@ -155,7 +155,7 @@ class BaseScope extends ImporterTopLevel {
     	// Get size unit
         boolean convert = false;
         if(fontSize.endsWith("px")){
-          convert = true;
+//          convert = true;
           fontSize = fontSize.substring(0, fontSize.length() -2);
         } else if(fontSize.endsWith("pt")){
           fontSize = fontSize.substring(0, fontSize.length() -2);
@@ -171,18 +171,22 @@ class BaseScope extends ImporterTopLevel {
         {
         }
         
+        
+        int isize = Math.round(size);
         //size conversion
         if(convert){//px->pt
           // pt = (3/4) * css_pixel
           // 3 / 4 = 72 /96
           // (see: http://static.zealous-studios.co.uk/projects/web_tests/PPI%20tests.html)
           size = 0.75f * size;
+          
+          
+          // java on windows point size correction
+          // (see: http://www.3rd-evolution.de/tkrammer/docs/java_font_size.html)
+          int screenDpi = Toolkit.getDefaultToolkit().getScreenResolution();
+          isize = Math.round(size * screenDpi / 72.0f);                    
         }
         
-        // java on windows point size correction
-        // (see: http://www.3rd-evolution.de/tkrammer/docs/java_font_size.html)
-        int screenDpi = Toolkit.getDefaultToolkit().getScreenResolution();
-        int isize = Math.round(size * screenDpi / 72.0f);
         
         int javaFontStyle = parseCssFontStyleAndWeight(fontStyle, fontWeight);
 
