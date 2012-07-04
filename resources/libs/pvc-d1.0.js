@@ -6189,8 +6189,7 @@ def.type('pvc.data.CrosstabTranslationOper', pvc.data.MatrixTranslationOper)
      * @override
      */
     _executeCore: function(){
-        if(this.metadata.length < 2){
-            pvc.log("[Warning] Crosstab data sources should have two or more columns.");
+        if(!this.metadata.length){
             return def.query(); 
         }
         
@@ -6252,10 +6251,6 @@ def.type('pvc.data.CrosstabTranslationOper', pvc.data.MatrixTranslationOper)
     },
     
     _measureData: function(){
-        if(this.metadata.length < 2) {
-            return;
-        }
-
         /* Don't change source */
         var lines = pvc.cloneMatrix(this.source);
 
@@ -6299,7 +6294,7 @@ def.type('pvc.data.CrosstabTranslationOper', pvc.data.MatrixTranslationOper)
         if(!this.options.isMultiValued) {
             categoriesCount = def.get(this.options, 'categoriesCount', 1);
 
-            // TODO: >= 1 check
+            // TODO: >= 0 check
             this.R = categoriesCount;
 
             this._colGroups = colNames.slice(this.R);
@@ -6317,7 +6312,7 @@ def.type('pvc.data.CrosstabTranslationOper', pvc.data.MatrixTranslationOper)
 
                 categoriesCount = def.get(this.options, 'categoriesCount', 1);
 
-                // TODO: >= 1 check
+                // TODO: >= 0 check
                 // TODO: Multiples consume row space?
                 this.R = categoriesCount;
 
@@ -6577,10 +6572,6 @@ def.type('pvc.data.CrosstabTranslationOper', pvc.data.MatrixTranslationOper)
             throw def.error.notImplemented();
         }
 
-        if(this.metadata.length < 2) {
-            return;
-        }
-        
         var me = this,
             index = 0;
         
@@ -19372,7 +19363,7 @@ pvc.PieChart = pvc.BaseChart.extend({
         this.base();
         
         this._addVisualRoles({
-            category: { isRequired: true, defaultDimensionName: 'category*' },
+            category: { isRequired: true, defaultDimensionName: 'category*', autoCreateDimension: true },
             
             /* value: required, continuous, numeric */
             value:  { 
