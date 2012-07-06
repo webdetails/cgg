@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120705\n
+//VERSION TRUNK-20120706\n
 var def = (function(){
 if(!Object.keys) {
     /** @ignore */
@@ -39,6 +39,14 @@ if (!Array.prototype.filter){
         }
 
         return res;
+    };
+}
+
+if (!Array.prototype.forEach){
+    Array.prototype.forEach = function(fun, ctx){
+        for(var i = 0, len = this.length; i < len; ++i) {  
+            fun.call(ctx, this[i], i, this);
+        }
     };
 }
 
@@ -138,7 +146,7 @@ var def = /** @lends def */{
     
     getPath: function(o, path, create, dv){
         if(o && path != null){
-            var parts = def.isArray(path) ? path : path.split('.');
+            var parts = def.array.is(path) ? path : path.split('.');
             var L = parts.length;
             if(L){
                 var i = 0;
@@ -377,7 +385,7 @@ var def = /** @lends def */{
         return scopeFun.call(ctx);
     },
     
-    // Utility/Factory functions ----------------
+    // Special functions ----------------
     
     /**
      * The natural order comparator function.
@@ -393,10 +401,6 @@ var def = /** @lends def */{
          */
         return (a === b) ? 0 : ((a > b) ? 1 : -1);
         //return (a < b) ? -1 : ((a > b) ? 1 : 0);
-    },
-    
-    constant: function(v){
-        return function(){ return v; };
     },
     
     methodCaller: function(p, context){
@@ -419,21 +423,11 @@ var def = /** @lends def */{
      */
     identity: function(x){ return x; },
     
-    /**
-     * The truthy function.
-     * @field
-     * @type function
-     */
-    truthy: function(x){ return !!x; },
-    
-    /**
-     * The falsy function.
-     * @field
-     * @type function
-     */
-    falsy: function(x){ return !x; },
-    
     add: function(a, b){ return a + b; },
+
+    // negate?
+    
+    // Constant functions ----------------
     
     /**
      * The NO OPeration function.
@@ -442,28 +436,83 @@ var def = /** @lends def */{
      */
     noop: function noop(){ /* NOOP */ },
     
-    // negate?
+    retTrue:  function(){ return true;  },
+    retFalse: function(){ return false; },
     
-    // Type coercion ----------------
+    // Type namespaces ----------------
     
-    fun: function(v){
-        return def.isFun(v) ? v : def.constant(v);
+    number: {
+        as: function(d, dv){
+            var v = parseFloat(d);
+            return isNaN(v) ? (dv || 0) : v;
+        }
     },
     
-    number: function(d, dv){
-        var v = parseFloat(d);
-        return isNaN(v) ? (dv || 0) : v;
+    array: {
+
+        is: function(v){
+            return (v instanceof Array);
+        },
+        
+        isLike: function(v){
+            return v && (v.length != null) && (typeof v !== 'string');
+        },
+        
+        /**
+         * Converts something to an array if it is not one already,
+         * and if it is not nully.
+         * 
+         * @param thing A thing to convert to an array.
+         * @returns {Array} 
+         */
+        as: function(thing){
+            return (thing instanceof Array) ? thing : ((thing != null) ? [thing] : null);
+        }
     },
     
-    /**
-     * Converts something to an array if it is not one already,
-     * and if it is not nully.
-     * 
-     * @param thing A thing to convert to an array.
-     * @returns {Array} 
-     */
-    array: function(thing){
-        return (thing instanceof Array) ? thing : ((thing != null) ? [thing] : null);
+    object: {
+        as: function(v){
+            return v && typeof(v) === 'object' ? v : null;
+        },
+        
+        asNative: function(v){
+            return v && typeof(v) === 'object' && v.constructor === Object ?
+                    v :
+                    null;
+        }
+    },
+    
+    string: {
+        is: function(v){
+            return typeof v === 'string';
+        },
+        
+        join: function(sep){
+            var args = [],
+                a = arguments;
+            for(var i = 1, L = a.length ; i < L ; i++){
+                var v = a[i];
+                if(v != null && v !== ""){
+                    args.push("" + v);
+                }
+            }
+        
+            return args.join(sep);
+        }
+    },
+    
+    fun: {
+        is: function(v){
+            return typeof v === 'function';
+        },
+        
+        as: function(v){
+            return typeof v === 'function' ? v : def.fun.constant(v);
+        },
+        
+        constant: function(v){
+            return function(){ return v; };
+        }
     },
     
     // nully to 'dv'
@@ -482,6 +531,11 @@ var def = /** @lends def */{
         return v == null;
     },
     
+    // !== null && !== undefined
+    notNully: function(v){
+        return v != null;
+    },
+    
     empty: function(v){
         return v == null || v === '';
     },
@@ -490,47 +544,21 @@ var def = /** @lends def */{
         return v != null && v !== '';
     },
     
-    // !== null && !== undefined
-    notNully: function(v){
-        return v != null;
-    },
+    /**
+     * The truthy function.
+     * @field
+     * @type function
+     */
+    truthy: function(x){ return !!x; },
     
-    isArrayLike: function(v){
-        return v && (v.length != null) && (typeof v !== 'string');
-    },
+    /**
+     * The falsy function.
+     * @field
+     * @type function
+     */
+    falsy: function(x){ return !x; },
     
-    isArray: function(v){
-        return (v instanceof Array);
-    },
-    
-    isString: function(v){
-        return typeof v === 'string';
-    },
-    
-    isFun: function(v){
-        return typeof v === 'function';
-    },
-    
-    join: function(sep){
-        var args = [],
-            a = arguments;
-        for(var i = 1, L = a.length ; i < L ; i++){
-            var v = a[i];
-            if(v != null && v !== ""){
-                args.push("" + v);
-            }
-        }
-    
-        return args.join(sep);
-    },
-    
-    // TODO: lousy implementation!
-    escapeHtml: function(str){
-        return str.replace(/&/gm, "&amp;")
-                  .replace(/</gm, "&lt;")
-                  .replace(/>/gm, "&gt;")
-                  .replace(/"/gm, "&quot;");    
-    },
+    // -----------------
     
     /* Ensures the first letter is upper case */
     firstUpperCase: function(s){
@@ -577,6 +605,8 @@ var def = /** @lends def */{
         });
     },
     
+    // --------------
+    
     error: function(error){
         return (error instanceof Error) ? error : new Error(error);
     },
@@ -587,15 +617,6 @@ var def = /** @lends def */{
     
     assert: function(msg, scope){
         throw def.error.assertionFailed(msg, scope);
-    },
-    
-    /**
-     * The not implemented function.
-     * @field
-     * @type function
-     */
-    notImplemented: function(){
-        throw def.error.notImplemented();
     }
 };
 
@@ -634,7 +655,7 @@ def.shared = function(){
 
 var errors = {
     operationInvalid: function(msg, scope){
-        return def.error(def.join(" ", "Invalid operation.", def.format(msg, scope)));
+        return def.error(def.string.join(" ", "Invalid operation.", def.format(msg, scope)));
     },
 
     notImplemented: function(){
@@ -647,14 +668,14 @@ var errors = {
 
     argumentInvalid: function(name, msg, scope){
         return def.error(
-                   def.join(" ",
+                   def.string.join(" ",
                        def.format("Invalid argument '{0}'.", [name]), 
                        def.format(msg, scope)));
     },
 
     assertionFailed: function(msg, scope){
         return def.error(
-                   def.join(" ", 
+                   def.string.join(" ", 
                        "Assertion failed.", 
                        def.format(msg, scope)));
     }
@@ -722,7 +743,7 @@ function getNamespace(name, base){
  * @private 
  */
 function createSpace(name, base, definition){
-    if(def.isFun(base)){
+    if(def.fun.is(base)){
         definition = base;
         base = null;
     }
@@ -796,27 +817,15 @@ def.globalSpace = globalSpace;
 // -----------------------
 
 /** @private */
-function asNativeObject(v){
-    return v && typeof(v) === 'object' && v.constructor === Object ?
-            v :
-            undefined;
-}
-
-/** @private */
-function asObject(v){
-    return v && typeof(v) === 'object' ? v : undefined;
-}
-
-/** @private */
 function mixinRecursive(instance, mixin){
     for(var p in mixin){
         var vMixin = mixin[p];
         if(vMixin !== undefined){
             var oMixin,
-                oTo = asNativeObject(instance[p]);
+                oTo = def.object.asNative(instance[p]);
 
             if(oTo){
-                oMixin = asObject(vMixin);
+                oMixin = def.object.as(vMixin);
                 if(oMixin){
                     mixinRecursive(oTo, oMixin);
                 } else {
@@ -824,7 +833,7 @@ function mixinRecursive(instance, mixin){
                     instance[p] = vMixin;
                 }
             } else {
-                oMixin = asNativeObject(vMixin);
+                oMixin = def.object.asNative(vMixin);
                 if(oMixin){
                     vMixin = Object.create(oMixin);
                 }
@@ -839,7 +848,7 @@ def.mixin = function(instance/*mixin1, mixin2, ...*/){
     for(var i = 1, L = arguments.length ; i < L ; i++){
         var mixin = arguments[i];
         if(mixin){
-            mixin = asObject(mixin.prototype || mixin);
+            mixin = def.object.as(mixin.prototype || mixin);
             if(mixin){
                 mixinRecursive(instance, mixin);
             }
@@ -854,7 +863,7 @@ def.mixin = function(instance/*mixin1, mixin2, ...*/){
 /** @private */
 function createRecursive(instance){
     for(var p in instance){
-        var vObj = asNativeObject(instance[p]);
+        var vObj = def.object.asNative(instance[p]);
         if(vObj){
             createRecursive( (instance[p] = Object.create(vObj)) );
         }
@@ -1037,7 +1046,7 @@ def.scope(function(){
     /** @private */
     function asMethod(fun) {
         if(fun) {
-            if(def.isFun(fun)) {
+            if(def.fun.is(fun)) {
                 return new Method({as: fun});
             }
             
@@ -1045,12 +1054,12 @@ def.scope(function(){
                 return fun;
             }
             
-            if(def.isFun(fun.as)) {
+            if(def.fun.is(fun.as)) {
                 return new Method(fun);
             }
             
             if(fun.isAbstract) {
-                return new Method({isAbstract: true, as: def.notImplemented });
+                return new Method({isAbstract: true, as: def.fail.notImplemented });
             }
         }
         
@@ -1379,6 +1388,18 @@ def.type('Map')
 
 // --------------------
 
+def.html = {
+    // TODO: lousy multipass implementation!
+    escape: function(str){
+        return str.replace(/&/gm, "&amp;")
+                  .replace(/</gm, "&lt;")
+                  .replace(/>/gm, "&gt;")
+                  .replace(/"/gm, "&quot;");    
+    }
+};
+
+// --------------------
+
 def.type('Query')
 .init(function(){
     this.index = -1;
@@ -1697,7 +1718,7 @@ def.type('AdhocQuery', def.Query)
 def.type('ArrayLikeQuery', def.Query)
 .init(function(list){
     this.base();
-    this._list  = def.isArrayLike(list) ? list : [list];
+    this._list  = def.array.isLike(list) ? list : [list];
     this._count = this._list.length;
 })
 .add({
@@ -1957,7 +1978,7 @@ def.query = function(q){
         return q;
     }
     
-    if(def.isFun(q)){
+    if(def.fun.is(q)){
         return new def.AdhocQuery(q);
     }
 
@@ -2044,8 +2065,32 @@ pvc.cloneMatrix = function(m){
 
 pvc.mergeDefaults = function(to, defaults, from){
     def.eachOwn(defaults, function(dv, p){
-        var v;
-        to[p] = (from && (v = from[p]) !== undefined) ? v : dv;
+        var v, dvo;
+        
+        if(from){ 
+            v = from[p];
+        }
+        
+        if(v !== undefined){
+            var vo = def.object.asNative(v);
+            if(vo){
+                dvo = def.object.asNative(dv);
+                if(dvo){
+                    v = def.create(dvo, vo);
+                } // else, ignore dv
+            } // else, simple value (null included) ignores dv
+        }
+        
+        if(v === undefined){
+            // Inherit default native objects
+            dvo = def.object.asNative(dv);
+            if(dvo){
+                dv = Object.create(dvo);
+            }
+            v = dv;
+        }
+        
+        to[p] = v;
     });
     
     return to;
@@ -2127,7 +2172,7 @@ pvc.createColorScheme = function(colors){
         return pv.Colors.category10;
     }
 	
-    colors = def.array(colors);
+    colors = def.array.as(colors);
 	
     return function() {
         var scale = pv.colors(colors); // creates a color scale with a defined range
@@ -2258,7 +2303,7 @@ pvc.Sides = function(sides){
 };
 
 pvc.Sides.names = 'left right top bottom'.split(' ');
-pvc.Sides.namesSet = pv.dict(pvc.Sides.names, def.constant(true));
+pvc.Sides.namesSet = pv.dict(pvc.Sides.names, def.retTrue);
 
 pvc.Sides.prototype.setSides = function(sides){
     if(typeof sides === 'string'){
@@ -3149,7 +3194,7 @@ var Size = def.type('pvc.Size')
 });
 
 pvc.Size.names = ['width', 'height'];
-pvc.Size.namesSet = pv.dict(pvc.Size.names, def.constant(true));
+pvc.Size.namesSet = pv.dict(pvc.Size.names, def.retTrue);
 
 // --------------------
 
@@ -4026,7 +4071,7 @@ def.scope(function(){
                    var domain = this._getDomain(),
                        scale  = this._createScale(domain);
                    
-                   createCategoryScale = def.constant(scale);
+                   createCategoryScale = def.fun.constant(scale);
                }
                
                return this._createCategoryScalesMap(createCategoryScale); 
@@ -5391,7 +5436,7 @@ def.type('pvc.data.TranslationOper')
         if(typeof dimNames === 'string'){
             dimNames = dimNames.split(/\s*\,\s*/);
         } else {
-            dimNames =  def.array(dimNames);
+            dimNames =  def.array.as(dimNames);
         }
         
         var hasDims = !!(dimNames && dimNames.length);
@@ -5409,7 +5454,7 @@ def.type('pvc.data.TranslationOper')
         }
         
         // Consumed/Reserved virtual item indexes
-        var indexes = def.array(dimReaderSpec.indexes);
+        var indexes = def.array.as(dimReaderSpec.indexes);
         if(indexes) {
             indexes.forEach(this._userUseIndex, this);
         }
@@ -5559,9 +5604,9 @@ def.type('pvc.data.TranslationOper')
 
     _userRead: function(reader, dimNames){
         /*jshint expr:true */
-        def.isFun(reader) || def.fail.argumentInvalid('reader', "Reader must be a function.");
+        def.fun.is(reader) || def.fail.argumentInvalid('reader', "Reader must be a function.");
         
-        if(def.isArray(dimNames)){
+        if(def.array.is(dimNames)){
             dimNames.forEach(function(name){
                 this._userDimsReadersByDim[name] = reader;
             }, this);
@@ -6632,7 +6677,7 @@ def.type('pvc.data.CrosstabTranslationOper', pvc.data.MatrixTranslationOper)
         if(this._axis2SeriesKeySet){
             var seriesReader = this._userDimsReadersByDim.series;
             if(seriesReader) {
-                var calcAxis2SeriesKeySet = def.constant(this._axis2SeriesKeySet);
+                var calcAxis2SeriesKeySet = def.fun.constant(this._axis2SeriesKeySet);
 
                 /* Create a reader that surely only returns 'series' atoms */
                 seriesReader = this._filterDimensionReader(seriesReader, 'series');
@@ -8437,11 +8482,11 @@ def.type('pvc.data.Data', pvc.data.Complex)
         
         if(parent.absLabel){
             /*global complex_labelSep:true */
-            this.absLabel = def.join(complex_labelSep, parent.absLabel, this.label);
+            this.absLabel = def.string.join(complex_labelSep, parent.absLabel, this.label);
         }
         
         if(parent.absKey){
-            this.absKey = def.join(",", parent.absKey, this.key);
+            this.absKey = def.string.join(",", parent.absKey, this.key);
         }
     }
 })
@@ -9329,7 +9374,7 @@ pvc.data.Data.setSelected = function(datums, selected){
  * @static
  */
 pvc.data.Data.toggleSelected = function(datums){
-    if(!def.isArrayLike(datums)){
+    if(!def.array.isLike(datums)){
         datums = def.query(datums).array();
     }
     
@@ -9374,7 +9419,7 @@ pvc.data.Data.setVisible = function(datums, visible){
  * @static
  */
 pvc.data.Data.toggleVisible = function(datums){
-    if(!def.isArrayLike(datums)){
+    if(!def.array.isLike(datums)){
         datums = def.query(datums).array();
     }
     
@@ -9743,9 +9788,9 @@ pvc.data.GroupingSpec.parse = function(specText, type){
     }
     
     var levels;
-    if(def.isArray(specText)) {
+    if(def.array.is(specText)) {
         levels = specText;
-    } else if(def.isString(specText)) {
+    } else if(def.string.is(specText)) {
         levels = specText.split(/\s*,\s*/); 
     }
 
@@ -9809,7 +9854,7 @@ var groupSpec_matchDimSpec = /^\s*(.+?)(?:\s+(asc|desc))?\s*$/i;
  */
 function groupSpec_parseGroupingLevel(groupLevelText, type) {
     /*jshint expr:true */
-    def.isString(groupLevelText) || def.fail.argumentInvalid('groupLevelText', "Invalid grouping specification.");
+    def.string.is(groupLevelText) || def.fail.argumentInvalid('groupLevelText', "Invalid grouping specification.");
     
     return def.query(groupLevelText.split(/\s*\|\s*/))
        .where(def.truthy)
@@ -9922,7 +9967,7 @@ def.type('pvc.data.GroupingOper', pvc.data.DataOper)
 
     // grouping spec ids is semantic keys, although the name is not 'key'
     var ids = [];
-    this._groupSpecs = def.array(groupingSpecs).map(function(groupSpec){
+    this._groupSpecs = def.array.as(groupingSpecs).map(function(groupSpec){
         if(groupSpec instanceof pvc.data.GroupingSpec) {
             if(groupSpec.type !== linkParent.type) {
                 throw def.error.argumentInvalid('groupingSpecText', "Invalid associated complex type.");
@@ -10530,7 +10575,7 @@ pvc.data.Data.add(/** @lends pvc.data.Data# */{
 function data_processWhereSpec(whereSpec){
     var whereProcSpec = [];
     
-    whereSpec = def.array(whereSpec);
+    whereSpec = def.array.as(whereSpec);
     if(whereSpec){
         whereSpec.forEach(processDatumFilter, this);
     }
@@ -10630,7 +10675,7 @@ function data_whereState(q, keyArgs){
  */
 function data_where(whereSpec, keyArgs) {
     
-    var orderBys = def.array(def.get(keyArgs, 'orderBy')),
+    var orderBys = def.array.as(def.get(keyArgs, 'orderBy')),
         datumKeyArgs = def.create(keyArgs || {}, {
             orderBy: null
         });
@@ -11576,7 +11621,7 @@ def.type('pvc.visual.Sign')
             return this.scene.datum; 
         });
         
-    pvMark.sign = def.constant(this);
+    pvMark.sign = def.fun.constant(this);
     
     /* Intercept the protovis mark's buildInstance */
     pvMark.buildInstance = this._buildInstance.bind(this, pvMark.buildInstance);
@@ -12500,7 +12545,7 @@ def.type('pvc.visual.CartesianAxis')
     this.type  = type;
     this.index = index == null ? 0 : index;
 
-    this.roles = def.array(roles);
+    this.roles = def.array.as(roles);
     this.role  = this.roles[0];
     this.scaleType = groupingScaleType(this.role.grouping);
 
@@ -13277,9 +13322,10 @@ pvc.BaseChart = pvc.Abstract.extend({
     constructor: function(options) {
         var parent = this.parent = def.get(options, 'parent') || null;
         if(parent) {
+            // options != null
             this.root = parent.root;
             this.dataEngine =
-            this.data = def.get(options, 'data') ||
+            this.data = options.data ||
                         def.fail.argumentRequired('options.data');
             
             this.left = options.left;
@@ -13301,7 +13347,7 @@ pvc.BaseChart = pvc.Abstract.extend({
             this._visualRoles = {};
             this._measureVisualRoles = [];
         }
-
+        
         this.options = pvc.mergeDefaults({}, pvc.BaseChart.defaultOptions, options);
     },
     
@@ -13348,11 +13394,7 @@ pvc.BaseChart = pvc.Abstract.extend({
         if(options.showTooltips){
             var ts = options.tipsySettings;
             if(ts){
-                ts = options.tipsySettings = def.create(ts);
                 this.extend(ts, "tooltip_");
-                if(ts.exclusionGroup === undefined) {
-                    ts.exclusionGroup = 'chart';
-                }
             }
         }
     },
@@ -13729,7 +13771,7 @@ pvc.BaseChart = pvc.Abstract.extend({
 
         function bind(role, dimNames){
             role.bind(pvc.data.GroupingSpec.parse(dimNames, type));
-            def.array(dimNames).forEach(function(dimName){
+            def.array.as(dimNames).forEach(function(dimName){
                 boundDimTypes[dimName] = true;
             });
         }
@@ -14024,7 +14066,7 @@ pvc.BaseChart = pvc.Abstract.extend({
         switch(this.options.legendClickMode){
             case 'toggleSelected':
                 if(!this.options.selectable){
-                    isOn = def.constant(true);
+                    isOn = def.retTrue;
                 } else {
                     isOn = function(){
                         return !this.group.owner.selectedCount() || 
@@ -14521,6 +14563,7 @@ pvc.BaseChart = pvc.Abstract.extend({
         },
         
         tipsySettings: {
+            exclusionGroup: 'chart',
             gravity: "s",
             delayIn:  200,
             delayOut: 50,
@@ -14528,6 +14571,7 @@ pvc.BaseChart = pvc.Abstract.extend({
             opacity:  0.8,
             html:     true,
             fade:     true,
+            corners:  false,
             followMouse: false
         },
         
@@ -15553,7 +15597,7 @@ pvc.BasePanel = pvc.Abstract.extend({
             commonAtoms = isMultiDatumGroup ? group.atoms : scene.datum.atoms;
         
         function addDim(escapedDimLabel, label){
-            tooltip.push('<b>' + escapedDimLabel + "</b>: " + (def.escapeHtml(label) || " - ") + '<br/>');
+            tooltip.push('<b>' + escapedDimLabel + "</b>: " + (def.html.escape(label) || " - ") + '<br/>');
         }
         
         function calcPercent(atom, dimName) {
@@ -15576,7 +15620,7 @@ pvc.BasePanel = pvc.Abstract.extend({
                         valueLabel += " (" + calcPercent(atom, dimName) + ")";
                     }
                     
-                    addDim(def.escapeHtml(atom.dimension.type.label), valueLabel);
+                    addDim(def.html.escape(atom.dimension.type.label), valueLabel);
                 }
             }
         });
@@ -15588,7 +15632,7 @@ pvc.BasePanel = pvc.Abstract.extend({
             group.freeDimensionNames().forEach(function(dimName){
                 var dim = group.dimensions(dimName);
                 if(!dim.type.isHidden){
-                    var dimLabel = def.escapeHtml(dim.type.label),
+                    var dimLabel = def.html.escape(dim.type.label),
                         valueLabel;
                     
                     if(dim.type.valueType === Number) {
@@ -15941,7 +15985,7 @@ pvc.BasePanel = pvc.Abstract.extend({
             // pvc.log(datum.key + ": " + JSON.stringify(shape) + " intersects? " + shape.intersectsRect(this.rubberBand));
             if (shape.intersectsRect(rb)){
                 var group = instance.group;
-                var datums = group ? group._datums : def.array(instance.datum);
+                var datums = group ? group._datums : def.array.as(instance.datum);
                 if(datums) {
                     datums.forEach(function(datum){
                         if(!datum.isNull) {
@@ -17105,7 +17149,7 @@ pvc.CartesianAbstract = pvc.TimeseriesAbstract.extend({
      * @type pvc.visual.CartesianAxis
      */
     _createAxis: function(axisType, axisIndex){
-        var roles = def.array(this._axisRoleNameMap[axisType])
+        var roles = def.array.as(this._axisRoleNameMap[axisType])
                         .map(function(roleName){
                             return this.visualRoles(roleName);
                         }, this);
@@ -18377,8 +18421,8 @@ pvc.AxisPanel = pvc.BasePanel.extend({
                 }
             } 
             
-            var angle  = def.number(this._getExtension(labelExtId, 'textAngle'),  0);
-            var margin = def.number(this._getExtension(labelExtId, 'textMargin'), 3);
+            var angle  = def.number.as(this._getExtension(labelExtId, 'textAngle'),  0);
+            var margin = def.number.as(this._getExtension(labelExtId, 'textMargin'), 3);
             
             var textHeight = pvc.text.getTextHeight("m", font);
             
@@ -20521,7 +20565,7 @@ pvc.WaterfallChart = pvc.BarAbstract.extend({
         this.base();
 
         var strokeStyle = this._getExtension("barWaterfallLine", "strokeStyle");
-        if(strokeStyle && !def.isFun(strokeStyle)){
+        if(strokeStyle && !def.fun.is(strokeStyle)){
             this._waterColor = pv.color(strokeStyle);
         }
 
@@ -20533,7 +20577,7 @@ pvc.WaterfallChart = pvc.BarAbstract.extend({
                 label: this.options.accumulatedLineLabel,
                 color: this._waterColor,
                 shape: 'bar',
-                isOn:  def.constant(true),
+                isOn:  def.retTrue,
                 click: null
             }]
         });
@@ -20738,7 +20782,7 @@ pvc.LineDotAreaPanel = pvc.CartesianAbstractPanel.extend({
                 segmented:   !isDense
             })
             
-            .lock('visible', def.constant(true))
+            .lock('visible', def.retTrue)
             
             /* Data */
             .lock('data',   function(seriesScene){ return seriesScene.childNodes; }) // TODO
@@ -20822,7 +20866,7 @@ pvc.LineDotAreaPanel = pvc.CartesianAbstractPanel.extend({
              */
             .lock('visible',
                     showDotsOnly ? 
-                    def.constant(false) : 
+                    def.retFalse : 
                     (isBaseDiscrete && isStacked ? 
                     function(){ return !this.scene.isNull || this.scene.isIntermediate; } :
                     function(){ return !this.scene.isNull; })
@@ -22225,7 +22269,7 @@ pvc.HeatGridChartPanel = pvc.CartesianAbstractPanel.extend({
         /* SHAPE TYPE & SIZE */
         var getShapeType;
         if(!sizeDimName) {
-            getShapeType = def.constant(shapeType);
+            getShapeType = def.fun.constant(shapeType);
         } else {
             getShapeType = function(){
                 return this.parent.sizeValue() != null ? shapeType : nullShapeType;
@@ -22711,7 +22755,7 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
                 // ------
                 .bottom(0)
                 .text(function(scene){ 
-                    return def.join(",", scene.acts.x.label, scene.acts.y.label);
+                    return def.string.join(",", scene.acts.x.label, scene.acts.y.label);
                 })
                 ;
         }
@@ -25342,7 +25386,7 @@ pvc.BoxplotChartPanel = pvc.CartesianAbstractPanel.extend({
                     case 'stroke': return strokeColor;
                 }
             })
-            .override('defaultStrokeWidth', def.constant(1))
+            .override('defaultStrokeWidth', def.fun.constant(1))
             .pvMark
             ;
 
@@ -25390,7 +25434,7 @@ pvc.BoxplotChartPanel = pvc.CartesianAbstractPanel.extend({
                 return this.scene.acts.median.value != null && this.delegate(true);
             })
             .lock(a_bottom,  function(){ return this.scene.acts.median.position; }) // bottom
-            .override('defaultStrokeWidth', def.constant(2))
+            .override('defaultStrokeWidth', def.fun.constant(2))
             .pvMark
             ;
     },
