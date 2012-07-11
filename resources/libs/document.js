@@ -56,6 +56,7 @@ cgg.element = function(_el) {
         return new cgg.element(e);
       }
     },
+    getElementsByTagName: function (tagName) {return _el.getElementsByTagName(tagName);},    
     setAttribute: function(attrName, value) {_el.setAttribute(attrName, value);},
     setAttributeNS: function(ns, attrName, value) {_el.setAttributeNS(ns,attrName, value);},
     removeAttribute: function(attrName) {_el.removeAttribute(attrName);},
