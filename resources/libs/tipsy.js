@@ -49,6 +49,7 @@ pv.Behavior.tipsy = function(opts) {
     
     var $fakeTipTarget, // target div
         $targetElem,
+        nextOperationId = 0,
         prevMouseX,
         prevMouseY,
         id = "tipsyPvBehavior" + (opts.id || new Date().getTime()),
@@ -91,18 +92,19 @@ pv.Behavior.tipsy = function(opts) {
             /* Compute the transform to offset the tooltip position. */
             var t = toScreenTransform(mark.parent);
             var instance = mark.instance();
+            var radius;
             if(mark.properties.outerRadius){
                 // Wedge
                 var angle  = instance.endAngle    - instance.angle / 2;
-                var radius = instance.outerRadius - (instance.outerRadius - instance.innerRadius) * 0.3;
+                radius = instance.outerRadius - (instance.outerRadius - instance.innerRadius) * 0.3;
                 
                 left = instance.left + Math.cos(angle) * radius + t.x;
                 top  = instance.top  + Math.sin(angle) * radius + t.y;
                 
             } else if(mark.properties.shapeRadius){
-                var radius = Math.max(2, instance.shapeRadius),
-                    cx = instance.left,
-                    cy = instance.top;
+                radius = Math.max(2, instance.shapeRadius);
+                var cx = instance.left;
+                var cy = instance.top;
     
                 switch(instance.shape){
                     case 'diamond':
@@ -375,18 +377,48 @@ pv.Behavior.tipsy = function(opts) {
         }
     }
     
-    function hideTipsy() {
-//        console.log("[TIPSY] Hide");
-        
-        // Release real target
-        setTarget(null);
-        
-        if ($fakeTipTarget) {
-            $fakeTipTarget.tipsy("leave");
-        }
+    function getNewOperationId(){
+        return nextOperationId++;
     }
     
+    function checkCanOperate(opId){
+        return opId === nextOperationId - 1;
+    }
+    
+    function hideTipsy() {
+        var opId = getNewOperationId();
+        
+        //console.log("[TIPSY] Delayed Hide Begin opId=" + opId);
+        
+        setTimeout(function(){
+            if(checkCanOperate(opId)){
+                hideTipsyCore();
+            } 
+//            else
+//            {
+//                console.log("[TIPSY] Delayed Hide Cancelled opId=" + opId);
+//            }
+        }, 100);
+    }
+    
+    function hideTipsyCore(opId) {
+        //console.log("[TIPSY] Hiding opId=" + opId);
+      
+      // Release real target
+      setTarget(null);
+      
+      if ($fakeTipTarget) {
+          $fakeTipTarget.tipsy("leave");
+      }
+    }
+  
+    
     function updateTipsy(ev){
+        
+        var opId = getNewOperationId();
+        
+        //console.log("[TIPSY] Updating opId=" + opId);
+        
         if($fakeTipTarget) {
             
             /* Don't know why: 
@@ -441,11 +473,15 @@ pv.Behavior.tipsy = function(opts) {
     }
     
     function showTipsy(mark) {
-//        console.log("[TIPSY] Show IN");
+        var opId = getNewOperationId();
+        
+//console.log("[TIPSY] Show IN opId=" + opId);
         
         if (!$canvas) {
             initBehavior(mark);
         }
+        
+        var isHidden = !$targetElem;
         
         setTarget(pv.event.target);
         
@@ -453,7 +489,11 @@ pv.Behavior.tipsy = function(opts) {
         
         setFakeTipTargetBounds(opts.followMouse ? getMouseBounds() : getInstanceBounds(mark));
         
-        $fakeTipTarget.tipsy("enter");
+        if(isHidden){
+            $fakeTipTarget.tipsy("enter");
+        } else {
+            $fakeTipTarget.tipsy("update");
+        }
         
 //        console.log("[TIPSY] Show OUT");
     }
