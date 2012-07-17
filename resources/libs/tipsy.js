@@ -102,11 +102,11 @@ pv.Behavior.tipsy = function(opts) {
             var radius;
             if(mark.properties.outerRadius){
                 // Wedge
-                var angle  = instance.endAngle    - instance.angle / 2;
-                radius = instance.outerRadius - (instance.outerRadius - instance.innerRadius) * 0.3;
+                var midAngle = instance.startAngle + instance.angle / 2;
+                radius = instance.outerRadius;// - (instance.outerRadius - instance.innerRadius) * 0.05;
                 
-                left = instance.left + Math.cos(angle) * radius + t.x;
-                top  = instance.top  + Math.sin(angle) * radius + t.y;
+                left = t.x + instance.left + radius * Math.cos(midAngle);
+                top  = t.y + instance.top  + radius * Math.sin(midAngle);
                 
             } else if(mark.properties.shapeRadius){
                 radius = Math.max(2, instance.shapeRadius);
@@ -436,7 +436,6 @@ pv.Behavior.tipsy = function(opts) {
         //console.log("[TIPSY] Updating opId=" + opId);
         
         if($fakeTipTarget) {
-            
             /* Don't know why: 
              * the mouseover event is triggered at a fixed interval
              * as long as the mouse is over the element, 
@@ -454,6 +453,15 @@ pv.Behavior.tipsy = function(opts) {
             prevMouseY = ev.clientY;
             
             // -------------
+            
+            if(!$fakeTipTarget.tipsy('visible')){
+                // Text may have changed
+                var mark;
+                var scene = this.$scene;
+                if(scene && (mark = scene.scenes.mark)){
+                    $fakeTipTarget.attr('title', getTooltipText(mark));
+                }
+            }
             
             setFakeTipTargetBounds(getMouseBounds(ev));
             
