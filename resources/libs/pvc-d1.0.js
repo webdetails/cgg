@@ -2081,9 +2081,9 @@ pv.error = pvc.logError;
 
 function syncTipsyLog(){
     var tip = pv.Behavior.tipsy;
-    if(tip){
-        tip.debug = pvc.debug;
-        tip.log   = pvc.log;
+    if(tip && tip.setDebug){
+        tip.setDebug(pvc.debug);
+        tip.log = pvc.log;
     }
 }
 
@@ -2387,16 +2387,16 @@ pv.Format.createFormatter = function(pvFormat) {
 pvc.parseAlign = function(side, align){
     var align2, isInvalid;
     if(side === 'left' || side === 'right'){
-        align2 = pvc.BasePanel.verticalAlign[align];
+        align2 = align && pvc.BasePanel.verticalAlign[align];
         if(!align2){
-            align2 = 'top';
-            isInvalid = true;
+            align2 = 'middle';
+            isInvalid = !!align;
         }
     } else {
-        align2 = pvc.BasePanel.horizontalAlign[align];
+        align2 = align && pvc.BasePanel.horizontalAlign[align];
         if(!align2){
-            align2 = 'left';
-            isInvalid = true;
+            align2 = 'center';
+            isInvalid = !!align;
         }
     }
     
@@ -15042,6 +15042,8 @@ pvc.BasePanel = pvc.Abstract.extend({
         this.paddings = new pvc.Sides(options && options.paddings);
         this.size     = new pvc.Size (options && options.size    );
         this.sizeMax  = new pvc.Size (options && options.sizeMax );
+        this.align    = pvc.parseAlign(this.anchor, this.align);
+        
         
         if(!parent) {
             this.parent    = null;
@@ -16725,7 +16727,7 @@ pvc.TitlePanelAbstract = pvc.BasePanel.extend({
 
     pvLabel: null,
     anchor: 'top',
-    align:  'center',
+
     title: null,
     titleSize: undefined,
     font: "12px sans-serif",
@@ -16739,12 +16741,6 @@ pvc.TitlePanelAbstract = pvc.BasePanel.extend({
         }
         
         var anchor = options.anchor || this.anchor;
-        var isVertical = anchor === 'top' || anchor === 'bottom';
-        
-        // Default value of align depends on anchor
-        if(options.align === undefined){
-            options.align = isVertical ? 'center' : 'middle';
-        }
         
         // titleSize
         if(options.size == null){
@@ -16967,8 +16963,8 @@ pvc.LegendPanel = pvc.BasePanel.extend({
     pvDot:   null,
     pvLabel: null,
     
-    anchor:     "bottom",
-    align:      "left",
+    anchor:  'bottom',
+    
     pvLegendPanel: null,
     legend:     null,
     legendSize: null,
@@ -16982,7 +16978,7 @@ pvc.LegendPanel = pvc.BasePanel.extend({
     drawLine:   false,
     drawMarker: true,
     
-    font:       '10px sans-serif',
+    font: '10px sans-serif',
     
     constructor: function(chart, parent, options){
         if(!options){
@@ -16995,8 +16991,12 @@ pvc.LegendPanel = pvc.BasePanel.extend({
         var isVertical = anchor !== 'top' && anchor !== 'bottom';
         
         // Default value of align depends on anchor
-        if(isVertical && options.align === undefined){
-            options.align = 'top';
+        if(options.align == null){
+            if(isVertical){
+                options.align = 'top';
+            } else if(isV1Compat) { // centered is better
+                options.align = 'left';
+            }
         }
         
         // legendSize
