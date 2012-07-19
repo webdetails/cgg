@@ -1,3 +1,7 @@
+12.07.19
+    * Added a hook for plugging in a default chart colorscheme (CvK Feb. 2012)
+    * Updated pvc-d1.0.js file to keep in sync with CDF
+
 12.05.15
 	*  Disabled CDW support due to security considerations. Was not in use anyway.
 	* Updated pvc-d1.0.js file to keep in sync with CDF
