@@ -2361,6 +2361,8 @@ pvc.toGrayScale = function(color, alpha, maxGrayLevel, minGrayLevel){
     
     if(alpha == null){
         alpha = color.opacity;
+    } else if(alpha < 0){
+        alpha = (-alpha) * color.opacity;
     }
     
     avg = Math.round(avg);
@@ -12035,7 +12037,7 @@ def.type('pvc.visual.Sign')
     },
 
     dimColor: function(type, color){
-        return pvc.toGrayScale(color);
+        return pvc.toGrayScale(color, -0.3, null, null); // ANALYZER requirements, so until there's no way to configure it...
     }
 });
 
@@ -12469,10 +12471,6 @@ def.type('pvc.visual.Bar', pvc.visual.Sign)
         return this.base(type, color);
     },
 
-    dimColor: function(type, color){
-        return pvc.toGrayScale(color, 0.6);
-    },
-
     /* STROKE WIDTH */
     strokeWidth: function(){
         var strokeWidth = this.baseStrokeWidth();
@@ -12610,16 +12608,12 @@ def.type('pvc.visual.PieSlice', pvc.visual.Sign)
         } else if(scene.anySelected() && !scene.isSelected()) {
             switch(type) {
                 case 'fill':
-                case 'stroke':
+                //case 'stroke': // ANALYZER requirements, so until there's no way to configure it...
                     return this.dimColor(type, color);
             }
         }
 
         return this.base(type, color);
-    },
-    
-    dimColor: function(type, color){
-        return pvc.toGrayScale(color, 0.6);
     },
     
     /* Offset */
@@ -13241,7 +13235,6 @@ $VCA.createAllDefaultOptions = function(options){
        ],
        globalDefaults = {
            'OriginIsZero':      true,
-           'Offset':            0,
            'Composite':         false,
            'OverlappedLabelsHide': false,
            'OverlappedLabelsMaxPct': 0.2,
@@ -17539,7 +17532,7 @@ pvc.LegendPanel = pvc.BasePanel.extend({
         var isV1Compat = (this.chart.options.compatVersion <= 1);
         
         // The size of the biggest cell
-        var cellWidth = this.markerSize + this.textMargin + maxLabelLen; // ignoring textAdjust
+        var cellWidth = this.markerSize + this.textMargin + maxLabelLen; // ignoring v1 textAdjust
         var cellHeight;
         if(isV1Compat){
             // Previously, the cellHeight was the padding.
@@ -19112,8 +19105,8 @@ pvc.CartesianGridDockingPanel = pvc.GridDockingPanel.extend({
      * TOP
      * -------------------
      * Axis Rules:     0
-     * Frame/EndLine: -5
      * Line/Dot/Area Content: -7
+     * Frame/EndLine: -8
      * ZeroLine:      -9   <<------
      * Content:       -10 (default)
      * FullGrid:      -12
@@ -19139,7 +19132,7 @@ pvc.CartesianGridDockingPanel = pvc.GridDockingPanel.extend({
         // and
         // yScale(yScale.domain()[0]) -> yScale(yScale.domain()[1])
         var pvFrame = this.pvPanel.add(pv.Bar)
-                        .zOrder(-5)
+                        .zOrder(-8)
                         .left(left)
                         .right(right)
                         .top (top)
@@ -19240,7 +19233,7 @@ pvc.CartesianAbstractPanel = pvc.BasePanel.extend({
         
         function processAxis(axis){
             var offset = axis && axis.option('Offset');
-            if(offset > 0) {
+            if(offset != null && offset >= 0) {
                 if(axis.orientation === 'x'){
                     setSide('left',  offset);
                     setSide('right', offset);
@@ -20717,7 +20710,7 @@ pvc.AxisPanel = pvc.BasePanel.extend({
      * @override
      */
     _detectDatumsUnderRubberBand: function(datumsByKey, rb){
-        if(!this.isDiscrete) {
+        if(!this.isDiscrete || !this.isVisible) {
             return false;
         }
         
@@ -23062,8 +23055,14 @@ pvc.LineDotAreaPanel = pvc.CartesianAbstractPanel.extend({
        
         // ---------------
         // BUILD
-        this.pvPanel.zOrder(-7);
-
+        if(showAreas){
+            // Areas don't look good above the axes
+            this.pvPanel.zOrder(-7);
+        } else {
+            // // Above axes
+            this.pvPanel.zOrder(1);
+        }
+        
         this.pvScatterPanel = this.pvPanel.add(pv.Panel)
             .lock('data', rootScene.childNodes)
             ;
@@ -25053,6 +25052,8 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
         
         // this.pvPanel.strokeStyle('red');
         
+        this.pvPanel.zOrder(1); // Above axes
+        
         this.pvScatterPanel = this.pvPanel.add(pv.Panel)
             .lock('data', rootScene.childNodes)
             ;
@@ -25115,13 +25116,14 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
         // which helps in distinguishing overlapped dots.
         // With lines shown, it would look strange.
         if(!rootScene.hasColorRole){
-            if(!myself.showLines){
-                dot.override('baseColor', function(type){
-                    var color = this.base(type);
-                    color.opacity = 0.85;
-                    return color;
-                });
-            }
+            // ANALYZER requirements, so until there's no way to configure it...
+//            if(!myself.showLines){
+//                dot.override('baseColor', function(type){
+//                    var color = this.base(type);
+//                    color.opacity = 0.85;
+//                    return color;
+//                });
+//            }
         } else {
             var colorScale = this._getColorRoleScale(data);
             
@@ -25150,9 +25152,10 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
                         color = color.darker();
                     }
                     
-                    if(!myself.showLines){
-                        color = color.alpha(color.opacity * 0.85);
-                    }
+                 // ANALYZER requirements, so until there's no way to configure it...
+//                    if(!myself.showLines){
+//                        color = color.alpha(color.opacity * 0.85);
+//                    }
                 }
                 
                 return color;
