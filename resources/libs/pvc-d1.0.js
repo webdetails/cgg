@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120726\n
+//VERSION TRUNK-20120727\n
 var def = (function(){
 if(!Object.keys) {
     /** @ignore */
@@ -2563,26 +2563,6 @@ pvc.Sides.resolvedMax = function(a, b){
     return sides;
 };
 
-pvc.Sides.resolvedPlus = function(a, b){
-    var sides = {};
-    
-    pvc.Sides.names.forEach(function(side){
-        sides[side] = (a[side] || 0) + (b[side] || 0);
-    });
-    
-    return sides;
-};
-
-pvc.Sides.resolvedMinus = function(a, b){
-    var sides = {};
-    
-    pvc.Sides.names.forEach(function(side){
-        sides[side] = (a[side] || 0) - (b[side] || 0);
-    });
-    
-    return sides;
-};
-
 // -------------
 
 pvc.PercentValue = function(pct){
@@ -2661,7 +2641,7 @@ pv.Mark.prototype.zOrder = function(zOrder) {
 };
 
 // Copy original methods
-var markRender = pv.Mark.prototype.render,
+var markRenderCore = pv.Mark.prototype.renderCore,
     panelAdd   = pv.Panel.prototype.add;
 
 // @replace
@@ -2677,13 +2657,7 @@ pv.Panel.prototype.add = function(){
 };
 
 // @replace
-pv.Mark.prototype.render = function(){
-    /* For the first render, take it from the top. */
-    if (this.parent && !this.root.scene) {
-        this.root.render();
-        return;
-    }
-    
+pv.Mark.prototype.renderCore = function(){
     /* Ensure zOrder is up to date */
     sortChildren.call(this);
     
@@ -2695,14 +2669,14 @@ pv.Mark.prototype.render = function(){
     
     this.root._renderId = def.nextId("render" + rootId);
     
-    if(pvc.debug >= 4){
+    if(pvc.debug >= 10){
         pvc.log("BEGIN RENDER " + this.root._renderId);
     }
     
     /* Render */
-    markRender.apply(this, arguments);
+    markRenderCore.apply(this, arguments);
     
-    if(pvc.debug >= 4){
+    if(pvc.debug >= 10){
         pvc.log("END RENDER " + this.root._renderId);
     }
 };
@@ -3842,7 +3816,9 @@ def.scope(function(){
     function getLabelPolygon(textWidth, textHeight, align, baseline, angle, margin){
         // From protovis' SvgLabel.js
         
-        // In text line coordinates. y points downwards
+        // x, y are the position of the left-bottom corner
+        // of the text relative to its anchor point (at x=0,y=0)
+        // x points right, y points down
         var x, y;
         
         switch (baseline) {
@@ -5962,7 +5938,7 @@ def.type('pvc.data.TranslationOper')
         // or array helpers, avoiding function calls, closures, etc.
         
         if(pvc.debug >= 4) {
-            pvc.log('readItem: ' + JSON.stringify(item));
+            pvc.log('virtual item: ' + JSON.stringify(item));
         }
         
         var r = 0, 
@@ -5999,7 +5975,7 @@ def.type('pvc.data.TranslationOper')
                 }
             });
             
-            pvc.log('\t-> atoms: ' + JSON.stringify(atomsMap));
+            pvc.log('  -> atoms: ' + JSON.stringify(atomsMap));
         }
         
         return atoms;
@@ -13057,6 +13033,30 @@ def.type('pvc.visual.CartesianAxis')
         }
     },
     
+    setScaleRange: function(size){
+        var scale = this.scale;
+        scale.min  = 0;
+        scale.max  = size;
+        scale.size = size; // original size // TODO: remove this...
+        
+        // -------------
+        
+        if(scale.type === 'Discrete'){
+            if(scale.domain().length > 0){ // Has domain? At least one point is required to split.
+                var bandRatio = this.chart.options.panelSizeRatio || 0.8;
+                scale.splitBandedCenter(scale.min, scale.max, bandRatio);
+            }
+        } else {
+            scale.range(scale.min, scale.max);
+        }
+        
+        if(pvc.debug >= 4){
+            pvc.log("Scale: " + JSON.stringify(def.copyOwn(scale)));
+        }
+        
+        return scale;
+    },
+    
     getScaleRoundingPaddings: function(){
         var roundingPaddings = this._roundingPaddings;
         if(!roundingPaddings){
@@ -13228,7 +13228,7 @@ $VCA.createAllDefaultOptions = function(options){
             'TitleMargins',
             'TitlePaddings',
             'TitleAlign',
-            'LabelFont',
+            'Font',
             'OriginIsZero',
             'Offset',
             'FixedMin',
@@ -13245,8 +13245,6 @@ $VCA.createAllDefaultOptions = function(options){
            'Composite':         false,
            'OverlappedLabelsHide': false,
            'OverlappedLabelsMaxPct': 0.2,
-           'LabelFont':         '9px sans-serif',
-           'TitleFont':         '12px sans-serif', // 'bold '
            'MinorTicks':        true,
            'FullGrid':          false,
            'FullGridCrossesMargin': true,
@@ -13467,7 +13465,7 @@ function bareIdOptions(name){
 /**
  * Obtains the value of an option that is common 
  * to all axis types, orientations and indexes
- * (ex. <tt>axisLabelFont</tt>).
+ * (ex. <tt>axisFont</tt>).
  * 
  * @name pvc.visual.CartesianAxis#_commonOptions
  * @function
@@ -14031,13 +14029,13 @@ pvc.BaseChart = pvc.Abstract.extend({
     _getLoadFilter: function(){
         if(this.options.ignoreNulls) {
             return function(datum){
-                var isNull = !datum.isNull;
+                var isNull = datum.isNull;
                 
                 if(isNull && pvc.debug >= 4){
                     pvc.log("Datum excluded.");
                 }
                 
-                return isNull;
+                return !isNull;
             };
         }
     },
@@ -15435,121 +15433,202 @@ pvc.BasePanel = pvc.Abstract.extend({
             return;
         }
         
-        var margins, remSize, fillChildren;
         
-        // May be expanded, see checkChildLayout
+        var aolMap = pvc.BasePanel.orthogonalLength;
+        var aoMap  = pvc.BasePanel.relativeAnchor;
+        
+        // Classify children
+        
+        var fillChildren = [];
+        var sideChildren = [];
+        
+        this._children.forEach(function(child) {
+            var a = child.anchor;
+            if(a){ // requires layout
+                if(a === 'fill') {
+                    fillChildren.push(child);
+                } else {
+                    /*jshint expr:true */
+                    def.hasOwn(aoMap, a) || def.fail.operationInvalid("Unknown anchor value '{0}'", [a]);
+                    
+                    sideChildren.push(child);
+                }
+            }
+        });
+    
+        // When expanded (see checkChildLayout)
+        // a re-layout is performed.
         var clientSize = def.copyOwn(layoutInfo.clientSize);
-        
-        function initLayout(){
-            
-            fillChildren = [];
-            
-            // Objects we can mutate
-            margins = new pvc.Sides(0);
-            remSize = def.copyOwn(clientSize);
-        }
-        
-        var aolMap = pvc.BasePanel.orthogonalLength,
-            aoMap  = pvc.BasePanel.relativeAnchor;
-        
         var childKeyArgs = {
                 force: true,
                 referenceSize: clientSize
             };
         
-        var needRelayout = false;
-        var relayoutCount = 0;
-        var allowGrow = true;
+        var margins, remSize;
         
-        initLayout.call(this);
+        doMaxTimes(3, layoutCycle, this);
         
-        // Lays out non-fill child panels and collects fill children
-        this._children.forEach(layoutChildI, this);
-        
-        // Lays out collected fill-child panels
-        fillChildren.forEach(layoutChildII, this);
-        
-        while(needRelayout){
-            needRelayout = false;
-            relayoutCount++;
-            allowGrow = relayoutCount <= 2;
-            
-            initLayout.call(this);
-            
-            this._children.forEach(layoutChildI, this);
-            
-            fillChildren.forEach(layoutChildII, this);
-        }
-        
+        /* Return possibly changed clientSize */
         return clientSize;
         
         // --------------------
+        function doMaxTimes(maxTimes, fun, ctx){
+            var index = 0;
+            while(maxTimes--){
+                // remTimes = maxTimes
+                if(fun.call(ctx, maxTimes, index) === false){
+                    return true;
+                }
+                index++;
+            }
+            
+            return false;
+        }
         
-        function layoutChildI(child) {
-            var a = child.anchor;
-            if(a === 'fill') {
-                // These are layed out on the second phase
-                fillChildren.push(child);
-            } else if(a) { // requires layout
-                /*jshint expr:true */
-                def.hasOwn(aoMap, a) || def.fail.operationInvalid("Unknown anchor value '{0}'", [a]);
+        function layoutCycle(remTimes, iteration){
+            if(pvc.debug >= 5){
+                pvc.log("\n[BasePanel] ==== LayoutCycle #" + (iteration + 1));
+            }
+            
+            // Objects we can mutate
+            // Reset margins and remSize
+            margins = new pvc.Sides(0);
+            remSize = def.copyOwn(clientSize);
+            
+            var canResize = (remTimes > 0);
+            
+            // Reset margins and remSize
+            // ** Instances we can mutate
+            margins = new pvc.Sides(0);
+            remSize = def.copyOwn(clientSize);
+            
+            var index, count, child;
+            
+            // Lay out SIDE child panels
+            index = 0;
+            count = sideChildren.length;
+            while(index < count){
+                child = sideChildren[index];
+                if(pvc.debug >= 5){
+                    pvc.log("[BasePanel] SIDE Child i=" + index + " at " + child.anchor);
+                }
+                
+                if(layoutChild.call(this, child, canResize)){
+                    return true; // resized => break
+                }
+                
+                index++;
+            }
+            
+            // Lay out FILL child panels
+            index = 0;
+            count = fillChildren.length;
+            while(index < count){
+                child = fillChildren[index];
+                if(pvc.debug >= 5){
+                    pvc.log("[BasePanel] FILL Child i=" + index);
+                }
+                
+                if(layoutChild.call(this, child, canResize)){
+                    return true; // resized => break
+                }
+                
+                index++;
+            }
+            
+            return false; // !resized
+        }
+        
+        function layoutChild(child, canResize) {
+            var resized  = false;
+            var paddings;
+            
+            childKeyArgs.canChange = canResize;
+            
+            doMaxTimes(3, function(remTimes, iteration){
+                if(pvc.debug >= 5){
+                    pvc.log("[BasePanel]   Attempt #" + (iteration + 1));
+                }
+                
+                childKeyArgs.paddings = paddings;
+                childKeyArgs.canChange = remTimes > 0;
                 
                 child.layout(new pvc.Size(remSize), childKeyArgs);
-                
                 if(child.isVisible){
-                    checkChildLayout.call(this, child);
-                    
-                    var align = pvc.parseAlign(a, child.align);
-                    
-                    if(!needRelayout){
-                        positionChild.call(this, a, child, align);
+                    resized = checkChildResize.call(this, child, canResize);
+                    if(resized){
+                        return false; // stop
                     }
                     
-                    updateSide.call(this, a, child, align);
+                    paddings = child._layoutInfo.requestPaddings;
+                    if(paddings){
+                        // Child wants to repeat its layout with != paddings
+                        if(remTimes > 0){
+                            paddings = new pvc.Sides(paddings);
+                            if(pvc.debug >= 5){
+                                pvc.log("[BasePanel] Child requested paddings change: " + JSON.stringify(paddings));
+                            }
+                            return true; // again
+                        }
+                        
+                        if(pvc.debug >= 2){
+                            pvc.log("[Warning] [BasePanel] FILL Child requests paddings change but no more iterations possible.");
+                        }
+                        
+                        // ignore overflow
+                    }
+                    
+                    // --------
+                    
+                    positionChild.call(this, child);
+                        
+                    if(child.anchor !== 'fill'){
+                        updateSide.call(this, child);
+                    }
                 }
-            }
-        }
-        
-        function layoutChildII(child) {
-            child.layout(new pvc.Size(remSize), childKeyArgs);
-            if(child.isVisible){
-                checkChildLayout(child);
-                if(!needRelayout){
-                    positionChild.call(this, 'fill', child);
-                }
-            }
-        }
-        
-        function checkChildLayout(child){
+                
+                return false; // stop
+            }, this);
             
+            return resized;
+        }
+        
+        function checkChildResize(child, canResize){
+            var resized = false;
             var addWidth = child.width - remSize.width;
             if(addWidth > 0){
-                if(!allowGrow){
+                if(!canResize){
                     if(pvc.debug >= 2){
                         pvc.log("[Warning] Layout iterations limit reached.");
                     }
                 } else {
-                    needRelayout = true;
-                    remSize.width += addWidth;
+                    resized = true;
+                    
+                    remSize   .width += addWidth;
                     clientSize.width += addWidth;
                 }
             }
             
             var addHeight = child.height - remSize.height;
             if(addHeight > 0){
-                if(!allowGrow){
+                if(!canResize){
                     if(pvc.debug >= 2){
                         pvc.log("[Warning] Layout iterations limit reached.");
                     }
                 } else {
-                    needRelayout = true;
-                    remSize.height += addHeight;
+                    resized = true;
+                    
+                    remSize   .height += addHeight;
                     clientSize.height += addHeight;
                 }
             }
+            
+            return resized;
         }
         
-        function positionChild(side, child, align) {
+        function positionChild(child) {
+            var side  = child.anchor;
+            var align = child.align;
             var sidePos;
             if(side === 'fill'){
                 side = 'left';
@@ -15588,7 +15667,8 @@ pvc.BasePanel = pvc.Abstract.extend({
         }
         
         // Decreases available size and increases margins
-        function updateSide(side, child) {
+        function updateSide(child) {
+            var side   = child.anchor;
             var sideol = aolMap[side];
             var olen   = child[sideol];
             
@@ -17919,7 +17999,7 @@ pvc.CartesianAbstract = pvc.TimeseriesAbstract.extend({
             if (!def.empty(title)) {
                 titlePanel = new pvc.AxisTitlePanel(this, this._gridDockPanel, {
                     title:        title,
-                    font:         axis.option('TitleFont'),
+                    font:         axis.option('TitleFont') || axis.option('Font'),
                     anchor:       axis.option('Position'),
                     align:        axis.option('TitleAlign'),
                     margins:      axis.option('TitleMargins'),
@@ -17931,7 +18011,7 @@ pvc.CartesianAbstract = pvc.TimeseriesAbstract.extend({
             
             var panel = pvc.AxisPanel.create(this, this._gridDockPanel, axis, {
                 useCompositeAxis:  axis.option('Composite'),
-                font:              axis.option('LabelFont'),
+                font:              axis.option('Font'),
                 anchor:            axis.option('Position'),
                 axisSize:          axis.option('Size'),
                 axisSizeMax:       axis.option('SizeMax'),
@@ -18167,31 +18247,14 @@ pvc.CartesianAbstract = pvc.TimeseriesAbstract.extend({
     
     _setAxisScaleRange: function(axis){
         var info = this._mainContentPanel._layoutInfo;
+        
         var size = (axis.orientation === 'x') ?
                    info.clientSize.width :
                    info.clientSize.height;
         
-        var scale = axis.scale;
-        scale.min  = 0;
-        scale.max  = size;
-        scale.size = size; // original size // TODO: remove this...
-        
-        // -------------
-        
-        if(scale.type === 'Discrete'){
-            if(scale.domain().length > 0){ // Has domain? At least one point is required to split.
-                var bandRatio = this.options.panelSizeRatio || 0.8;
-                scale.splitBandedCenter(scale.min, scale.max, bandRatio);
-            }
-        } else {
-            scale.range(scale.min, scale.max);
-        }
-        
-        if(pvc.debug >= 4){
-            pvc.log("Scale: " + JSON.stringify(def.copyOwn(scale)));
-        }
-        
-        return scale;
+        axis.setScaleRange(size);
+
+        return axis.scale;
     },
     
     _getAxesRoundingPaddings: function(){
@@ -18453,6 +18516,25 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
      * Left and right paddings are shared by the top, center and bottom panels.
      * Top and bottom paddings are shared by the left, center and right panels.
      * </p>
+     * <p>
+     * Child panel's can inform of existing overflowPaddings - 
+     * resulting of things that are ok to overflow, 
+     * as long as they don't leave the parent panel's space, 
+     * and that the parent panel itself tries to reserve space for it or 
+     * ensure it is in a free area.
+     * </p>
+     * <p>
+     * The empty corner cells of the grid layout can absorb some of the overflow 
+     * content from non-fill child panels. 
+     * If, for example, a child panel is placed at the 'left' cell and it
+     * overflows in 'top', that overflow can be partly absorbed by 
+     * the top-left corner cell, as long as there's a panel in the top cell that
+     * imposes that much height. 
+     * </p>
+     * <p>
+     * If the corner space is not enough to absorb the overflow paddings
+     * 
+     * </p>
      * 
      * @override
      */
@@ -18466,7 +18548,7 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
         var margins  = new pvc.Sides(0);
         var paddings = new pvc.Sides(0);
         var remSize = def.copyOwn(layoutInfo.clientSize);
-        
+        var overFlowPaddings;
         var aolMap = pvc.BasePanel.orthogonalLength;
         var aoMap  = pvc.BasePanel.relativeAnchor;
         var alMap  = pvc.BasePanel.parallelLength;
@@ -18482,6 +18564,7 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
         // loop detection
         var paddingHistory = {}; 
         var loopSignal = {};
+        var overflowPaddingsSignal = {};
         var isDisasterRecovery = false;
         
         
@@ -18533,14 +18616,15 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
             }
             
             var index, count;
-            var canChange = !isDisasterRecovery && (remTimes > 0);
+            var canChange = layoutInfo.canChange !== false && !isDisasterRecovery && (remTimes > 0);
             var paddingsChanged;
+            var ownPaddingsChanged = false;
             
             index = 0;
             count = sideChildren.length;
             while(index < count){
                 if(pvc.debug >= 5){
-                    pvc.log("[GridDockingPanel] SIDE Child " + index);
+                    pvc.log("[GridDockingPanel] SIDE Child i=" + index);
                 }
                 
                 paddingsChanged = layoutChild2Side(sideChildren[index], canChange);
@@ -18552,23 +18636,39 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
                         return false; // stop;
                     }
                     
-                    if(remTimes > 0){
-                        if(pvc.debug >= 5){
-                            pvc.log("[GridDockingPanel] SIDE Child " + index + " increased paddings (remTimes=" + remTimes + ")");
+                    if(paddingsChanged === overflowPaddingsSignal){
+                        // Don't stop right away cause there might be other overflow paddings requests
+                        // of other side childs
+                        if(!ownPaddingsChanged){
+                            ownPaddingsChanged = true;
+                            layoutInfo.requestPaddings = layoutInfo.paddings; 
                         }
-                        return true; // repeat
-                    } else if(pvc.debug >= 2){
-                        pvc.log("[Warning] [GridDockingPanel] SIDE Child " + index + " increased paddings but no more iterations possible.");
+                    } else {
+                        if(remTimes > 0){
+                            if(pvc.debug >= 5){
+                                pvc.log("[GridDockingPanel] SIDE Child i=" + index + " increased paddings");
+                            }
+                            return true; // repeat
+                        } else if(pvc.debug >= 2){
+                            pvc.log("[Warning] [GridDockingPanel] SIDE Child i=" + index + " increased paddings but no more iterations possible.");
+                        }
                     }
                 }
                 index++;
+            }
+            
+            if(ownPaddingsChanged){
+                if(pvc.debug >= 5){
+                    pvc.log("[GridDockingPanel] Restarting due to overflowPaddings change");
+                }
+                return false; // stop;
             }
             
             index = 0;
             count = fillChildren.length;
             while(index < count){
                 if(pvc.debug >= 5){
-                    pvc.log("[GridDockingPanel] FILL Child " + index);
+                    pvc.log("[GridDockingPanel] FILL Child i=" + index);
                 }
                 
                 paddingsChanged = layoutChildFill(fillChildren[index], canChange);
@@ -18582,11 +18682,11 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
                     
                     if(remTimes > 0){
                         if(pvc.debug >= 5){
-                            pvc.log("[GridDockingPanel] FILL Child " + index + " increased paddings (remTimes=" + remTimes + ")");
+                            pvc.log("[GridDockingPanel] FILL Child i=" + index + " increased paddings");
                         }
                         return true; // repeat
                     } else if(pvc.debug >= 2){
-                        pvc.log("[Warning] [GridDockingPanel] FILL Child " + index + " increased paddings but no more iterations possible.");
+                        pvc.log("[Warning] [GridDockingPanel] FILL Child i=" + index + " increased paddings but no more iterations possible.");
                     }
                 }
                 index++;
@@ -18689,9 +18789,11 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
                 if(child.isVisible){
                     paddingsChanged = checkAnchorPaddingsChanged(a, paddings, child, canChange);
                     
-                    var align = pvc.parseAlign(a, child.align);
-                    
-                    positionChildOrtho(child, align);
+                    if(checkOverflowPaddingsChanged(a, layoutInfo.paddings, child, canChange)){
+                        return overflowPaddingsSignal;
+                    }
+                        
+                    positionChildOrtho(child, child.align);
                 }
             }
             
@@ -18764,14 +18866,14 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
             
             var changed = false;
             if(newPaddings){
-                if(pvc.debug >= 5){
+                if(pvc.debug >= 10){
                     pvc.log("[GridDockingPanel] => clientSize=" + JSON.stringify(child._layoutInfo.clientSize));
                     pvc.log("[GridDockingPanel] <= requestPaddings=" + JSON.stringify(newPaddings));
                 }
                 
                 getAnchorPaddingsNames(a).forEach(function(side){
                     if(newPaddings.hasOwnProperty(side)){
-                        var value    = paddings    [side] || 0;
+                        var value    = paddings[side] || 0;
                         var newValue = Math.floor(10000 * (newPaddings[side] || 0)) / 10000;
                         var increase = newValue - value;
                         
@@ -18786,7 +18888,7 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
                                 paddings[side] = newValue;
                                 
                                 if(pvc.debug >= 5){
-                                    pvc.log("[Warning] [GridDockingPanel] changed padding " + side + " <- " + newValue);
+                                    pvc.log("[Warning] [GridDockingPanel]   changed padding " + side + " <- " + newValue);
                                 }
                             }
                         }
@@ -18811,6 +18913,50 @@ pvc.GridDockingPanel = pvc.BasePanel.extend({
                     
                     paddings.width  = paddings.left + paddings.right ;
                     paddings.height = paddings.top  + paddings.bottom;
+                }
+            }
+            
+            return changed;
+        }
+        
+        function checkOverflowPaddingsChanged(a, ownPaddings, child, canChange){
+            var overflowPaddings = child._layoutInfo.overflowPaddings;
+            
+            var changed = false;
+            if(overflowPaddings){
+                if(pvc.debug >= 10){
+                    pvc.log("[GridDockingPanel] <= overflowPaddings=" + JSON.stringify(overflowPaddings));
+                }
+                
+                getAnchorPaddingsNames(a).forEach(function(side){
+                    if(overflowPaddings.hasOwnProperty(side)){
+                        var value    = ownPaddings[side] || 0;
+                        var newValue = Math.floor(10000 * (overflowPaddings[side] || 0)) / 10000;
+                        newValue -= margins[side]; // corners absorb some of it
+                        
+                        var increase = newValue - value;
+                        
+                        // STABILITY & SPEED requirement
+                        if(increase > Math.abs(0.05 * value)){
+                            if(!canChange){
+                                if(pvc.debug >= 2){
+                                    pvc.log("[Warning] [GridDockingPanel] CANNOT change overflow  padding but child wanted to: " + side + "=" + newValue);
+                                }
+                            } else {
+                                changed = true;
+                                ownPaddings[side] = newValue;
+                                
+                                if(pvc.debug >= 5){
+                                    pvc.log("[GridDockingPanel]   changed overflow padding " + side + " <- " + newValue);
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                if(changed){
+                    ownPaddings.width  = ownPaddings.left + ownPaddings.right ;
+                    ownPaddings.height = ownPaddings.top  + ownPaddings.bottom;
                 }
             }
             
@@ -18842,6 +18988,12 @@ pvc.CartesianGridDockingPanel = pvc.GridDockingPanel.extend({
         this.extend(this.xGridRule,  "xAxisGrid_");
         this.extend(this.yGridRule,  "yAxisGrid_");
         this.extend(this.pvFrameBar, "plotFrame_");
+        
+        if(this.chart.options.compatVersion <= 1){
+            this.extend(this.pvFrameBar, "xAxisEndLine_");
+            this.extend(this.pvFrameBar, "yAxisEndLine_");
+        }
+        
         this.extend(this.xZeroLine,  "xAxisZeroLine_");
         this.extend(this.yZeroLine,  "yAxisZeroLine_");
     },
@@ -19292,24 +19444,6 @@ pvc.CategoricalAbstract = pvc.CartesianAbstract.extend({
             // Allow for more caching when isNull is null
             keyArgs = { visible: true, isNull: ignoreNulls ? false : null};
         
-        // Determine the series that have at least one non-null datum
-//        if(serGrouping && !this.options.ignoreNulls){
-//            var seriesWithNonNullDatumsData = partData.groupBy(serGrouping, {
-//                visible:  true,
-//                where:    function(datum){ return !datum.isNull; },
-//                whereKey: "datum_not_null"
-//            });
-//            
-//            // Exclude null datums whose series value is not in 
-//            // seriesWithNonNullDatumsData
-//            keyArgs.where = function(datum){
-//                if(!datum.isNull) {
-//                    return true;
-//                }
-//                
-//            };
-//        }
-        
         return serGrouping ?
                 // <=> One multi-dimensional, two-levels data grouping
                 partData.groupBy([catGrouping, serGrouping], keyArgs) :
@@ -19602,6 +19736,13 @@ pvc.AxisPanel = pvc.BasePanel.extend({
         this.axis = axis;
         this.roleName = axis.role.name;
         this.isDiscrete = axis.role.grouping.isDiscrete();
+        
+        if(options.font === undefined){
+            var extensionFont = this._getExtension(this.panelName + 'Label', 'font');
+            if(typeof extensionFont === 'string'){
+                this.font = extensionFont;
+            }
+        }
     },
     
     getTicks: function(){
@@ -19646,13 +19787,17 @@ pvc.AxisPanel = pvc.BasePanel.extend({
              */
             this._calcTicks();
             
-            /* II - Calculate REQUIRED axisSize so that all labels fit */
+            /* II - Calculate NEEDED axisSize so that all tick's labels fit */
             if(layoutInfo.axisSize == null){
                 this._calcAxisSizeFromLabel(); // -> layoutInfo.axisSize and layoutInfo.labelBBox
             }
             
-            /* III - Calculate Trimming Length if FIXED/REQUIRED > AVAILABLE */
+            /* III - Calculate Trimming Length if: FIXED/NEEDED > AVAILABLE */
             this._calcMaxTextLengthThatFits();
+            
+            
+            /* IV - Calculate overflow paddings */
+            this._calcOverflowPaddings();
             
             // Release memory.
             layoutInfo.labelBBox = null;
@@ -19682,7 +19827,7 @@ pvc.AxisPanel = pvc.BasePanel.extend({
             switch (this.anchor) {
                 case "right":
                 case "left":
-                case "center": 
+                case "center":
                     baseline = "middle";
                     break;
                     
@@ -19714,16 +19859,8 @@ pvc.AxisPanel = pvc.BasePanel.extend({
         var labelBBox = layoutInfo.labelBBox;
         
         // The length not over the plot area
-        var length;
-        switch(this.anchor){
-            case 'left':   length = -labelBBox.x; break;
-            case 'right':  length = labelBBox.x2; break;
-            case 'top':    length = -labelBBox.y; break;
-            case 'bottom': length = labelBBox.y2; break;
-        }
-        
-        length = Math.max(length, 0);
-        
+        var length = this._getLabelBBoxQuadrantLength(labelBBox, this.anchor);
+
         // --------------
         
         layoutInfo.axisSize = this.tickLength + length; 
@@ -19737,10 +19874,102 @@ pvc.AxisPanel = pvc.BasePanel.extend({
         }
     },
     
+    _getLabelBBoxQuadrantLength: function(labelBBox, quadrantSide){
+        // labelBBox coordinates are relative to the anchor point
+        // x points to the right, y points downwards
+        //        T
+        //        ^
+        //        |
+        // L  <---0--->  R
+        //        |
+        //        v
+        //        B
+        //
+        //  +--> xx
+        //  |
+        //  v yy
+        //
+        //  x1 <= x2
+        //  y1 <= y2
+        // 
+        //  p1 +-------+
+        //     |       |
+        //     +-------+ p2
+        
+        var length;
+        switch(quadrantSide){
+            case 'left':   length = -labelBBox.x;  break;
+            case 'right':  length =  labelBBox.x2; break;
+            case 'top':    length = -labelBBox.y;  break;
+            case 'bottom': length =  labelBBox.y2; break;
+        }
+        
+        return Math.max(length, 0);
+    },
+    
+    _calcOverflowPaddings: function(){
+        if(!this._layoutInfo.labelBBox){
+            this._calcLabelBBox();
+        }
+        
+        this._calcOverflowPaddingsFromLabelBBox();
+    },
+    
+    _calcOverflowPaddingsFromLabelBBox: function(){
+        var layoutInfo = this._layoutInfo;
+        var paddings   = layoutInfo.paddings;
+        var labelBBox  = layoutInfo.labelBBox;
+        var orthoSides = this.isAnchorTopOrBottom() ? ['left', 'right'] : ['top', 'bottom'];
+        
+        var isDiscrete = this.scale.type === 'Discrete';
+        var halfBand;
+        if(isDiscrete){
+            this.axis.setScaleRange(layoutInfo.clientSize[this.anchorLength()]);
+            halfBand = this.scale.range().band / 2;
+        }
+
+        var overflowPaddings = null;
+        orthoSides.forEach(function(side){
+            var overflowPadding  = this._getLabelBBoxQuadrantLength(labelBBox, side);
+            if(overflowPadding > 0){
+                // Discount real paddings that this panel already has
+                // cause they're, in principle, empty space that can be occupied.
+                overflowPadding -= (paddings[side] || 0);
+                if(overflowPadding > 0){
+                    // On discrete axes, half of the band width is not yet overflow.
+                    if(isDiscrete){
+                        overflowPadding -= halfBand;
+                    }
+                    
+                    if(overflowPadding > 1){ // small delta to avoid frequent relayouts... (the reported font height often causes this kind of "error" in BBox calculation)
+                        if(isDiscrete){
+                            // reduction of space causes reduction of band width
+                            // which in turn usually causes the overflowPadding to increase,
+                            // as the size of the text usually does not change.
+                            // Ask a little bit more to hit the target faster.
+                            overflowPadding *= 1.05;
+                        }
+                        
+                        if(!overflowPaddings){ 
+                            overflowPaddings= {}; 
+                        }
+                        overflowPaddings[side] = overflowPadding;
+                    }
+                }
+            }
+        }, this);
+        
+        if(pvc.debug >= 6 && overflowPaddings){
+            pvc.log("[OverflowPaddings] " +  this.panelName + " " + JSON.stringify(overflowPaddings));
+        }
+        
+        layoutInfo.overflowPaddings = overflowPaddings;
+    },
+    
     _calcMaxTextLengthThatFits: function(){
         var layoutInfo = this._layoutInfo;
-        var maxClientLength = layoutInfo.clientSize[this.anchorOrthoLength()];
-        if(layoutInfo.axisSize <= maxClientLength){
+        var availableClientLength = layoutInfo.clientSize[this.anchorOrthoLength()];
+        if(layoutInfo.axisSize <= availableClientLength){
             // Labels fit
             // Clear to avoid unnecessary trimming
             layoutInfo.maxTextWidth = null;
@@ -19755,7 +19984,7 @@ pvc.AxisPanel = pvc.BasePanel.extend({
             }
             
             // Now move backwards, to the max text width...
-            var maxOrthoLength = maxClientLength - 2 * this.tickLength;
+            var maxOrthoLength = availableClientLength - 2 * this.tickLength;
             
             // A point at the maximum orthogonal distance from the anchor
             var mostOrthoDistantPoint;
@@ -20003,7 +20232,7 @@ pvc.AxisPanel = pvc.BasePanel.extend({
                     if(lastBelow){
                         // We were below max length and then overshot...
                         // Choose the best conforming one
-                        if(/*pctError > 0.05 || */pctError > lastBelow.error){
+                        if(pctError > lastBelow.error){
                             ticksInfo = lastBelow;
                         }
                         break;
@@ -24710,12 +24939,15 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
             */
            
            // X and Y axis orientations
-           axes.x.scale.range(0, clientSize.width );
-           axes.y.scale.range(0, clientSize.height);
+           axes.x.setScaleRange(clientSize.width );
+           axes.y.setScaleRange(clientSize.height);
            
            // X and Y visual roles
            var sceneXScale = chart.axes.base.sceneScale({sceneVarName:  'x'});
            var sceneYScale = chart.axes.ortho.sceneScale({sceneVarName: 'y'});
+           
+           var xLength = chart.axes.base.scale.max;
+           var yLength = chart.axes.ortho.scale.max;
            
            var hasDotSizeRole = rootScene.hasDotSizeRole;
            var sizeScale = this.dotSizeScale;
@@ -24775,8 +25007,8 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
                // How much overflow on each side?
                setSide('left',   r - x);
                setSide('bottom', r - y);
-               setSide('right',  x + r - clientSize.width );
-               setSide('top',    y + r - clientSize.height);
+               setSide('right',  x + r - xLength );
+               setSide('top',    y + r - yLength);
            };
            
            rootScene
