@@ -7549,7 +7549,8 @@ pv.SvgScene.rule = function(scenes) {
         "y2": s.top + s.height,
         "stroke": stroke.color,
         "stroke-opacity": stroke.opacity,
-        "stroke-width": s.lineWidth / this.scale
+        "stroke-width": s.lineWidth / this.scale,
+        "stroke-dasharray": s.strokeDasharray || 'none'
       });
     
     if(s.svg) this.setAttributes(e, s.svg);
@@ -10202,7 +10203,8 @@ pv.Rule.prototype = pv.extend(pv.Mark)
     .property("width", Number)
     .property("height", Number)
     .property("lineWidth", Number)
-    .property("strokeStyle", pv.fillStyle);
+    .property("strokeStyle", pv.fillStyle)
+    .property("strokeDasharray", String);
 
 pv.Rule.prototype.type = "rule";
 
@@ -10251,7 +10253,8 @@ pv.Rule.prototype.defaults = new pv.Rule()
     .extend(pv.Mark.prototype.defaults)
     .lineWidth(1)
     .strokeStyle("black")
-    .antialias(false);
+    .antialias(false)
+    .strokeDasharray("");
 
 /**
  * Constructs a new rule anchor with default properties. Rules support five
@@ -10538,6 +10541,7 @@ pv.Panel.prototype.buildImplied = function(s) {
     if (pv.renderer() === "batik") {
       if (c) {
         if (c.$panel != this) {
+          pv.Panel.updateCreateId(c);
           c.$panel = this;
           while (c.lastChild) c.removeChild(c.lastChild);
         }
@@ -10547,6 +10551,7 @@ pv.Panel.prototype.buildImplied = function(s) {
     } else if (c) {
       /* Clear the container if it's not associated with this panel. */
       if (c.$panel != this) {
+        pv.Panel.updateCreateId(c);
         c.$panel = this;
         while (c.lastChild) c.removeChild(c.lastChild);
       }
@@ -10579,6 +10584,10 @@ pv.Panel.prototype.buildImplied = function(s) {
   }
   if (!s.transform) s.transform = pv.Transform.identity;
   pv.Mark.prototype.buildImplied.call(this, s);
+};
+
+pv.Panel.updateCreateId = function(c){
+    c.$pvCreateId = (c.$pvCreateId || 0) + 1;
 };
 /**
  * Constructs a new image with default properties. Images are not typically
