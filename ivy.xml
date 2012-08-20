@@ -45,6 +45,10 @@
     <dependency org="org.apache.xmlgraphics" name="batik-svggen" rev="1.7" conf='codegen->default' transitive="false"/>
 
 
+		<dependency org="pentaho" name="cpf"
+			rev="TRUNK-SNAPSHOT" transitive="false" changing="true" conf='runtime->default'/>
+
+
     <!--  runtime batik -->
 	<dependency org="org.apache.xmlgraphics" name="batik-awt-util" rev="1.7" conf='runtime->default' transitive="false"/>    
     <dependency org="org.apache.xmlgraphics" name="batik-anim" rev="1.7" conf='runtime->default' transitive="false"/>
