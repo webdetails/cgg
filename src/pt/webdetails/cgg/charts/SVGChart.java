@@ -1,7 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package pt.webdetails.cgg.charts;
 
 import java.io.IOException;
@@ -24,11 +24,11 @@ public class SVGChart implements Chart {
 
     private static final Log logger = LogFactory.getLog(SVGChart.class);
     private Document svg;
-    private String svgSource;
-
-    public SVGChart(String svgSource) {
-        this.svgSource = svgSource;
-    }
+//    private String svgSource;
+//
+//    public SVGChart(String svgSource) {
+//        this.svgSource = svgSource;
+//    }
 
     public SVGChart(Document doc) {
         this.svg = doc;
