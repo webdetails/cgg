@@ -52,18 +52,6 @@
 
   <tstamp/>
 
-  <path id="classpath">
-    <fileset dir="${devlib.dir}">
-      <include name="**/*.jar" />
-    </fileset>
-    <fileset dir="${lib.dir}">
-      <include name="**/*.jar" />
-    </fileset>
-    <fileset dir="runtime-lib">
-      <include name="**/*.jar" />
-    </fileset>
-  </path>
-
 
   <!-- Build the project.revision property -->
   <property name="distribution.version" value="${project.stage}-${project.version}"/>
@@ -98,7 +86,7 @@
       <fileset dir="${dist.dir}">
         <include name="${ivy.artifact.id}-${project.revision}.jar"/>
       </fileset>
-      <fileset dir="runtime-lib">
+      <fileset dir="${runtimelib.dir}">
         <include name="**/*.jar"/>
         <exclude name="**/batik-js-1.7.jar"/>
       </fileset>
@@ -268,7 +256,7 @@
 
   <target name="resolve-runtime" depends="resolve-init">
     <ivy:resolve file="${ivyfile}" conf="runtime" />
-    <ivy:retrieve conf="runtime" pattern="runtime-lib/[module]-[revision](-[classifier]).[ext]" />
+    <ivy:retrieve conf="runtime" pattern="${runtimelib.dir}/[module]-[revision](-[classifier]).[ext]" />
   </target>
 
 </project>
