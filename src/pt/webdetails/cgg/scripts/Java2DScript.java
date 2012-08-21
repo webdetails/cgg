@@ -1,7 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package pt.webdetails.cgg.scripts;
 
 import java.awt.image.BufferedImage;
@@ -20,10 +20,7 @@ import pt.webdetails.cgg.charts.Java2DChart;
 class Java2DScript extends BaseScript {
 
     private static final Log logger = LogFactory.getLog(Java2DScript.class);
-    private Map<String, String> params;
-    private String source;
     private BufferedImage imageBuffer;
-    private String[] dependencies;
     private long width, height;
 
     Java2DScript() {
@@ -42,7 +39,7 @@ class Java2DScript extends BaseScript {
 
     @Override
     public Chart execute(Map<String, Object> params) {
-        Context cx = ContextFactory.getGlobal().enter();
+        ContextFactory.getGlobal().enter();
         try {
             getGraphics();
             executeScript(params);
