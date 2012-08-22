@@ -3934,12 +3934,12 @@ pv.Behavior.selector = function(autoRefresh, mark) {
         
         events = [
             [root,     "mousemove", pv.listen(root, "mousemove", mousemove)],
-            [root,     "mouseup",   pv.listen(root, "mouseup",   mouseup  )],
+            [root,     "mouseup",   pv.listen(root, "mouseup",   mouseup  )]//,
             
             // But when the mouse leaves the canvas we still need to
             // receive events...
-            [document, "mousemove", pv.listen(document, "mousemove", mousemove)],
-            [document, "mouseup",   pv.listen(document, "mouseup",   mouseup  )]
+//            [document, "mousemove", pv.listen(document, "mousemove", mousemove)],
+ //           [document, "mouseup",   pv.listen(document, "mouseup",   mouseup  )]
         ];
     }
     
@@ -18729,7 +18729,9 @@ pvc.MultiChartPanel = pvc.BasePanel.extend({
                 ar = this._calulateDefaultAspectRatio(width);
             }
             
-            height = width / ar;
+            //If a multiChartMaxHeight is specified, the height of each chart can never be bigger
+            var desirableHeight = width / ar;
+            height = Math.min(desirableHeight, def.get(options, 'multiChartMaxHeight', desirableHeight));
         }
 
         // ----------------------
