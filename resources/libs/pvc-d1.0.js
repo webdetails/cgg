@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120807\n
+//VERSION TRUNK-20120827\n
 var def = (function(){
 /** @private */
 var arraySlice = Array.prototype.slice;
@@ -3939,7 +3939,7 @@ pv.Behavior.selector = function(autoRefresh, mark) {
             // But when the mouse leaves the canvas we still need to
             // receive events...
 //            [document, "mousemove", pv.listen(document, "mousemove", mousemove)],
- //           [document, "mouseup",   pv.listen(document, "mouseup",   mouseup  )]
+//            [document, "mouseup",   pv.listen(document, "mouseup",   mouseup  )]
         ];
     }
     
@@ -16283,15 +16283,15 @@ pvc.BaseChart = pvc.Abstract.extend({
             }
             
             var groupScene = rootScene.createGroup({
-                group:     domainData,
-                colorAxis: colorAxis
+                group:           domainData,
+                colorAxis:       colorAxis,
+                extensionPrefix: pvc.visual.Axis.getId('legend', rootScene.childNodes.length)
              });
             
             // For latter binding an appropriate bullet renderer
             colorAxis.legendBulletGroupScene = groupScene;
             
             var partColorScale = colorAxis.scale;
-            //partShape = (!partValue || partValue === '0' ? 'square' : 'bar'); // TODO: HACK...
             
             domainData
                 .children()
@@ -16651,6 +16651,8 @@ pvc.BaseChart = pvc.Abstract.extend({
 //        multiChartWidth: undefined,
 //        multiChartAspectRatio: undefined,
 //        multiChartSingleRowFillsHeight: undefined,
+//        multiChartSingleColFillsHeight: undefined,
+//        multiChartMaxHeight: undefined,
         
         orientation: 'vertical',
         
@@ -18719,8 +18721,15 @@ pvc.MultiChartPanel = pvc.BasePanel.extend({
         width = pvc.PercentValue.resolve(width, clientSize.width);
 
         var height;
-        if(rowCount === 1 && def.get(options, 'multiChartSingleRowFillsHeight', true)){
-            height = clientSize.height;
+        if((rowCount === 1 && def.get(options, 'multiChartSingleRowFillsHeight', true)) ||
+           (colCount === 1 && def.get(options, 'multiChartSingleColFillsHeight', true))){
+            // Use the initial client height
+            var prevLayoutInfo = layoutInfo.previous;
+            if(!prevLayoutInfo){
+                height = clientSize.height;
+            } else {
+                height = prevLayoutInfo.height;
+            }
         } else {
             // ar ::= width / height
             var ar = +options.multiChartAspectRatio; // + is to number
@@ -18729,9 +18738,13 @@ pvc.MultiChartPanel = pvc.BasePanel.extend({
                 ar = this._calulateDefaultAspectRatio(width);
             }
             
-            //If a multiChartMaxHeight is specified, the height of each chart can never be bigger
-            var desirableHeight = width / ar;
-            height = Math.min(desirableHeight, def.get(options, 'multiChartMaxHeight', desirableHeight));
+            // If  multiChartMaxHeight is specified, the height of each chart cannot be bigger
+            height = width / ar;
+            
+            var maxHeight = +def.get(options, 'multiChartMaxHeight'); // null -> 0
+            if(!isNaN(maxHeight) && maxHeight > 0){
+                height = Math.min(height, maxHeight);
+            }
         }
 
         // ----------------------
@@ -26393,9 +26406,8 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
                 var sizeValExtent = chart._dotSizeDim.extent({visible: true});
                 hasDotSizeRole = !!sizeValExtent;
                 if(hasDotSizeRole){
-                
-                    var sizeValMin  = sizeValExtent.min.value,
-                        sizeValMax  = sizeValExtent.max.value;
+                   var sizeValMin  = sizeValExtent.min.value,
+                       sizeValMax  = sizeValExtent.max.value;
 
                     //Need to calculate manually the abs - probably there's a better way to do this
                     if (this.dotSizeAbs) {
@@ -26793,7 +26805,7 @@ pvc.MetricLineDotPanel = pvc.CartesianAbstractPanel.extend({
         }
         
         // -- DOT SIZE --
-        if(!rootScene.hasDotSizeRole){        
+        if(!rootScene.hasDotSizeRole){
             dot.override('baseSize', function(){
                 /* When not showing dots, 
                  * but a datum is alone and 
@@ -27264,7 +27276,7 @@ pvc.MetricLineDotAbstract = pvc.MetricXYAbstract.extend({
         
         return new pvc.MetricLineDotPanel(this, parentPanel, {
             showValues:    options.showValues,
-            valuesAnchor:   options.valuesAnchor,            
+            valuesAnchor:   options.valuesAnchor,
             showLines:      options.showLines,
             showDots:       options.showDots,
             orientation:    options.orientation,
@@ -27278,7 +27290,7 @@ pvc.MetricLineDotAbstract = pvc.MetricXYAbstract.extend({
     defaults: def.create(pvc.MetricXYAbstract.prototype.defaults, {
         showDots:   false,
         showLines:  false,
-        showValues: false,        
+        showValues: false,
         originIsZero: false,
         
         tipsySettings: { offset: 15 },
@@ -27290,9 +27302,10 @@ pvc.MetricLineDotAbstract = pvc.MetricXYAbstract.extend({
 //        minColor:  undefined, //"white",
 //        maxColor:  undefined, //"darkgreen",
         nullColor: "#efc5ad",  // white with a shade of orange
-        
+         
         /* Dot Size Role */
         dotSizeAbs: false
+        
 //        dotSizeRatio:   undefined,
 //        dotSizeRatioTo: undefined,
 //        autoDotSizePadding: undefined
