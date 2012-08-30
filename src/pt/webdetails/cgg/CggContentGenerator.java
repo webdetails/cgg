@@ -56,6 +56,12 @@ public class CggContentGenerator extends SimpleContentGenerator {
     }
 
     @Exposed(accessLevel = AccessLevel.PUBLIC)
+    public void Draw(final OutputStream out) {
+        draw(out);
+    }
+
+
+    @Exposed(accessLevel = AccessLevel.PUBLIC)
     public void draw(final OutputStream out) {
         try {
 
