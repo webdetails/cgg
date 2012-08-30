@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120827\n
+//VERSION TRUNK-20120830\n
 var def = (function(){
 /** @private */
 var arraySlice = Array.prototype.slice;
@@ -134,6 +134,10 @@ var def = /** @lends def */{
     get: function(o, p, dv){
         var v;
         return o && (v = o[p]) != null ? v : dv;
+    },
+    
+    gets: function(o, props){
+        return props.map(function(p){ return o[p]; });
     },
     
     getPath: function(o, path, create, dv){
@@ -1928,6 +1932,11 @@ def.type('Query')
     selectMany: function(fun, ctx){
         return new def.SelectManyQuery(this, fun, ctx);
     },
+    
+    union: function(/*others*/){
+        var queries = def.array.append([this], arguments);
+        return new def.SelectManyQuery(new def.ArrayLikeQuery(queries));
+    },
 
     // deferred filter
     where: function(fun, ctx){
@@ -2121,7 +2130,9 @@ def.type('SelectManyQuery', def.Query)
 
 function query_nextMany(){
     while(this._source.next()){
-        var manySource = this._selectMany.call(this._ctx, this._source.item, this._source.index);
+        var manySource = this._selectMany ?
+                            this._selectMany.call(this._ctx, this._source.item, this._source.index) :
+                            this._source.item;
         if(manySource != null){
             this._manySource = def.query(manySource);
             return 1;
@@ -10776,16 +10787,19 @@ add(/** @lends pvc.data.DataOper */{
  * @param {string} [keyArgs.whereKey] A key for the specified datum predicate,
  * previously returned by this function.
  * <p>
- * If this argument is specified it can be used to cache results.
+ * If this argument is specified, and it is not the value <c>null</c>,
+ * it can be used to cache results.
+ * If this argument is specified, and it is the value <c>null</c>,
+ * the results are not cached.
  * If it is not specified, and <tt>keyArgs</tt> is specified,
  * one is returned.
  * If it is not specified and <tt>keyArgs</tt> is not specified,
  * then the instance will have a null {@link #key} property value.
  * </p>
  * <p>
- * If it a key not returned by this operation is specified,
- * then it should be prefixed by a "_" character,
- * in order to not colide with keys generated internally.
+ * If a key not previously returned by this operation is specified,
+ * then it should be prefixed with a "_" character,
+ * in order to not collide with keys generated internally.
  * </p>
  */
 def.type('pvc.data.GroupingOper', pvc.data.DataOper)
@@ -10802,12 +10816,12 @@ def.type('pvc.data.GroupingOper', pvc.data.DataOper)
     this._isNull     = def.get(keyArgs, 'isNull',   null);
         
     /* 'Where' predicate and its key */
-    var hasKey = this._selected == null, // Selected state changes does not yet invalidate cache...
+    var hasKey = this._selected == null, // TODO: Selected state changes do not yet invalidate cache...
         whereKey = '';
     if(this._where){
         whereKey = def.get(keyArgs, 'whereKey');
         if(!whereKey){
-            if(!keyArgs){
+            if(!keyArgs || whereKey === null){
                 // Force no key
                 hasKey = false;
             } else {
@@ -10833,7 +10847,7 @@ def.type('pvc.data.GroupingOper', pvc.data.DataOper)
 
         return groupSpec;
     });
-
+    
     /* Operation key */
     if(hasKey){
         this.key = ids.join('!!') +
@@ -10861,7 +10875,7 @@ add(/** @lends pvc.data.GroupingOper */{
             where:    this._where
         });
         
-                /* Group datums */
+        /* Group datums */
         var rootNode = this._group(datumsQuery);
 
         /* Render node into a data */
