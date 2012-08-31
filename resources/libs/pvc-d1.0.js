@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120830\n
+//VERSION TRUNK-20120831\n
 var def = (function(){
 /** @private */
 var arraySlice = Array.prototype.slice;
