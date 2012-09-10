@@ -94,6 +94,10 @@ public class CggContentGenerator extends SimpleContentGenerator {
                 String fileName = attachmentName.indexOf(".") > 0 ? attachmentName : attachmentName + "." + outputTypeParam;
                 setResponseHeaders(getMimeType(fileName), fileName);
             }
+            else{
+                // Just set mime types
+                setResponseHeaders(getMimeType(outputType.name()));
+            }
 
 
             Long width = requestParams.getLongParameter("width", 0L);
