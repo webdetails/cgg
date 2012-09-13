@@ -1,4 +1,4 @@
-//VERSION TRUNK-20120907\n
+//VERSION TRUNK-20120913\n
 var def = (function(){
 /** @private */
 var arraySlice = Array.prototype.slice;
@@ -17403,6 +17403,17 @@ pvc.BasePanel = pvc.Abstract.extend({
             this.pvPanel.paddingPanel  = this.pvPanel;
             this.pvPanel.borderPanel   = pvBorderPanel;
             
+            if(pvc.debug >= 15){
+                this.pvPanel // inner
+                    .strokeStyle('lightgreen')
+                    .lineWidth(1)
+                    .strokeDasharray('- ');
+                
+                pvBorderPanel // outer
+                    .strokeStyle('lightblue')
+                    .lineWidth(1)
+                    .strokeDasharray(null); 
+            }
             /* Protovis marks that are pvcPanel specific,
              * and/or #_creates child panels.
              */
@@ -20787,7 +20798,8 @@ pvc.CartesianAbstractPanel = pvc.BasePanel.extend({
             orthoAxis.option('FixedMax') != null ||
             baseAxis .option('FixedMin') != null ||
             baseAxis .option('FixedMax') != null){
-            this.pvPanel.overflow("hidden");
+            // Padding area is used by bubbles and other vizs without problem
+            this.pvPanel.borderPanel.overflow("hidden");
         }
     },
 
