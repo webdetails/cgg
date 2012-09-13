@@ -1,3 +1,6 @@
+// Portions Copyright (c) 2012 jQuery Foundation and other contributors, http://jquery.com/ 
+
+
 var hasOwn = Object.prototype.hasOwnProperty;
 // Shamelessly copied from jquery!
 jQuery = $ = {};
