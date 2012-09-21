@@ -350,7 +350,7 @@ pv.Behavior.tipsy = function(opts) {
     
     function updateTipDebug(){
         if($fakeTipTarget){
-            if(_tip.debug >= 5){
+            if(_tip.debug >= 16){
                 $fakeTipTarget.css({
                     borderColor: 'red',
                     borderWidth: '1px',
@@ -639,7 +639,7 @@ function getVisibleScreenBounds(mark){
             height += top;
             top = 0;
         }
-
+        
         right  = instance.right;
         if(right < 0){
             width += right;
