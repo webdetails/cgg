@@ -148,6 +148,9 @@ TYPICAL TARGET SEQUENCE
   <property name="devlib.dir"
             value="${basedir}/dev-lib"
             description="Directory for developer to place development Jar files (not affected by clean targets)" />
+  <property name="runtimelib.dir"
+            value="${basedir}/runtime-lib"
+            description="Directory that hosts Jar files required to for the project to run.  (IVY will populate this directory with required jars)" />
 
   <!-- Compiler properties (passed directly to javac ant target) -->
   <property name="javac.debug"
@@ -347,6 +350,9 @@ TYPICAL TARGET SEQUENCE
     <fileset dir="${lib.dir}">
       <include name="**/*.jar" />
     </fileset>
+    <fileset dir="${runtimelib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
   </path>
 
   <!-- Setup the classpath used for testing -->
@@ -445,6 +451,7 @@ TYPICAL TARGET SEQUENCE
     <mkdir dir="${lib.dir}" />
     <mkdir dir="${devlib.dir}" />
     <mkdir dir="${testlib.dir}" />
+    <mkdir dir="${runtimelib.dir}" />
   </target>
 
 
@@ -980,6 +987,7 @@ TYPICAL TARGET SEQUENCE
       ====================================================================-->
   <target name="clean-jars">
     <delete dir="${lib.dir}" />
+    <delete dir="${runtimelib.dir}" />
     <delete dir="${testlib.dir}" />
   </target>
 
