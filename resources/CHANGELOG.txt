@@ -1,3 +1,10 @@
+12.10.17
+    * Sync CCC with that of the CDF branch
+    * Updated platform dependency to 4.5 stable
+    * Added missing copyright for jquery bits
+    * Added missing output type declaration when no filename was specified
+    * Workaround for changes in detecting method name in draw 
+
 12.09.05
     * Integration with CPF
     * Updated pvc-d1.0.js file to keep in sync with CDF
