@@ -142,8 +142,6 @@ function getCccType(type) {
         "cccBulletChart": pvc.BulletChart,
         "cccMetricDotChart": pvc.MetricDotChart,
         "cccMetricLineChart": pvc.MetricLineChart,
-        "cccStackedLineChart": pvc.mStackedLineChart,
-        "cccStackedAreaChart": pvc.mStackedAreaChart,
         "cccWaterfallChart": pvc.WaterfallChart,
         "cccBoxplotChart": pvc.BoxplotChart        
     }[type];
