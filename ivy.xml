@@ -31,22 +31,31 @@
     <!--  pentaho dependencies -->
     <!--  internal dependencies -->
 		<!-- pentaho-bi-platform-plugin-services pulls js-1.7R1 -->
-    <dependency org="pentaho" name="pentaho-bi-platform-plugin-services"
+    <!--<dependency org="pentaho" name="pentaho-bi-platform-plugin-services"
                 rev="${dependency.bi-platform.revision}" changing="true" transitive="false"/>
     <dependency org="pentaho" name="pentaho-bi-platform-plugin-actions"
                 rev="${dependency.bi-platform.revision}" changing="true" transitive="false"/>
     <dependency org="pentaho" name="pentaho-bi-platform-web-servlet"
                 rev="${dependency.bi-platform.revision}" changing="true" transitive="false"/>
-
-		<dependency org="javax.servlet" name="servlet-api" rev="2.4" />
-    <dependency org="pentaho" name="pentaho-bi-platform-engine-core"
-        rev="${dependency.bi-platform.revision}" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-api"
-        rev="${dependency.bi-platform.revision}" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-engine-services"
-        rev="${dependency.bi-platform.revision}" transitive="false" />
-		<dependency org="pentaho" name="cpf"
-			rev="TRUNK-SNAPSHOT" transitive="false" changing="true" conf='runtime->default'/>
+-->
+    <dependency org="pentaho" name="pentaho-platform-extensions" 
+                rev="${dependency.bi-platform.revision}" transitive="false" changing="true" />
+    <dependency org="pentaho" name="pentaho-user-console-package" 
+                rev="${dependency.bi-platform.revision}" transitive="false" changing="true" />
+    <dependency org="pentaho" name="pentaho-platform-api" 
+                rev="${dependency.bi-platform.revision}" changing="true" transitive="false" />
+    <dependency org="pentaho" name="pentaho-platform-core" 
+                rev="${dependency.bi-platform.revision}" changing="true" transitive="false" />
+    <dependency org="pentaho" name="pentaho-platform-repository" 
+                rev="${dependency.bi-platform.revision}" changing="true" transitive="false" />
+    <dependency org="pentaho" name="pentaho-platform-scheduler" 
+                rev="${dependency.bi-platform.revision}" changing="true" transitive="false" />
+    <dependency org="pentaho" name="common-ui" 
+                rev="${dependency.bi-platform.revision}" changing="true" transitive="false" >
+      <artifact name="common-ui" type="zip" />
+    </dependency>
+		<!--<dependency org="pentaho" name="cpf"
+			rev="TRUNK-SNAPSHOT" transitive="false" changing="true" conf='runtime->default'/>-->
 
 		<dependency org="rhino" name="js" rev="1.7R1" />
 
@@ -58,7 +67,7 @@
     <dependency org="org.apache.xmlgraphics" name="batik-svggen" rev="${batik.rev}" conf='codegen->default' transitive="false"/>
 
     <!--  runtime batik -->
-	<dependency org="org.apache.xmlgraphics" name="batik-awt-util" rev="${batik.rev}" conf='runtime->default' transitive="false"/>    
+    <dependency org="org.apache.xmlgraphics" name="batik-awt-util" rev="${batik.rev}" conf='runtime->default' transitive="false"/>    
     <dependency org="org.apache.xmlgraphics" name="batik-anim" rev="${batik.rev}" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-css" rev="${batik.rev}" conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.xmlgraphics" name="batik-codec" rev="${batik.rev}" conf='runtime->default' transitive="false"/>
