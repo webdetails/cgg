@@ -122,12 +122,13 @@
 
 
        
-	<echo file="${dist.dir}/marketplace.xml">&lt;version branch="STABLE">
+	<echo file="${dist.dir}/marketplace.xml">&lt;version>
+	    &lt;branch>STABLE&lt;/branch>
 		&lt;version>${distribution.version}&lt;/version>
 		&lt;name>Stable&lt;/name>
-		&lt;downloadUrl>http://ci.analytical-labs.com/job/Webdetails-CGG-Release/lastSuccessfulBuild/artifact/dist/cgg-${distribution.version}.zip&lt;/downloadUrl>
-		&lt;description>Release ${distribution.version}&lt;/description>
-		&lt;buildId>&lt;/buildId>
+		&lt;package_url>http://ci.analytical-labs.com/job/Webdetails-CGG-Release/lastSuccessfulBuild/artifact/dist/cgg-${distribution.version}.zip&lt;/package_url>
+		&lt;description>${distribution.version} release.&lt;/description>
+		&lt;build_id>&lt;/build_id>
 		&lt;/version>	</echo>         
 
 
