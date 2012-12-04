@@ -123,7 +123,7 @@
 
        
 	<echo file="${dist.dir}/marketplace.xml">&lt;version>
-	    &lt;branch>TRUNK<&lt;/branch>
+	    &lt;branch>TRUNK&lt;/branch>
 		&lt;version>${distribution.version}&lt;/version>
 		&lt;name>Trunk&lt;/name>
 		&lt;package_url>http://ci.analytical-labs.com/job/Webdetails-CGG/lastSuccessfulBuild/artifact/dist/cgg-TRUNK-SNAPSHOT.zip&lt;/package_url>
