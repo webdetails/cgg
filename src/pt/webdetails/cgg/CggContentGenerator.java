@@ -30,20 +30,8 @@ import pt.webdetails.cpf.annotations.Exposed;
  */
 public class CggContentGenerator extends SimpleContentGenerator {
 
-    private static final long serialVersionUID = 1L;
     
     private static final Log logger = LogFactory.getLog(CggContentGenerator.class);
-    private static final String MIME_SVG = "image/svg+xml";
-
-
-    private enum OutputType {
-
-        SVG, PNG, PDF;
-        
-        public static OutputType parse(String value){
-          return valueOf(StringUtils.upperCase(value));
-        }
-    }
 
     @Override
     public Log getLogger() {//TODO:?
@@ -63,116 +51,8 @@ public class CggContentGenerator extends SimpleContentGenerator {
 
     @Exposed(accessLevel = AccessLevel.PUBLIC)
     public void draw(final OutputStream out) {
-        try {
-
-            HashMap<String, Object> params = new HashMap<String, Object>();
-            IParameterProvider requestParams = getRequestParameters();
-            @SuppressWarnings("unchecked")
-            Iterator<String> inputParams = requestParams.getParameterNames();
-            while (inputParams.hasNext()) {
-                String paramName = inputParams.next();
-                if (paramName.startsWith("param")) {
-                    String pName = paramName.substring(5);
-                    Object[] p = requestParams.getArrayParameter(paramName, null);
-                    if (p.length == 1) { // not *really* an array, is it?
-                        params.put(pName, p[0]);
-                    } else {
-                        params.put(pName, p);
-                    }
-                }
-            }
-
-            String scriptName = requestParams.getStringParameter("script", "");
-            String scriptTypeParam = requestParams.getStringParameter("type", "svg");
-            String outputTypeParam = requestParams.getStringParameter("outputType", "png");
-            
-            OutputType outputType = OutputType.parse(outputTypeParam);
-            ScriptType scriptType = ScriptType.parse(scriptTypeParam);
-
-            final String attachmentName = requestParams.getStringParameter("attachmentName", null);
-            if (attachmentName != null) {
-                String fileName = attachmentName.indexOf(".") > 0 ? attachmentName : attachmentName + "." + outputTypeParam;
-                setResponseHeaders(getMimeType(fileName), fileName);
-            }
-            else{
-                // Just set mime types
-                setResponseHeaders(getMimeType(outputType.name()));
-            }
-
-
-            Long width = requestParams.getLongParameter("width", 0L);
-            Long height = requestParams.getLongParameter("height", 0L);
-            logger.debug("Starting:" + new Date().getTime());
-            
-            try {
-                Chart chart = evaluateChart(params, scriptName, scriptType, width, height);
-                getOutput(chart, outputType, out);
-                logger.debug("Image exported:" + new Date().getTime());
-            } catch (Exception e) {
-                logger.error(e);
-            }
-        } catch (Exception ex) {
-            logger.fatal(ex);
-        }
+      CggService service = new CggService();
+      service.draw(getResponse(), getRequest());
     }
-
-    /**
-     * @param params
-     * @param scriptName
-     * @param scriptType
-     * @param width
-     * @param height
-     * @return
-     * @throws FileNotFoundException 
-     */
-    private Chart evaluateChart(HashMap<String, Object> params, String scriptName, ScriptType scriptType, Long width, Long height) {
-      ScriptFactory factory = ScriptFactory.getInstance();
-      factory.setSystemPath(getPluginPath()  + "/libs/");
-      
-      try {
-          Script script = factory.createScript(scriptName, scriptType, width, height);
-      
-          logger.debug("Script created:" + new Date().getTime());
-          Chart chart = script.execute(params);
-          logger.debug("Script executed:" + new Date().getTime());
-          return chart;
-      } catch (FileNotFoundException e) {
-          logger.error(e);
-          return null;
-      }   
-    }
-
-    private void getOutput(Chart chart, OutputType outputType, OutputStream out) {
-
-
-        switch (outputType) {
-            case PDF:
-                /*
-                if (chart instanceof pt.webdetails.cgg.charts.SVGChart) {
-                chart.toPDF(out);
-                }
-                 */
-                break;
-            case PNG:
-                chart.toPNG(out);
-                break;
-            case SVG:
-                setResponseHeaders(MIME_SVG, null);
-                if (chart instanceof pt.webdetails.cgg.charts.SVGChart) {
-                    ((SVGChart) chart).toSVG(out);
-                }
-                else {
-                  logger.error("Trying to get SVG from non-SVG chart");
-                }
-                break;
-            default:
-        }
-    }
-
-    @Exposed(accessLevel = AccessLevel.PUBLIC)
-    public void refresh(OutputStream out) {
-        ScriptFactory.getInstance().clearCachedScopes();
-    }
-
    
 }

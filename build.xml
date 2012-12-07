@@ -90,6 +90,10 @@
         <include name="**/*.jar"/>
         <exclude name="**/batik-js-1.7.jar"/>
       </fileset>
+      <fileset dir="dev-lib">
+        <include name="**/*.jar"/>
+      </fileset>
+      
     </copy>
 
 
