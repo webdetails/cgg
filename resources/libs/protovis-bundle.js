@@ -5,4 +5,5 @@
     lib("Base.js") &&
     lib("json.js") &&
     lib("ccc-util.js") &&
-    lib("pvc-d1.0.js");
+    lib('def.js') &&
+     lib("pvc-d2.0.js");
