@@ -15,6 +15,7 @@ import java.util.Iterator;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -42,6 +43,7 @@ public class CggService {
   
   
   private static final Log logger = LogFactory.getLog(CggService.class);
+  private OutputStream outputStream;
   
    private enum OutputType {
 
@@ -53,7 +55,12 @@ public class CggService {
     }  
   
    
-       private static final String MIME_SVG = "image/svg+xml";
+ private static final String MIME_SVG = "image/svg+xml";
+ 
+ 
+ public void setOutputStream(final OutputStream stream){
+     outputStream = stream;
+ }
   
  @GET
  @Path("/refresh")
@@ -69,74 +76,50 @@ public class CggService {
   @Path("/draw")
 //  @Produces("text/plain")
   @Consumes({ APPLICATION_XML, APPLICATION_JSON })
-  public void draw(@Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest) {
+  public void draw(
+          @QueryParam("script") String script,
+          @DefaultValue("svg") @QueryParam("type") String type,
+          @DefaultValue("png") @QueryParam("outputType") String outputType,
+          @DefaultValue("") @QueryParam("attachmentName") String attachmentName,
+          @DefaultValue("0") @QueryParam("width") Long width,
+          @DefaultValue("0") @QueryParam("height") Long height,
+          
+          @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest) {
   
         try {
 
             HashMap<String, Object> params = new HashMap<String, Object>();
             @SuppressWarnings("unchecked")
-            Enumeration<String> inputParams = servletRequest.getParameterNames();
-            while (inputParams.hasMoreElements()) {
-                String paramName = inputParams.nextElement();
-                if (paramName.startsWith("param")) {
-                    String pName = paramName.substring(5);
-                    params.put(pName, servletRequest.getParameter(paramName));
-/* Disabling support for array parameters
-                    Object[] p = requestParams.getArrayParameter(paramName, null);
-                    if (p.length == 1) { // not *really* an array, is it?
-                        params.put(pName, p[0]);
-                    } else {
-                        params.put(pName, p);
+            
+             
+            Enumeration<String> inputParams;
+            if(servletRequest != null){
+                inputParams = servletRequest.getParameterNames();
+                while (inputParams.hasMoreElements()) {
+                    String paramName = inputParams.nextElement();
+                    if (paramName.startsWith("param")) {
+                        String pName = paramName.substring(5);
+                        params.put(pName, servletRequest.getParameter(paramName));
                     }
-                     
-                     */
                 }
             }
-
-            String scriptName = servletRequest.getParameter("script");
-            if (scriptName == null) scriptName = "";
-            String scriptTypeParam = servletRequest.getParameter("type");
-            if (scriptTypeParam == null) scriptTypeParam = "svg";
-            String outputTypeParam = servletRequest.getParameter("outputType");
-            if (outputTypeParam == null)
-              outputTypeParam = "png";
             
-            OutputType outputType = OutputType.parse(outputTypeParam);
-            ScriptType scriptType = ScriptType.parse(scriptTypeParam);
+            OutputType scriptOutputType = OutputType.parse(outputType);
+            ScriptType scriptType = ScriptType.parse(type);
 
-            final String attachmentName = servletRequest.getParameter("attachmentName");
-            if (attachmentName != null) {
-                String fileName = attachmentName.indexOf(".") > 0 ? attachmentName : attachmentName + "." + outputTypeParam;
+            if (!attachmentName.isEmpty()) {
+                String fileName = attachmentName.indexOf(".") > 0 ? attachmentName : attachmentName + "." + type;
                 setResponseHeaders(getMimeType(fileName), fileName, servletResponse);
             }
             else{
-                // Just set mime types
-                setResponseHeaders(getMimeType(outputType.name()), servletResponse);
-            }
-
-
-            String widthAsStr = servletRequest.getParameter("width");
-            if (StringUtils.isEmpty(widthAsStr))
-              widthAsStr = "0";
-            Long width = 0L;
-            try {
-              width = Long.parseLong(widthAsStr);
-            } catch (NumberFormatException nfe) {}
-
-            
-            String heightAsStr = servletRequest.getParameter("height");
-            if (StringUtils.isEmpty(heightAsStr))
-              heightAsStr = "0";
-            Long height = 0L;
-            try {
-              height = Long.parseLong(heightAsStr);
-            } catch (NumberFormatException nfe) {}            
+                setResponseHeaders(getMimeType(scriptOutputType.name()), servletResponse);
+            }          
             
             logger.debug("Starting:" + new Date().getTime());
             
             try {
-                Chart chart = evaluateChart(params, scriptName, scriptType, width, height);
-                getOutput(chart, outputType, servletResponse.getOutputStream(), servletResponse);
+                Chart chart = evaluateChart(params, script, scriptType, width, height);
+                getOutput(chart, scriptOutputType, servletResponse == null ? outputStream : servletResponse.getOutputStream(), servletResponse);
                 logger.debug("Image exported:" + new Date().getTime());
             } catch (Exception e) {
                 logger.error(e);

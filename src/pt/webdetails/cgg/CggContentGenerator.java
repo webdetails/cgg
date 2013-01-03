@@ -11,6 +11,8 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -23,6 +25,7 @@ import pt.webdetails.cgg.charts.SVGChart;
 import pt.webdetails.cpf.SimpleContentGenerator;
 import pt.webdetails.cpf.annotations.AccessLevel;
 import pt.webdetails.cpf.annotations.Exposed;
+import sun.print.resources.serviceui;
 
 /**
  *
@@ -51,8 +54,37 @@ public class CggContentGenerator extends SimpleContentGenerator {
 
     @Exposed(accessLevel = AccessLevel.PUBLIC)
     public void draw(final OutputStream out) {
-      CggService service = new CggService();
-      service.draw(getResponse(), getRequest());
+        IParameterProvider requestParams = parameterProviders.get(IParameterProvider.SCOPE_REQUEST); 
+       
+        String script = requestParams.getStringParameter("script","");
+        String type = requestParams.getStringParameter("type","svg");
+        String outputType = requestParams.getStringParameter("outputType","png");
+        String attachmentName = requestParams.getStringParameter("attachmentName","");
+        
+        String widthAsStr = requestParams.getStringParameter("width","0");
+        Long width = 0L;
+        try {
+          width = Long.parseLong(widthAsStr);
+        } catch (NumberFormatException nfe) {}
+
+        String heightAsStr = requestParams.getStringParameter("height","0");
+        Long height = 0L;
+        try {
+          height = Long.parseLong(heightAsStr);
+        } catch (NumberFormatException nfe) {}
+        
+        
+        HttpServletRequest request = getRequest();
+        HttpServletResponse response = getResponse();
+        
+
+       
+        CggService service = new CggService();
+        
+        if(response == null){
+            service.setOutputStream(out);
+        }
+        service.draw(script, type, outputType, attachmentName, height, width, response, request);
     }
    
 }
