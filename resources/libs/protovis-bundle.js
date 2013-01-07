@@ -2,10 +2,10 @@
     lib("document.js") &&
     lib("svg-utils.js") &&
     lib("protovis.js") && 
+    lib("protovis-cgg.js") && 
     lib("Base.js") &&
     lib("json.js") &&
     lib("ccc-util.js") &&
-lib('compatVersion.js') &&    
-lib('def.js') &&
-        
- lib("pvc-d2.0.js");
+    lib('compatVersion.js') &&    
+    lib('def.js') &&
+    lib("pvc-d2.0.js");
