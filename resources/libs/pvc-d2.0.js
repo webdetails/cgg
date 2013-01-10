@@ -1,4 +1,4 @@
-//VERSION TRUNK-20130107
+//VERSION TRUNK-20130110
 
 
 /*global pvc:true */
@@ -1412,6 +1412,7 @@ var pvc = def.globalSpace('pvc', {
     $.support.svg = $.support.svg || 
         document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1");
 }(/*global jQuery:true */jQuery));
+
 pvc.text = {
     getFitInfo: function(w, h, text, font, diagMargin){
         if(text === '') {
@@ -11147,7 +11148,7 @@ function data_whereDatumFilter(datumFilter, keyArgs) {
     },
 
     /**
-     * Returns an array with the visible categories.
+     * Returns an array with the visible series.
      * @deprecated
      */
     getVisibleSeries: function(){
@@ -20755,6 +20756,12 @@ def
             return function(){
                 // Capture current context
                 var context = myself._getContext(pvMark, null);
+                
+                // discard intermediate points
+                if (context.scene.isIntermediate){
+                   return null;
+                }
+                
                 return buildTooltip.call(myself, context);
             };
         }
@@ -20762,6 +20769,12 @@ def
         return function(){
             // Capture current context
             var context = myself._getContext(pvMark, null);
+            
+            // discard intermediate points
+            if (context.scene.isIntermediate){
+                return null;
+            }
+            
             context.pin();
             
             var tooltip;
@@ -23720,7 +23733,7 @@ def
         this.base(layoutInfo);
 
         var plotFrameVisible;
-        if(chart.compatVersion <= 1){
+        if(chart.compatVersion() <= 1){
             plotFrameVisible = !!(xAxis.option('EndLine') || yAxis.option('EndLine'));
         } else {
             plotFrameVisible = def.get(chart.options, 'plotFrameVisible', true);
@@ -23879,7 +23892,7 @@ def
             .lock('top',    top)
             .lock('bottom', bottom)
             .lock('fillStyle', null)
-            .strokeStyle("#808285")
+            .strokeStyle("#666666")
             .lineWidth(1)
             .antialias(false)
             .zOrder(-8)
@@ -23921,7 +23934,7 @@ def
                     .lock(oend_a, oend)
                     .lock(a,      zeroPosition)
                     .override('defaultColor', function(){
-                        return pv.color("#808285");
+                        return pv.color("#666666");
                     })
                     .pvMark
                     .lineWidth(1)
@@ -24120,8 +24133,7 @@ def
     _getVisibleData: function(){
         return this.chart._getVisibleData(this.dataPartValue);
     }
-});
-/**
+});/**
  * CategoricalAbstract is the base class for all categorical or timeseries
  */
 def
@@ -25483,7 +25495,7 @@ def
                 extensionId: 'rule'
             })
             .lock('data', [rootScene])
-            .override('defaultColor', def.fun.constant(pv.Color.names.black))
+            .override('defaultColor', def.fun.constant("#666666"))
             // ex: anchor = bottom
             .lock(this.anchorOpposite(), 0) // top (of the axis panel)
             .lock(begin_a, rMin )  // left
@@ -25709,7 +25721,7 @@ def
                     // Control visibility through .visible or lineWidth
                     return pvRule.scene ? 
                            pvRule.scene[0].strokeStyle : 
-                           pv.Color.names.black;
+                           "#666666";
                 })
                 .pvMark
                 ;
@@ -25778,7 +25790,7 @@ def
             .lock(anchorOrtho,    0)
             
             .font(font)
-            
+            .textStyle("#666666")
             .textAlign(align)
             .textBaseline(baseline)
             
@@ -25891,7 +25903,7 @@ def
                     // NOTE: the rule only has one scene/instance
                     return pvRule.scene ? 
                            pvRule.scene[0].strokeStyle :
-                           pv.Color.names.black;
+                           "#666666";
                 })
                 .lock(anchorOpposite, 0) // top
                 .lock(anchorOrtho,    0) // left
@@ -25928,7 +25940,7 @@ def
                         // Control visibility through color or through .visible
                         return pvTicks.scene ? 
                                pvTicks.scene[0].strokeStyle : 
-                               pv.Color.names.black;
+                               pv.Color.names.d;
                     })
                     .lock(anchorOpposite, 0) // top
                     .lock(anchorLength,   null)
@@ -25987,6 +25999,7 @@ def
                 return text;
              })
             .font(this.font)
+            .textStyle("#666666")
             //.textMargin(0.5) // Just enough for some labels not to be cut (vertical)
             ;
         
@@ -26183,6 +26196,7 @@ def
                      ((align == 'right')? tickScene.x + tickScene.dx : tickScene.x);
             })
             .font(font)
+            .textStyle("#666666")
             .text(function(tickScene){
                 var fitInfo = this.fitInfo();
                 var label = tickScene.vars.tick.label;
@@ -29406,7 +29420,7 @@ def
     },
     
     defaults: {
-        tooltipOffset: 15
+        tooltipOffset: 10
     }
 });
 
@@ -31441,7 +31455,7 @@ def
     defaults: {
         axisOriginIsZero: false,
         
-        tooltipOffset: 15
+        tooltipOffset: 10
         
         /* Continuous Color Role */
         // TODO:
