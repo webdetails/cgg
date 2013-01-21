@@ -60,6 +60,10 @@ public class ScriptFactory {
             logger.error(e);
         }
         
+        if(!path.startsWith("/")){
+            path = "/" + path;
+        }
+        
         if(!path.startsWith("/system") && !RepositoryAccess.getRepository().resourceExists(path)){
           throw new FileNotFoundException("Couldn't find " + path);
         }
@@ -107,7 +111,7 @@ public class ScriptFactory {
 
         return script;
     }
-
+    
     private synchronized Scriptable getScope(ScriptType type) {
         boolean cacheless = true;
         if (cacheless || !scopes.containsKey(type)) {
