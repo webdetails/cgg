@@ -127,33 +127,51 @@ $.extend = function() {
 	// Return the modified object
 	return target;
 };
+
 $.tipsy = function(){};
 pv.Behavior.tipsy = function(){};
 
 function getCccType(type) {
-    return {
-        "cccBarChart": pvc.BarChart,
-        "cccDotChart": pvc.DotChart,
-        "cccLineChart": pvc.LineChart,
-        "cccStackedLineChart": pvc.StackedLineChart,
-        "cccStackedAreaChart": pvc.StackedAreaChart,
-        "cccPieChart": pvc.PieChart,
-        "cccHeatGridChart": pvc.HeatGridChart,
-        "cccBulletChart": pvc.BulletChart,
-        "cccMetricDotChart": pvc.MetricDotChart,
-        "cccMetricLineChart": pvc.MetricLineChart,
-        "cccWaterfallChart": pvc.WaterfallChart,
-        "cccBoxplotChart": pvc.BoxplotChart        
-    }[type];
-};
+    if(type){
+        var className = type.replace(/^ccc(.*)$/, '$1');
+        return pvc[className];
+    }
+}
 
-function convertExtensionPoints(extPoints) {
-    var ep = {};
-    extPoints.forEach(
-        function(a){
-	    ep[a[0]]=a[1];
-	});
-   return ep;
+// NOTE: this function must be in sync with that of 
+// BaseCccComponent#_preProcessChartDefinition
+function preProcessChartDefinition(chartDef){
+    if(chartDef){
+        // Obtain effective compatVersion
+        var compatVersion = chartDef.compatVersion;
+        if(compatVersion == null){
+            compatVersion = typeof pvc.defaultCompatVersion === 'function' ? 
+                            pvc.defaultCompatVersion() :
+                            1;
+        }
+        
+        if(compatVersion <= 1){
+            // Properties that are no more registered in the component
+            // and that had a name mapping.
+            // The default mapping, for unknown properties, doesn't work.
+            if('showLegend' in chartDef){
+                chartDef.legend = chartDef.showLegend;
+                delete chartDef.showLegend;
+            }
+            
+            // Don't presume chartDef props must be own
+            for(var p in chartDef){
+                var m = /^barLine(.*)$/.exec(p);
+                if(m){
+                    p2 = 'secondAxis' + (m[1] || '');
+                    chartDef[p2] = chartDef[p];
+                    delete chartDef[p];
+                }
+            }
+        }
+        
+        chartDef.extensionPoints = Dashboards.propertiesArrayToObject(chartDef.extensionPoints);
+    }
 }
 
 function renderCccFromComponent(component, data) {
@@ -161,17 +179,25 @@ function renderCccFromComponent(component, data) {
 	if(typeof component.postFetch === 'function'){
 		try{
 			data = component.postFetch(data);
-		}
-		catch(e){print("Error in postfetch: " + e)} // ignore
+		} catch(e) {
+            // ignore
+            print("Error in postfetch: " + e);
+        }
 	}
-    component.chartDefinition.extensionPoints = convertExtensionPoints(component.chartDefinition.extensionPoints);
-    var o = $.extend({},component.chartDefinition);
+    
+    preProcessChartDefinition(component.chartDefinition);
+    
+    var o = $.extend({}, component.chartDefinition);
     o.showTooltips = false;
+    o.clickable    = false;
+    o.selectable   = false;
+    o.hoverable    = false;
     o.tooltipFormat = function(){};
-    var chartType = getCccType(component.type);
-    var chart = new chartType(o);
-
-    chart.setData(data,{
+    
+    var ChartType = getCccType(component.type);
+    var chart = new ChartType(o);
+    
+    chart.setData(data, {
         crosstabMode: component.crosstabMode,
         seriesInRows: component.seriesInRows
     });
@@ -180,9 +206,26 @@ function renderCccFromComponent(component, data) {
 
 
 var Dashboards = Dashboards || {};
+Dashboards.propertiesArrayToObject = function(pArray) {
+  var obj = {};
+  for (p in pArray) if (pArray.hasOwnProperty(p)) {
+    var prop = pArray[p];
+    obj[prop[0]] = prop[1];
+  }
+  return obj;
+};
+
+Dashboards.objectToPropertiesArray = function(obj) {
+  var pArray = [];
+  for (key in obj) if (obj.hasOwnProperty(key)) {
+    pArray.push([key,obj[key]]);
+  }
+  return pArray;
+};
+
 Dashboards.log = function(m,type){ 
 	if (type)
 		print(type + ": " + m);
 	else
 		print("LOG: " + m);
-}
+};
