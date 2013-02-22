@@ -1,4 +1,4 @@
-//VERSION TRUNK-20130213
+//VERSION TRUNK-20130222
 
 
 /*global pvc:true */
@@ -7930,7 +7930,7 @@ def.type('pvc.data.Data', pvc.data.Complex)
         }
         
         if(parent.absKey){
-            this.absKey = def.string.join(",", parent.absKey, this.key);
+            this.absKey = def.string.join(',', parent.absKey, this.key); // TODO: comma??
         } else {
             this.absKey = this.key;
         }
@@ -8207,10 +8207,20 @@ def.type('pvc.data.Data', pvc.data.Complex)
     },
     
     /**
+     * Obtains the first datum of this data, if any.
+     * @type {pvc.data.Datum} The first datum or <i>null</i>.
+     * @see #singleDatum 
+     */
+    firstDatum: function(){
+        return this._datums.length ? this._datums[0] : null;
+    },
+    
+    /**
      * Obtains the single datum of this data, 
-     * or null, when the data no datums or has more than one.
+     * or null, when the has data no datums or has more than one.
      * 
      * @type pvc.data.Datum
+     * @see #firstDatum
      */
     singleDatum: function(){
         var datums = this._datums;
@@ -9116,6 +9126,9 @@ function groupSpec_parseGroupingLevel(groupLevelText, type) {
  */
 def.type('pvc.data.DataOper')
 .init(function(linkParent, keyArgs){
+    /*jshint expr:true */
+    linkParent || def.fail.argumentRequired('linkParent');
+    
     this._linkParent = linkParent;
 }).
 add(/** @lends pvc.data.DataOper */{
@@ -9174,16 +9187,15 @@ add(/** @lends pvc.data.DataOper */{
  */
 def.type('pvc.data.GroupingOper', pvc.data.DataOper)
 .init(function(linkParent, groupingSpecs, keyArgs){
-    /* Grouping spec may be specified as text or object */
     /*jshint expr:true */
     groupingSpecs || def.fail.argumentRequired('groupingSpecs');
 
     this.base(linkParent, keyArgs);
 
-    this._where      = def.get(keyArgs, 'where');
-    this._visible    = def.get(keyArgs, 'visible',  null);
-    this._selected   = def.get(keyArgs, 'selected', null);
-    this._isNull     = def.get(keyArgs, 'isNull',   null);
+    this._where    = def.get(keyArgs, 'where');
+    this._visible  = def.get(keyArgs, 'visible',  null);
+    this._selected = def.get(keyArgs, 'selected', null);
+    this._isNull   = def.get(keyArgs, 'isNull',   null);
     
     /* 'Where' predicate and its key */
     var hasKey = this._selected == null, // TODO: Selected state changes do not yet invalidate cache...
@@ -10548,14 +10560,6 @@ def
     },
     
     /**
-     * Obtains the first datum of this data, if any.
-     * @type {pvc.data.Datum} The first datum or <i>null</i>. 
-     */
-    firstDatum: function(){
-        return this._datums.length ? this._datums[0] : null;
-    },
-    
-    /**
      * Sums the absolute value 
      * of the sum of a specified dimension on each child.
      *
@@ -11805,10 +11809,9 @@ def.type('pvc.visual.Role')
  * @constructor
  * @param {pvc.visual.Scene} [parent=null] The parent scene.
  * @param {object} [keyArgs] Keyword arguments.
- * @property {pvc.data.Data}  [keyArgs.group=null] The data group that's present in the scene.
- * Specify only one of the arguments <tt>group</tt> or <tt>datum</tt>.
- * @property {pvc.data.Datum} [keyArgs.datum=null] The single datum that's present in the scene.
- * Specify only one of the arguments <tt>group</tt> or <tt>datum</tt>.
+ * @property {pvc.data.Datum | pvc.data.Data | pvc.data.Datum[] | pvc.data.Data[]} 
+ *  [keyArgs.source=null]
+ *  The data source(s) that are present in the scene.
  */
 def.type('pvc.visual.Scene')
 .init(function(parent, keyArgs){
@@ -11822,51 +11825,75 @@ def.type('pvc.visual.Scene')
     pv.Dom.Node.call(this, /* nodeValue */null);
     
     this.parent = parent || null;
-    this.root   = this;
     if(parent){
+        this.root = parent.root;
+        
         // parent -> ((pv.Dom.Node#)this).parentNode
         // this   -> ((pv.Dom.Node#)parent).childNodes
         // ...
         var index = def.get(keyArgs, 'index', null);
         parent.insertAt(this, index);
-        this.root = parent.root;
     } else {
         /* root scene */
+        this.root = this;
+        
         this._active = null;
         this._panel = def.get(keyArgs, 'panel') || 
             def.fail.argumentRequired('panel', "Argument is required on root scene.");
     }
     
     /* DATA */
-    var group = def.get(keyArgs, 'group', null),
-        datum;
-    if(group){
-        datum = group._datums[0]; // null on empty datas (just try hiding all series with the legend)
+    var first, group, datum, datums, groups, atoms, firstAtoms;
+    var dataSource = def.array.to(def.get(keyArgs, 'source')); // array.to: nully remains nully
+    if(dataSource && dataSource.length){
+        this.source = dataSource;
+        
+        first = dataSource[0];
+        if(first instanceof pvc.data.Data){
+            // Group/groups
+            group  = first;
+            groups = dataSource;
+            
+            // There are datas with no datums.
+            // For example, try, hiding all datums (using the legend).
+            datum  = group.firstDatum() || 
+                     def
+                     .query(groups)
+                     .select(function(group){ return group.firstDatum(); })
+                     .first(def.notNully);
+            // datum may still be null!
+        } else {
+            /*jshint expr:true */
+            (first instanceof pvc.data.Datum) || def.assert("not a datum");
+            datum  = first;
+            datums = dataSource;
+        }
+        
+        atoms      = first.atoms; // firstDataSourceAtoms
+        firstAtoms = (datum && datum.atoms) || first.atoms; // firstDatumAtoms
+    } else if(parent){
+        atoms = firstAtoms = Object.create(parent.atoms);
     } else {
-        datum = def.get(keyArgs, 'datum');
+        atoms = firstAtoms = {};
     }
     
-    this.datum = datum || null;
-    this.group = group;
+    // Created empty even when there is no data
+    this.atoms = atoms;
+    this.firstAtoms = firstAtoms;
     
-    var parentAtoms;
-    var source = (group || datum);
-    this.atoms = source ? source.atoms :
-                 (parentAtoms = (parent && parent.atoms)) ? Object.create(parentAtoms) :
-                 {};
-
+    // Only set when existent, otherwise inherit from prototype
+    groups && (this.groups  = groups);
+    group  && (this.group   = group );
+    datums && (this._datums = datums);
+    datum  && (this.datum   = datum );
+    
     // Groups may have some null datums and others not null
     // Testing groups first ensures that the only
     // case where isNull is detected is that of a single datum scene.
     // Note that groups do not have isNull property, only datums do.
-    if(!source || source.isNull){
+    if(!first || first.isNull){
         this.isNull = true;
     }
-
-    source = (datum || group);
-    this.firstAtoms = source ? source.atoms : 
-                      (parentAtoms = (parent && parent.atoms)) ? Object.create(parentAtoms) :
-                      this.atoms;
 
     /* VARS */
     this.vars = parent ? Object.create(parent.vars) : {};
@@ -11874,10 +11901,16 @@ def.type('pvc.visual.Scene')
 .add(pv.Dom.Node)
 
 .add(/** @lends pvc.visual.Scene# */{
+    source: null,
+    groups: null,
+    group:  null,
+    _datums: null,
+    datum:  null,
+    
     isNull: false,
     
     /** 
-     * Obtains the group of this scene, or if inexistent
+     * Obtains the (first) group of this scene, or if inexistent
      * the group of the parent scene, if there is one, and so on.
      * If no data can be obtained in this way,
      * the data of the associated panel is returned.
@@ -11903,9 +11936,10 @@ def.type('pvc.visual.Scene')
      * @type def.Query
      */
     datums: function(){
-        return this.group ?
-                    this.group.datums() :
-                    (this.datum ? def.query(this.datum) : def.query());
+        // For efficiency, assumes datums of multiple groups are disjoint sets
+        return this.groups  ? def.query(this.groups ).selectMany(function(g){ return g.datums(); }) :
+               this._datums ? def.query(this._datums) :
+               def.query();
     },
 
     /*
@@ -13185,7 +13219,7 @@ def
             this.pvMark
                 .lineCap('round') // only used by strokeDashArray
                 .strokeDasharray(function (scene){
-                    return scene.vars.size.value < 0 ? 'shortdash' : null; // .  .  .
+                    return scene.vars.size.value < 0 ? 'dash' : null; // '-'
                 });
         }
     }
@@ -13941,8 +13975,8 @@ function visualContext_update(mark, event){
         this.index = null;
         
         scene = new pvc.visual.Scene(null, {
-            panel: this.panel,
-            group: this.chart.root.data
+            panel:  this.panel,
+            source: this.chart.root.data
         });
     }
     
@@ -15068,6 +15102,15 @@ def
             def.get(keyArgs, 'tick'),
             def.get(keyArgs, 'tickLabel'),
             def.get(keyArgs, 'tickRaw'));
+    
+    if(def.get(keyArgs, 'isHidden')) {
+        this.isHidden = true;
+    }
+})
+.add({
+    // True when the scene contains excluded data(s)
+    // due to overlappedLabelsMode:hide exclusion
+    isHidden: false
 });def.scope(function(){
     
     def
@@ -16675,9 +16718,9 @@ def
     this._renderer = def.get(keyArgs, 'renderer');
     
     this.colorAxis = def.get(keyArgs, 'colorAxis');
-    this.clickMode = def.get(keyArgs, 'clickMode');
     
-    if(this.colorAxis && !this.clickMode){
+    this.clickMode = def.get(keyArgs, 'clickMode');
+    if(!this.clickMode && this.colorAxis){
         this.clickMode = this.colorAxis.option('LegendClickMode');
     }
 })
@@ -17078,9 +17121,10 @@ def
                     proto:        markerPvBaseProto,
                     freePosition: true,
                     activeSeriesAware: false, // no guarantee that series exist in the scene
-                    noTooltip:   true,
+                    noTooltip:    true,
                     noSelect:     this.noSelect,
                     noHover:      this.noHover,
+                    noClick:      true,
                     extensionId:  extensionPrefix + "Dot",
                     wrapper:      wrapper
                 })
@@ -18517,8 +18561,21 @@ def
     _processOptionsCore: function(options){
         // Disable animation if environment doesn't support it
         if(!this.parent){
-            if (!$.support.svg || pv.renderer() === 'batik') {
-                options.animate = false;
+            var interactive = options.interactive;
+            if(interactive == null){
+                interactive = options.interactive = (pv.renderer() !== 'batik');
+            }
+            
+            if(!interactive){
+                options.animated = 
+                options.tooltipEnabled = 
+                options.selectable = 
+                options.hoverable =
+                options.clickable = false;
+            } else {
+                if (!$.support.svg) {
+                    options.animate = false;
+                }
             }
             
             this._processTooltipOptions(options);
@@ -18847,6 +18904,8 @@ def
                 return pvFormat.format(d * 100) + "%";
             };
         }),
+        
+        //interactive: true,
         
         // Content/Plot area clicking
         clickable:  false,
@@ -20674,7 +20733,7 @@ pvc.BaseChart
                                          dataPartAtom.value === 'trend';
                             
                             var groupScene = rootScene.createGroup({
-                                group:           domainData,
+                                source:          domainData,
                                 colorAxis:       colorAxis,
                                 clickMode:       locked ? 'none' : undefined,
                                 extensionPrefix: pvc.buildIndexedId('', legendIndex++)
@@ -20688,7 +20747,7 @@ pvc.BaseChart
                             domainData
                                 .children()
                                 .each(function(itemData){
-                                    var itemScene = groupScene.createItem({group: itemData});
+                                    var itemScene = groupScene.createItem({source: itemData});
                                     
                                     // HACK...
                                     itemScene.color = partColorScale(itemData.value);
@@ -20856,6 +20915,10 @@ pvc.BaseChart
         }
         
         return this.root._onUserSelection(datums);
+    },
+    
+    _isInteractive: function(){
+        return this.options.interactive;
     },
     
     _isSelectable: function(){
@@ -21999,7 +22062,7 @@ def
             this._createCore(this._layoutInfo);
             
             /* RubberBand */
-            if (this.isTopRoot && pv.renderer() !== 'batik' && this.chart._canSelectWithRubberband()){
+            if (this.isTopRoot) {
                 this._initRubberBand();
             }
 
@@ -22851,7 +22914,7 @@ def
                 this._onClick(context);
             }
             
-            if((sign  && sign.isSelectable()) || 
+            if((sign  && sign.isClickSelectable()) || 
                (!sign && this.chart.options.selectable && context.scene.datum)){
                 this._onSelect(context);
             }
@@ -22910,19 +22973,50 @@ def
      * @virtual
      */
     _initRubberBand: function(){
+        if(!this.chart._isInteractive()) {
+            return;
+        }
+        
         var myself = this,
-            chart = this.chart,
+            chart = myself.chart,
             options  = chart.options,
-            data = chart.data;
-
+            clickClearsSelection = options.clearSelectionMode === 'emptySpaceClick',
+            useRubberband = this.chart._canSelectWithRubberband();
+        
+        if(!useRubberband && !clickClearsSelection){
+            return;
+        }
+        
+        var data = chart.data,
+            rubberPvParentPanel = myself.pvRootPanel || myself.pvPanel.paddingPanel;
+        
+        // IE must have a fill style to fire events
+        if(!myself._getExtensionAbs('base', 'fillStyle')){
+            rubberPvParentPanel.fillStyle(pvc.invisibleFill);
+        }
+        
+        // Require all events, wether it's painted or not
+        rubberPvParentPanel.lock('events', 'all');
+        
+        if(!useRubberband) {
+            if(clickClearsSelection) {
+                // Install clearSelectionMode click
+                rubberPvParentPanel
+                    .event("click", function() {
+                        if(data.owner.clearSelected()) {
+                            chart.updateSelections();
+                        }
+                    });
+            }
+            return;
+        }
+        
         var dMin2 = 4; // Minimum dx or dy, squared, for a drag to be considered a rubber band selection
 
         this._isRubberBandSelecting = false;
 
         // Rubber band
-        var rubberPvParentPanel = this.pvRootPanel || this.pvPanel.paddingPanel,
-            toScreen,
-            rb;
+        var toScreen, rb;
         
         var selectBar = 
             this.selectBar = 
@@ -22935,18 +23029,14 @@ def
                 noDoubleClick: true,
                 noTooltip:    true
             })
-            .override('defaultStrokeWidth', function(){
-                return 1.5;
-            })
+            .override('defaultStrokeWidth', function(){ return 1.5; })
             .override('defaultColor', function(type){
                 return type === 'stroke' ? 
                        '#86fe00' :                 /* 'rgb(255,127,0)' */ 
                        'rgba(203, 239, 163, 0.6)'  /* 'rgba(255, 127, 0, 0.15)' */
                        ;
             })
-            .override('interactiveColor', function(color){
-                return color;
-            })
+            .override('interactiveColor', function(color){ return color; })
             .pvMark
             .lock('visible', function(){ return !!rb;  })
             .lock('left',    function(){ return rb.x;  })
@@ -22958,14 +23048,6 @@ def
             .lock('cursor')
             .lock('events', 'none')
             ;
-        
-        // IE must have a fill style to fire events
-        if(!this._getExtensionAbs('base', 'fillStyle')){
-            rubberPvParentPanel.fillStyle(pvc.invisibleFill);
-        }
-        
-        // Require all events, wether it's painted or not
-        rubberPvParentPanel.lock('events', 'all');
         
         // NOTE: Rubber band coordinates are always transformed to canvas/client 
         // coordinates (see 'select' and 'selectend' events)
@@ -23028,7 +23110,7 @@ def
                 }
             });
         
-        if(options.clearSelectionMode === 'emptySpaceClick'){
+        if(clickClearsSelection){
             rubberPvParentPanel
                 .event("click", function() {
                     // It happens sometimes that the click is fired 
@@ -23042,7 +23124,7 @@ def
                     }
                     
                     if(data.owner.clearSelected()) {
-                        myself.chart.updateSelections();
+                        chart.updateSelections();
                     }
                 });
         }
@@ -23168,19 +23250,15 @@ def
             if (shape.intersectsRect(rect)){
                 var cccScene = instance.data; // exists for sure (ensured by eachInstanceWithData
                 if(cccScene && cccScene.datum){
-                    var group  = cccScene.group;
-                    var datums = group ? group._datums : def.array.as(cccScene.datum);
-                    if(datums) {
-                        datums.forEach(function(datum){
-                            if(!datum.isNull) {
-                                if(pvc.debug >= 20) {
-                                    this._log("Rubbered Datum.key=" + datum.key + ": " + pvc.stringify(shape) + " mark type: " + pvMark.type + " index=" + index);
-                                }
-
-                                fun.call(ctx, datum);
+                    cccScene.datums().each(function(datum){
+                        if(!datum.isNull) {
+                            if(pvc.debug >= 20) {
+                                this._log("Rubbered Datum.key=" + datum.key + ": " + pvc.stringify(shape) + " mark type: " + pvMark.type + " index=" + index);
                             }
-                        }, this);
-                    }
+
+                            fun.call(ctx, datum);
+                        }
+                    }, this);
                 }
             }
         }
@@ -24110,7 +24188,7 @@ def
     },
     
     _buildScene: function(layoutInfo){
-        var rootScene = new pvc.visual.Scene(null, { panel: this, group: this.chart.data });
+        var rootScene = new pvc.visual.Scene(null, {panel: this, source: this.chart.data});
         var textLines = layoutInfo.lines;
         
         rootScene.vars.size  = layoutInfo.lineSize;
@@ -24177,9 +24255,9 @@ def
     
     pvLegendPanel: null,
     
-    textMargin: 6,    // The space *between* the marker and the text, in pixels.
-    itemPadding:    2.5,  // Half the space *between* legend items, in pixels.
-    markerSize: 15,   // *diameter* of marker *zone* (the marker itself may be a little smaller)
+    textMargin:  6,    // The space *between* the marker and the text, in pixels.
+    itemPadding: 2.5,  // Half the space *between* legend items, in pixels.
+    markerSize:  15,   // *diameter* of marker *zone* (the marker itself may be a little smaller)
     font:  '10px sans-serif',
 
     /**
@@ -24253,6 +24331,7 @@ def
               extensionId: 'panel',
               wrapper:     wrapper,
               noSelect:    false,
+              noClick:     false,
               noClickSelect: true // just rubber-band (the click is for other behaviors)
           })
           .lockMark('data', function(row){ return row.items; }) // each row has a list of bullet item scenes
@@ -24288,6 +24367,7 @@ def
                      "rgba(200,200,200,1)" : 
                      "rgba(200,200,200,0.0001)";
           })
+          // See also the _isClickable override, below
           .cursor(function(itemScene){
               return itemScene.isClickable() ? "pointer" : null;
           })
@@ -24345,8 +24425,54 @@ def
           .font(function(itemScene){ return itemScene.vars.font; }) // TODO: lock?
           .textDecoration(function(itemScene){ return itemScene.isOn() ? "" : "line-through"; })
           ;
+      
+      if(pvc.debug >= 16){
+          var font = this.font;
+          var textHeight = pv.Text.fontHeight(font) * 2/3;
+          
+          pvLegendMarkerPanel.anchor("right")
+       // Single-point panel (w=h=0)
+          .add(pv.Panel)
+              [this.anchorLength()](0)
+              [this.anchorOrthoLength()](0)
+              .fillStyle(null)
+              .strokeStyle(null)
+              .lineWidth(0)
+           .add(pv.Line)
+              .data(function(scene){
+                  
+                  var labelBBox = pvc.text.getLabelBBox(
+                          pv.Text.measure(scene.vars.value.label, font).width, 
+                          textHeight,  // shared stuff
+                          'left', 
+                          'middle', 
+                          0, 
+                          2);  
+                  var corners = labelBBox.source.points();
+                  
+                  // Close the path
+                  if(corners.length > 1){
+                      // not changing corners on purpose
+                      corners = corners.concat(corners[0]);
+                  }
+                  
+                  return corners;
+              })
+              .left(function(p){ return p.x; })
+              .top (function(p){ return p.y; })
+              .strokeStyle('red')
+              .lineWidth(0.5)
+              .strokeDasharray('-')
+              ;
+      }
     },
 
+    // Doesn't matter if the chart's clickable is false.
+    // Legend allows click based on legendClickMode
+    _isClickable: function(){
+        return true;
+    },
+    
     _getExtensionId: function(){
         return 'area'; 
     },
@@ -24366,13 +24492,13 @@ def
         if(!rootScene){
             /* The legend root scene contains all datums of its chart */
             rootScene = new pvc.visual.legend.BulletRootScene(null, {
-                panel: this, 
-                group: this.chart.data,
-                horizontal: this.isAnchorTopOrBottom(),
-                font:       this.font,
-                markerSize: this.markerSize,
-                textMargin: this.textMargin, 
-                itemPadding:    this.itemPadding
+                panel:       this, 
+                source:      this.chart.data,
+                horizontal:  this.isAnchorTopOrBottom(),
+                font:        this.font,
+                markerSize:  this.markerSize,
+                textMargin:  this.textMargin, 
+                itemPadding: this.itemPadding
             });
             
             this._rootScene = rootScene;
@@ -25767,6 +25893,8 @@ def
             ;
         
         if(isDiscrete){
+            // TODO: now that the grid rules' scenes are independent of the
+            // axes scenes, we should not have to use the end scene twice.
             var halfStep = scale.range().step / 2;
             pvGridRule
                 .lock(tick_a, function(tickScene){
@@ -25797,14 +25925,14 @@ def
 
         var rootScene =
             new pvc.visual.CartesianAxisRootScene(null, {
-                panel: this,
-                group: data
+                panel:  this,
+                source: data
             });
             
         if (isDiscrete){
             data._children.forEach(function(tickData){
                 new pvc.visual.CartesianAxisTickScene(rootScene, {
-                    group:     tickData,
+                    source:    tickData,
                     tick:      tickData.value,
                     tickRaw:   tickData.rawValue,
                     tickLabel: tickData.label
@@ -26831,7 +26959,7 @@ def
             .select(function(catGroup){
                 var range = this._getStackedCategoryValueExtent(catGroup, valueDimName, useAbs);
                 if(range){
-                    return {range: range, group: catGroup};
+                    return {range: range, source: catGroup};
                 }
             }, this)
             .where(def.notNully)
@@ -27139,8 +27267,7 @@ def
                 layoutInfo.axisSize = 50;
             }
         } else {
-            layoutInfo.textAngle  = def.number.as(this._getExtension('label', 'textAngle'),  0);
-            layoutInfo.textMargin = def.number.as(this._getExtension('label', 'textMargin'), 3);
+            this._readTextProperties(layoutInfo);
             
             /* I  - Calculate ticks
              * --> layoutInfo.{ ticks, ticksText, maxTextWidth } 
@@ -27152,7 +27279,7 @@ def
             }
             
             /* II - Calculate NEEDED axisSize so that all tick's labels fit */
-            this._calcAxisSizeFromLabel(); // -> layoutInfo.requiredAxisSize, layoutInfo.labelBBox
+            this._calcAxisSizeFromLabel(layoutInfo); // -> layoutInfo.requiredAxisSize, layoutInfo.maxLabelBBox, layoutInfo.ticksBBoxes
             
             if(layoutInfo.axisSize == null){
                 layoutInfo.axisSize = layoutInfo.requiredAxisSize;
@@ -27166,14 +27293,14 @@ def
         }
     },
     
-    _calcAxisSizeFromLabel: function(){
-        this._calcLabelBBox();
-        this._calcAxisSizeFromLabelBBox();
+    _calcAxisSizeFromLabel: function(layoutInfo){
+        this._calcTicksLabelBBoxes(layoutInfo);
+        this._calcAxisSizeFromLabelBBox(layoutInfo);
     },
 
-    // --> layoutInfo.labelBBox
-    _calcLabelBBox: function(){
-        var layoutInfo = this._layoutInfo;
+    _readTextProperties: function(layoutInfo){
+        layoutInfo.textAngle  = def.number.as(this._getExtension('label', 'textAngle'),  0);
+        layoutInfo.textMargin = def.number.as(this._getExtension('label', 'textMargin'), 3);
         
         var align = this._getExtension('label', 'textAlign');
         if(typeof align !== 'string'){
@@ -27181,6 +27308,7 @@ def
                     "center" : 
                     (this.anchor == "left") ? "right" : "left";
         }
+        layoutInfo.textAlign = align;
         
         var baseline = this._getExtension('label', 'textBaseline');
         if(typeof baseline !== 'string'){
@@ -27196,34 +27324,25 @@ def
                     break;
                   
                 default:
-                //case "top": 
+                //case "top":
                     baseline = "bottom";
-                    //break;
             }
-        } 
-        
-        return (layoutInfo.labelBBox = pvc.text.getLabelBBox(
-                        layoutInfo.maxTextWidth != null ? layoutInfo.maxTextWidth : layoutInfo._maxTextWidth, 
-                        layoutInfo.textHeight, 
-                        align, 
-                        baseline, 
-                        layoutInfo.textAngle, 
-                        layoutInfo.textMargin));
+        }
+        layoutInfo.textBaseline = baseline;
     },
     
-    _calcAxisSizeFromLabelBBox: function(){
-        var layoutInfo = this._layoutInfo;
-        var labelBBox = layoutInfo.labelBBox;
+    _calcAxisSizeFromLabelBBox: function(layoutInfo){
+        var maxLabelBBox = layoutInfo.maxLabelBBox;
         
         // The length not over the plot area
-        var length = this._getLabelBBoxQuadrantLength(labelBBox, this.anchor);
+        var length = this._getLabelBBoxQuadrantLength(maxLabelBBox, this.anchor);
 
         // --------------
         
         var axisSize = this.tickLength + length; 
         
         // Add equal margin on both sides?
-        var angle = labelBBox.sourceAngle;
+        var angle = maxLabelBBox.sourceAngle;
         if(!(angle === 0 && this.isAnchorTopOrBottom())){
             // Text height already has some free space in that case
             // so no need to add more.
@@ -27274,83 +27393,71 @@ def
             return;
         }
 
-        if(!this._layoutInfo.labelBBox){
-            this._calcLabelBBox();
-        }
-        
         this._calcOverflowPaddingsFromLabelBBox();
     },
 
-    // TODO: this method is using the biggest label size
-    // to estimate overflow on each end of the axis.
-    // When at either end, the text is much smaller
-    // than the biggest it often results in wider
-    // than needed margins being reserved.
-    //
-    // TODO: the half-band method for determining the overflow in
-    // discrete axes also doesn't take text-alignment into account.
     _calcOverflowPaddingsFromLabelBBox: function(){
         var overflowPaddings = null;
-        
-        var layoutInfo = this._layoutInfo;
-        var ticks = layoutInfo.ticks;
+        var me = this;
+        var li = me._layoutInfo;
+        var ticks = li.ticks;
         var tickCount = ticks.length;
         if(tickCount){
-            var paddings   = layoutInfo.paddings;
-            var labelBBox  = layoutInfo.labelBBox;
-            var isTopOrBottom = this.isAnchorTopOrBottom();
-            var begSide    = isTopOrBottom ? 'left'  : 'top';
-            var endSide    = isTopOrBottom ? 'right' : 'bottom';
-            var isDiscrete = this.scale.type === 'discrete';
+            var ticksBBoxes  = li.ticksBBoxes;
+            var paddings     = li.paddings;
+            var isTopOrBottom = me.isAnchorTopOrBottom();
+            var begSide      = isTopOrBottom ? 'left'  : 'bottom';
+            var endSide      = isTopOrBottom ? 'right' : 'top';
+            var scale        = me.scale;
+            var isDiscrete   = scale.type === 'discrete';
+            var clientLength = li.clientSize[me.anchorLength()];
             
-            var clientLength = layoutInfo.clientSize[this.anchorLength()];
             this.axis.setScaleRange(clientLength);
             
-            var sideTickOffset;
-            if(isDiscrete){
-                var halfBand = this.scale.range().step / 2; // don't use .band, cause it does not include margins... 
-                sideTickOffset = def.set({}, 
-                        begSide, halfBand,
-                        endSide, halfBand);
-            } else {
-                sideTickOffset = def.set({}, 
-                        begSide, this.scale(ticks[0]),
-                        endSide, clientLength - this.scale(ticks[tickCount - 1]));
-            }
-            
-            [begSide, endSide].forEach(function(side){
-                var overflowPadding  = this._getLabelBBoxQuadrantLength(labelBBox, side);
-                if(overflowPadding > 0){
-                    // Discount real paddings that this panel already has
-                    // cause they're, in principle, empty space that can be occupied.
-                    overflowPadding -= (paddings[side] || 0);
-                    if(overflowPadding > 0){
-                        // On discrete axes, half of the band width is not yet overflow.
-                        overflowPadding -= sideTickOffset[side];
-                        if(overflowPadding > 1){ // small delta to avoid frequent relayouts... (the reported font height often causes this kind of "error" in BBox calculation)
+            var evalLabelSideOverflow = function(labelBBox, side, isBegin, index) {
+                var sideLength = me._getLabelBBoxQuadrantLength(labelBBox, side);
+                if(sideLength > 1) {// small delta to avoid frequent re-layouts... (the reported font height often causes this kind of "error" in BBox calculation)
+                    var anchorPosition = scale(isDiscrete ? ticks[index].value : ticks[index]);
+                    var sidePosition = isBegin ? (anchorPosition - sideLength) : (anchorPosition + sideLength);
+                    var sideOverflow = Math.max(0, isBegin ? -sidePosition : (sidePosition - clientLength));
+                    if(sideOverflow > 1) { 
+                        // Discount this panels' paddings 
+                        // cause they're, in principle, empty space that can be occupied.
+                        sideOverflow -= (paddings[side] || 0);
+                        if(sideOverflow > 1) {
                             if(isDiscrete){
                                 // reduction of space causes reduction of band width
                                 // which in turn usually causes the overflowPadding to increase,
                                 // as the size of the text usually does not change.
                                 // Ask a little bit more to hit the target faster.
-                                overflowPadding *= 1.05;
+                                sideOverflow *= 1.05;
                             }
-                            
-                            if(!overflowPaddings){ 
-                                overflowPaddings= {}; 
+                                
+                            if(!overflowPaddings) { 
+                                overflowPaddings= def.set({}, side, sideOverflow); 
+                            } else {
+                                var currrOverflowPadding = overflowPaddings[side];
+                                if(currrOverflowPadding == null || 
+                                   (currrOverflowPadding < sideOverflow)){
+                                    overflowPaddings[side] = sideOverflow;
+                                }
                             }
-                            overflowPaddings[side] = overflowPadding;
                         }
                     }
                 }
-            }, this);
+            };
+            
+            ticksBBoxes.forEach(function(labelBBox, index){
+                evalLabelSideOverflow(labelBBox, begSide, true,  index); 
+                evalLabelSideOverflow(labelBBox, endSide, false, index);
+            });
             
             if(pvc.debug >= 6 && overflowPaddings){
-                this._log("OverflowPaddings = " + pvc.stringify(overflowPaddings));
+                me._log("OverflowPaddings = " + pvc.stringify(overflowPaddings));
             }
         }
         
-        layoutInfo.overflowPaddings = overflowPaddings;
+        li.overflowPaddings = overflowPaddings;
     },
     
     _calcMaxTextLengthThatFits: function(){
@@ -27371,7 +27478,7 @@ def
         } else {
             // Text may not fit. 
             // Calculate maxTextWidth where text is to be trimmed.
-            var labelBBox = layoutInfo.labelBBox;
+            var maxLabelBBox = layoutInfo.maxLabelBBox;
             
             // Now move backwards, to the max text width...
             var maxOrthoLength = efSize - 2 * this.tickLength;
@@ -27407,7 +27514,7 @@ def
             // Intersect the line that passes through mostOrthoDistantPoint,
             // and has the direction parallelDirection with 
             // the top side and with the bottom side of the *original* label box.
-            var corners = labelBBox.source.points();
+            var corners = maxLabelBBox.source.points();
             var botL = corners[0];
             var botR = corners[1];
             var topR = corners[2];
@@ -27424,7 +27531,7 @@ def
             // the line that passes at mostOrthoDistantPoint and has direction parallelDirection (dividing line)
             // further away to the axis, are to be replaced.
             
-            var sideLRWidth  = labelBBox.sourceTextWidth;
+            var sideLRWidth  = maxLabelBBox.sourceTextWidth;
             var maxTextWidth = sideLRWidth;
             
             var botLI = botI.minus(botL);
@@ -27463,7 +27570,7 @@ def
             // just cutting on one side of the label original box
             // won't do, because when text is centered, the cut we make in length
             // ends up distributed by both sides...
-            if(labelBBox.sourceAlign === 'center'){
+            if(maxLabelBBox.sourceAlign === 'center'){
                 var cutWidth = sideLRWidth - maxTextWidth;
                 
                 // Cut same width on the opposite side. 
@@ -27492,7 +27599,7 @@ def
         layoutInfo.textHeight = pv.Text.fontHeight(this.font) * 2/3;
         layoutInfo.maxTextWidth = null;
         
-        // Reset scale to original unrounded domain
+        // Reset scale to original un-rounded domain
         this.axis.setTicks(null);
         
         // update maxTextWidth, ticks and ticksText
@@ -27509,22 +27616,15 @@ def
         this.axis.setScaleRange(clientLength);
 
         if(layoutInfo.maxTextWidth == null){
-            layoutInfo.maxTextWidth = 
-                def.query(layoutInfo.ticksText)
-                    .select(function(text){ return pv.Text.measure(text, this.font).width; }, this)
-                    .max();
+            this._calcTicksTextLength(layoutInfo);
         }
-        
-        // Backup value, cause the first one is cleared to prevent label trimming
-        // but the max text width is important for other uses
-        layoutInfo._maxTextWidth = layoutInfo.maxTextWidth;
     },
     
     _calcDiscreteTicks: function(){
         var layoutInfo = this._layoutInfo;
         var role = this.axis.role;
         var data = role.flatten(this.data, {visible: true});
-
+        
         layoutInfo.data  = data;
         layoutInfo.ticks = data._children;
         
@@ -27557,9 +27657,15 @@ def
         }
         
         layoutInfo.ticksText = data._children.map(format);
+        
+        this._clearTicksTextDeps(layoutInfo);
     },
     
-    
+    _clearTicksTextDeps: function(ticksInfo){ 
+        ticksInfo.maxTextWidth = 
+        ticksInfo.ticksTextLength = 
+        ticksInfo.ticksBBoxes = null;
+    },
 
     _calcTimeSeriesTicks: function(){
         this._calcContinuousTicks(this._layoutInfo/*, this.desiredTickCount */); // not used
@@ -27595,13 +27701,60 @@ def
         }
     },
     
-    _calcContinuousTicksText: function(ticksInfo){
-        
+    _calcContinuousTicksText: function(ticksInfo){        
         ticksInfo.ticksText = def.query(ticksInfo.ticks)
-                               .select(function(tick){ return this.scale.tickFormat(tick); }, this)
-                               .array();
+                   .select(function(tick){ return this.scale.tickFormat(tick); }, this)
+                   .array();
+        
+        this._clearTicksTextDeps(ticksInfo);
     },
     
+    _calcTicksTextLength: function(ticksInfo){
+        var max  = 0;
+        var font = this.font;
+        ticksInfo.ticksTextLength = def.query(ticksInfo.ticksText)
+            .select(function(text){
+                var len = pv.Text.measure(text, font).width;
+                if(len > max){ max = len; }
+                return len; 
+            })
+            .array();
+        
+        ticksInfo.maxTextWidth = max;
+        ticksInfo.ticksBBoxes  = null;
+    },
+    
+    _calcTicksLabelBBoxes: function(ticksInfo){
+        var me = this;
+        var li = me._layoutInfo;
+        var ticksTextLength = ticksInfo.ticksTextLength || 
+                              me._calcTicksTextLength(ticksInfo);
+        
+        var maxBBox;
+        var maxLen = li.maxTextWidth;
+        
+        ticksInfo.ticksBBoxes = def.query(ticksTextLength)
+            .select(function(len){
+                var labelBBox = me._calcLabelBBox(len);
+                if(!maxBBox && len === maxLen){ maxBBox = labelBBox; }
+                return labelBBox;
+            }, me)
+            .array();
+        
+        li.maxLabelBBox = maxBBox;
+    },
+    
+    _calcLabelBBox: function(textWidth){
+        var li = this._layoutInfo;
+        return pvc.text.getLabelBBox(
+                    textWidth, 
+                    li.textHeight,  // shared stuff
+                    li.textAlign, 
+                    li.textBaseline, 
+                    li.textAngle, 
+                    li.textMargin);
+    },
+
     // --------------
     
     _calcDiscreteTicksIncludeModulo: function(){
@@ -27619,16 +27772,12 @@ def
         
         // Calculate includeModulo depending on labelSpacingMin
             
-        // scale is already setup
+        // Scale is already setup
         
         // How much are label anchors separated from each other
         // (in the axis direction)
         var b = this.scale.range().step; // don't use .band, cause it does not include margins...
-        
-        // Height of label box
         var h = layoutInfo.textHeight;
-        
-        // Width of label box
         var w = layoutInfo.maxTextWidth;  // Should use the average value?
         
         if(!(w > 0 && h > 0 && b > 0)){
@@ -27917,32 +28066,72 @@ def
             var rootScene = 
                 this._rootScene = 
                 new pvc.visual.CartesianAxisRootScene(null, {
-                    panel: this, 
-                    group: this._getRootData()
+                    panel:  this, 
+                    source: this._getRootData()
                 });
             
             var layoutInfo = this._layoutInfo;
+            var ticks     = layoutInfo.ticks;
             var ticksText = layoutInfo.ticksText;
             if (this.isDiscrete){
                 if(this.useCompositeAxis){
                     this._buildCompositeScene(rootScene);
                 } else {
-                    layoutInfo.ticks.forEach(function(tickData, index){
-                        new pvc.visual.CartesianAxisTickScene(rootScene, {
-                            group:     tickData,
-                            tick:      tickData.value,
-                            tickRaw:   tickData.rawValue,
-                            tickLabel: ticksText[index]
-                        });
+                    var includeModulo   = this._tickIncludeModulo;
+                    var hiddenLabelText = this.hiddenLabelText;
+                    
+                    rootScene.vars.tickIncludeModulo = includeModulo;
+                    rootScene.vars.hiddenLabelText   = hiddenLabelText;
+                    
+                    var hiddenDatas, hiddenTexts, createHiddenScene, hiddenIndex;
+                    if(includeModulo > 2) {
+                        var keySep = rootScene.group.owner.keySep;
+                        
+                        createHiddenScene = function() {
+                            var k = hiddenDatas.map(function(d) { return d.key; }).join(keySep);
+                            var l = hiddenTexts.slice(0, 10).join(', ') + (hiddenTexts.length > 10 ? ', ...' : '');
+                            var scene = new pvc.visual.CartesianAxisTickScene(rootScene, {
+                                source:    hiddenDatas,
+                                tick:      k,
+                                tickRaw:   k,
+                                tickLabel: l,
+                                isHidden:  true
+                            });
+                            scene.dataIndex = hiddenIndex;
+                            hiddenDatas = hiddenTexts = hiddenIndex = null;
+                        };
+                    }
+                    
+                    ticks.forEach(function(tickData, index){
+                        var isHidden = (index % includeModulo) !== 0;
+                        if(isHidden && includeModulo > 2) {
+                            if(hiddenIndex == null){ hiddenIndex = index; }
+                            (hiddenDatas || (hiddenDatas = [])).push(tickData);
+                            (hiddenTexts || (hiddenTexts = [])).push(ticksText[index]);
+                        } else {
+                            if(hiddenDatas) { createHiddenScene(); }
+                            var scene = new pvc.visual.CartesianAxisTickScene(rootScene, {
+                                source:    tickData,
+                                tick:      tickData.value,
+                                tickRaw:   tickData.rawValue,
+                                tickLabel: ticksText[index],
+                                isHidden:  isHidden
+                            });
+                            
+                            scene.dataIndex = index;
+                        }
                     });
+                    
+                    if(hiddenDatas) { createHiddenScene(); }
                 }
             } else {
-                layoutInfo.ticks.forEach(function(majorTick, index){
-                    new pvc.visual.CartesianAxisTickScene(rootScene, {
+                ticks.forEach(function(majorTick, index){
+                    var scene = new pvc.visual.CartesianAxisTickScene(rootScene, {
                         tick:      majorTick,
                         tickRaw:   majorTick,
                         tickLabel: ticksText[index]
                     });
+                    scene.dataIndex = index;
                 }, this);
             }
         }
@@ -27974,12 +28163,12 @@ def
                     .children()
                     .each(function(childData){
                         var childScene = new pvc.visual.CartesianAxisTickScene(scene, {
-                            group:     childData,
+                            source:    childData,
                             tick:      childData.value,
                             tickRaw:   childData.rawValue,
                             tickLabel: childData.label
                         });
-                        
+                        childScene.dataIndex = childData.childIndex();
                         recursive(childScene);
                     });
             }
@@ -28003,17 +28192,16 @@ def
     renderOrdinalAxis: function(){
         var scale = this.scale,
             hiddenLabelText   = this.hiddenLabelText,
+            includeModulo     = this._tickIncludeModulo,
+            hiddenStep2       = includeModulo * scale.range().step / 2,
             anchorOpposite    = this.anchorOpposite(),
             anchorLength      = this.anchorLength(),
             anchorOrtho       = this.anchorOrtho(),
             anchorOrthoLength = this.anchorOrthoLength(),
             pvRule            = this.pvRule,
             rootScene         = this._getRootScene(),
-            includeModulo     = this._tickIncludeModulo,
+            layoutInfo        = this._layoutInfo,
             isV1Compat        = this.compatVersion() <= 1;
-        
-        rootScene.vars.tickIncludeModulo = includeModulo;
-        rootScene.vars.hiddenLabelText   = hiddenLabelText;
         
         var wrapper;
         if(isV1Compat){
@@ -28050,16 +28238,11 @@ def
                 extensionId: 'ticksPanel'
             })
             .lock('data', rootScene.childNodes)
-            // This non-extendable property stores
-            //  if the tick would be hidden by
-            //  virtue of the includeModulo effect.
-            .localProperty('hidden')
-            .lockMark('hidden', function(){ // for use by
-                return (this.index % includeModulo) !== 0;
-            })
             .lock(anchorOpposite, 0) // top (of the axis panel)
             .lockMark(anchorOrtho, function(tickScene){
-                return scale(tickScene.vars.tick.value);
+                return tickScene.isHidden ?
+                       scale(tickScene.previousSibling.vars.tick.value) + hiddenStep2 :
+                       scale(tickScene.vars.tick.value);
             })
             .lock('strokeDasharray', null)
             .lock('strokeStyle', null)
@@ -28076,8 +28259,7 @@ def
                 })
                 .lock('data') // Inherited
                 .intercept('visible', function(){
-                    return !this.pvMark.parent.hidden() &&
-                            this.delegateExtension(true);
+                    return !this.scene.isHidden && this.delegateExtension(true);
                 })
                 .optional('lineWidth', 1)
                 .lock(anchorOpposite,  0) // top
@@ -28099,33 +28281,7 @@ def
                 ;
         }
         
-        // Determine anchored text properties
-        var baseline;
-        var align;
-        switch(this.anchor){
-            case 'top':
-                align = 'center';
-                baseline = 'bottom';
-                break;
-                
-            case 'bottom':
-                align = 'center';
-                baseline = 'top';
-                break;
-                
-            case 'left': 
-                align = 'right';
-                baseline = 'middle';
-                break;
-            
-            case 'right': 
-                align = 'left';
-                baseline = 'middle';
-                break;
-        }
-        
         var font = this.font;
-        
         var maxTextWidth = this._layoutInfo.maxTextWidth;
         if(!isFinite(maxTextWidth)){
             maxTextWidth = 0;
@@ -28156,20 +28312,21 @@ def
                 }
             })
             .intercept('visible', function(tickScene){
-                return !this.pvMark.parent.hidden()  ?
+                return !tickScene.isHidden  ?
                        this.delegateExtension(true) :
                        !!tickScene.vars.hiddenLabelText;
             })
             .intercept('text', function(tickScene){
+                // Allow late overriding (does not affect layout..)
                 var text;
-                if(this.pvMark.parent.hidden()){
-                    text = tickScene.vars.hiddenLabelText;
+                if(tickScene.isHidden){
+                    text = hiddenLabelText;
                 } else {
-                    // Allow late overriding (does not affect layout..)
                     text = this.delegateExtension();
                     if(text === undefined){
                         text = tickScene.vars.tick.label;
                     }
+                    
                     if(maxTextWidth){
                         text = pvc.text.trimToWidthB(maxTextWidth, text, font, "..", false);
                     }
@@ -28185,8 +28342,8 @@ def
             
             .font(font)
             .textStyle("#666666")
-            .textAlign(align)
-            .textBaseline(baseline)
+            .textAlign(layoutInfo.textAlign)
+            .textBaseline(layoutInfo.textBaseline)
             ;
         
         this._debugTicksPanel(pvTicksPanel);
@@ -28194,13 +28351,9 @@ def
     
     _debugTicksPanel: function(pvTicksPanel){
         if(pvc.debug >= 16){ // one more than general debug box model
-            var corners = this._layoutInfo.labelBBox.source.points();
-            
-            // Close the path
-            if(corners.length > 1){
-                // not changing corners on purpose
-                corners = corners.concat(corners[0]);
-            }
+            var font = this.font;
+            var li = this._layoutInfo;
+            var ticksBBoxes = li.ticksBBoxes || this._calcTicksLabelBBoxes(li);
             
             pvTicksPanel
                 // Single-point panel (w=h=0)
@@ -28212,12 +28365,20 @@ def
                     .fillStyle(null)
                     .strokeStyle(null)
                     .lineWidth(0)
+                    .visible(function(tickScene){ return !tickScene.isHidden; })
                  .add(pv.Line)
-                    .visible(function(){
-                        var gp = this.parent.parent;
-                        return !gp.hidden || !gp.hidden(); 
-                     })
-                    .data(corners)
+                    .data(function(scene){
+                        var labelBBox = ticksBBoxes[scene.dataIndex];
+                        var corners   = labelBBox.source.points();
+                        
+                        // Close the path
+                        if(corners.length > 1){
+                            // not changing corners on purpose
+                            corners = corners.concat(corners[0]);
+                        }
+                        
+                        return corners;
+                    })
                     .left(function(p){ return p.x; })
                     .top (function(p){ return p.y; })
                     .strokeStyle('red')
@@ -28803,7 +28964,7 @@ def
             var linkLabelSize    = resolvePercentWidth (this.linkLabelSize   );
             
             var textMargin = def.number.to(this._getConstantExtension('label', 'textMargin'), 3);
-            var textHeight = pv.Text.fontHeight(labelFont);
+            var textHeight = pv.Text.fontHeight(labelFont) * 2/3;
             
             var linkHandleWidth = this.linkHandleWidth * textHeight; // em
             linkMargin += linkHandleWidth;
@@ -29129,7 +29290,7 @@ def
 .init(function(panel){
     var data = panel.visualRoles.category.flatten(panel.data, pvc.data.visibleKeyArgs);
     
-    this.base(null, {panel: panel, group: data});
+    this.base(null, {panel: panel, source: data});
 
     var colorVarHelper = new pvc.visual.RoleVarHelper(this, panel.visualRoles.color, {roleVar: 'color'});
     
@@ -29150,7 +29311,7 @@ def
         .init(function(categData, value){
             
             // Adds to parent scene...
-            this.base(rootScene, {group: categData});
+            this.base(rootScene, {source: categData});
             
             this.vars.category = pvc.visual.ValueLabelVar.fromComplex(categData);
 
@@ -29440,7 +29601,7 @@ def
 def
 .type('pvc.visual.PieLinkLineScene', pvc.visual.Scene)
 .init(function(catScene, x, y, index){
-    this.base(catScene, { group: catScene.group, index: index });
+    this.base(catScene, {source: catScene.group, index: index});
     
     this.x = x;
     this.y = y;
@@ -29757,6 +29918,10 @@ def
                           (orthoScale.max + paddings[a_top]),
             angle;
 
+        // 0 degrees
+        //  /\
+        // /__\
+        //
         if(!isMin){
             angle = isVertical ? Math.PI: -Math.PI/2;
         } else {
@@ -29824,7 +29989,7 @@ def
     },
 
     _buildScene: function(data, seriesData){
-        var rootScene  = new pvc.visual.Scene(null, {panel: this, group: data});
+        var rootScene  = new pvc.visual.Scene(null, {panel: this, source: data});
         
         var categDatas = data._children;
         var roles = this.visualRoles;
@@ -29842,7 +30007,7 @@ def
 
         function createSeriesScene(seriesData1){
             /* Create series scene */
-            var seriesScene = new pvc.visual.Scene(rootScene, {group: seriesData1}),
+            var seriesScene = new pvc.visual.Scene(rootScene, {source: seriesData1}),
                 seriesKey   = seriesData1.key;
 
             seriesScene.vars.series = pvc.visual.ValueLabelVar.fromComplex(seriesData1);
@@ -29852,7 +30017,7 @@ def
             categDatas.forEach(function(categData1){
                 /* Create leaf scene */
                 var group = data._childrenByKey[categData1.key]._childrenByKey[seriesKey],
-                    scene = new pvc.visual.Scene(seriesScene, {group: group});
+                    scene = new pvc.visual.Scene(seriesScene, {source: group});
 
                 var categVar =
                     scene.vars.category = pvc.visual.ValueLabelVar.fromComplex(categData1);
@@ -30390,7 +30555,7 @@ def
     },
 
     _buildRuleScene: function(){
-        var rootScene  = new pvc.visual.Scene(null, {panel: this, group: this.visibleData()});
+        var rootScene  = new pvc.visual.Scene(null, {panel: this, source: this.visibleData()});
         var prevValue;
         
         /**
@@ -30406,7 +30571,7 @@ def
         function createCategScene(ruleInfo){
             var categData1 = ruleInfo.group;
             
-            var categScene = new pvc.visual.Scene(rootScene, {group: categData1});
+            var categScene = new pvc.visual.Scene(rootScene, {source: categData1});
             
             var categVar = 
                 categScene.vars.category =
@@ -30439,7 +30604,7 @@ def
             rootCatData = chart._catRole.select(
                             chart.partData(this.dataPartValue),
                             {visible: true}),
-            rootScene  = new pvc.visual.Scene(null, {panel: this, group: rootCatData});
+            rootScene  = new pvc.visual.Scene(null, {panel: this, source: rootCatData});
 
         if(ruleInfoByCategKey){
             createCategSceneRecursive(rootCatData, 0);
@@ -30454,7 +30619,7 @@ def
             if(children.length){
                 // Group node
                 if(level){
-                    var categScene = new pvc.visual.Scene(rootScene, {group: catData});
+                    var categScene = new pvc.visual.Scene(rootScene, {source: catData});
 
                     var categVar = 
                         categScene.vars.category =
@@ -30716,6 +30881,8 @@ def
         this.linesVisible = true;
         plot.option.specify({'LinesVisible': true});
     }
+     
+    this.visualRoles.value = chart.visualRoles(plot.option('OrthoRole'));
 })
 .add({
     pvLine: null,
@@ -30787,10 +30954,6 @@ def
         var linesVisible = this.linesVisible;
         var anchor = this.isOrientationVertical() ? "bottom" : "left";
 
-        this.valueRole     = chart.visualRoles(this.plot.option('OrthoRole'));
-        this.valueRoleName = this.valueRole.name;
-        this.valueDimName  = this.valueRole.firstDimensionName();
-        
         // ------------------
         // DATA
         var isBaseDiscrete = this.axes.base.role.grouping.isDiscrete();
@@ -31157,14 +31320,17 @@ def
      */
 
     _buildScene: function(data, isBaseDiscrete){
-        var rootScene  = new pvc.visual.Scene(null, {panel: this, group: data});
+        var rootScene  = new pvc.visual.Scene(null, {panel: this, source: data});
         var categDatas = data._children;
         var chart = this.chart;
         var serRole = this.visualRoles.series;
-        var colorVarHelper = new pvc.visual.RoleVarHelper(rootScene, this.visualRoles.color, {roleVar: 'color'});
-        var valueDim = data.owner.dimensions(this.valueDimName);
+        var valueRole = this.visualRoles.value;
         var isStacked = this.stacked;
-        var visibleKeyArgs = {visible: true, zeroIfNone: false};
+        var valueVarHelper = new pvc.visual.RoleVarHelper(rootScene, valueRole, {roleVar: 'value', hasPercentSubVar: isStacked});
+        var colorVarHelper = new pvc.visual.RoleVarHelper(rootScene, this.visualRoles.color, {roleVar: 'color'});
+        var valueDimName  = valueRole.firstDimensionName();
+        var valueDim = data.owner.dimensions(valueDimName);
+        
         var orthoScale = this.axes.ortho.scale;
         var orthoNullValue = def.scope(function(){
                 // If the data does not cross the origin, 
@@ -31194,7 +31360,7 @@ def
         })
         /* Create series scene */
         .each(function(seriesData1/*, seriesIndex*/){
-            var seriesScene = new pvc.visual.Scene(rootScene, {group: seriesData1 || data});
+            var seriesScene = new pvc.visual.Scene(rootScene, {source: seriesData1 || data});
 
             seriesScene.vars.series = pvc.visual.ValueLabelVar.fromComplex(seriesData1);
             
@@ -31207,29 +31373,25 @@ def
                     group = group._childrenByKey[seriesData1.key];
                 }
                 
-                var value = group ?
-                    group.dimensions(valueDim.name).sum(visibleKeyArgs) : 
-                    null;
-                
-                var serCatScene = new pvc.visual.Scene(seriesScene, {group: group});
+                var serCatScene = new pvc.visual.Scene(seriesScene, {source: group});
                 
                 // -------------
+                
                 serCatScene.dataIndex = categIndex;
                 
                 serCatScene.vars.category = pvc.visual.ValueLabelVar.fromComplex(categData);
                 
                 // -------------
+
+                valueVarHelper.onNewScene(serCatScene, /* isLeaf */ true);
+
+                var valueVar = serCatScene.vars.value;
+                var value    = valueVar.value;
                 
-                var valueVar = new pvc.visual.ValueLabelVar(
-                                    value,
-                                    valueDim.format(value),
-                                    value);
-                
-                /* accumulated value, for stacked */
-                // NOTE: the null value can only happen if interpolation is 'none'
+                // accumulated value, for stacked
                 valueVar.accValue = value != null ? value : orthoNullValue;
                 
-                serCatScene.vars.value = valueVar;
+                // -------------
                 
                 colorVarHelper.onNewScene(serCatScene, /* isLeaf */ true);
                 
@@ -31404,7 +31566,7 @@ def
                 if(belowScene && isBaseDiscrete) {
                     var belowValueVar = belowScene.vars.value;
                     interAccValue = belowValueVar.accValue;
-                    interValue = belowValueVar[this.valueRoleName];
+                    interValue = belowValueVar[valueRole.name];
                 } else {
                     interValue = interAccValue = orthoNullValue;
                 }
@@ -31438,9 +31600,8 @@ def
             
             var interScene = new pvc.visual.Scene(seriesScene, {
                     /* insert immediately before toScene */
-                    index: toChildIndex,
-                    group: /*toScene.isInterpolatedMiddle ? fromScene.group: */toScene.group, 
-                    datum: toScene.group ? null : toScene.datum
+                    index:  toChildIndex,
+                    source: /*toScene.isInterpolatedMiddle ? fromScene.group: */toScene.source
                 });
             
             interScene.dataIndex = toScene.dataIndex;
@@ -32115,7 +32276,7 @@ def
 
     _buildScene: function(data, seriesRootData, cellSize){
         var me = this;
-        var rootScene  = new pvc.visual.Scene(null, {panel: me, group: data});
+        var rootScene  = new pvc.visual.Scene(null, {panel: me, source: data});
         var categDatas = data._children;
 
         var roles = me.visualRoles;
@@ -32132,7 +32293,7 @@ def
 
         function createSeriesScene(serData1){
             /* Create series scene */
-            var serScene = new pvc.visual.Scene(rootScene, {group: serData1});
+            var serScene = new pvc.visual.Scene(rootScene, {source: serData1});
 
             serScene.vars.series = pvc.visual.ValueLabelVar.fromComplex(serData1);
 
@@ -32144,7 +32305,7 @@ def
         function createSeriesCategoryScene(serScene, catData1, serData1){
             var group = data._childrenByKey[catData1.key]._childrenByKey[serData1.key];
 
-            var serCatScene = new pvc.visual.Scene(serScene, {group: group});
+            var serCatScene = new pvc.visual.Scene(serScene, {source: group});
 
             serCatScene.vars.category = pvc.visual.ValueLabelVar.fromComplex(catData1);
 
@@ -32994,7 +33155,7 @@ def
 
     _buildScene: function(){
         var data = this.visibleData();
-        var rootScene = new pvc.visual.Scene(null, {panel: this, group: data});
+        var rootScene = new pvc.visual.Scene(null, {panel: this, source: data});
 
         var roles = this.visualRoles;
         var axes  = this.axes;
@@ -33021,7 +33182,7 @@ def
         
         function createSeriesScene(seriesGroup){
             /* Create series scene */
-            var seriesScene = new pvc.visual.Scene(rootScene, {group: seriesGroup});
+            var seriesScene = new pvc.visual.Scene(rootScene, {source: seriesGroup});
             
             seriesScene.vars.series =
                     pvc.visual.ValueLabelVar.fromComplex(seriesGroup);
@@ -33042,7 +33203,7 @@ def
                 }
                 
                 /* Create leaf scene */
-                var scene = new pvc.visual.Scene(seriesScene, {datum: datum});
+                var scene = new pvc.visual.Scene(seriesScene, {source: datum});
                 scene.dataIndex = dataIndex;
                 
                 scene.vars.x = pvc.visual.ValueLabelVar.fromAtom(xAtom);
@@ -33112,8 +33273,8 @@ def
             
             var interScene = new pvc.visual.Scene(seriesScene, {
                     /* insert immediately before toScene */
-                    index: toChildIndex,
-                    datum: toScene.datum
+                    index:  toChildIndex,
+                    source: toScene.datum
                 });
             
             interScene.dataIndex = toScene.dataIndex;
@@ -35413,7 +35574,7 @@ def
             }),
             visibleKeyArgs = {visible: true, zeroIfNone: false},
             data = this.visibleData(),
-            rootScene  = new pvc.visual.Scene(null, {panel: this, group: data}),
+            rootScene  = new pvc.visual.Scene(null, {panel: this, source: data}),
             baseScale  = this.axes.base.scale,
             bandWidth  = baseScale.range().band,
             boxWidth   = Math.min(bandWidth * this.boxSizeRatio, this.maxBoxSize),
@@ -35429,7 +35590,7 @@ def
         return rootScene;
         
         function createCategScene(categData){
-            var categScene = new pvc.visual.Scene(rootScene, {group: categData});
+            var categScene = new pvc.visual.Scene(rootScene, {source: categData});
             var vars = categScene.vars;
             
             // Series distinction is ignored
