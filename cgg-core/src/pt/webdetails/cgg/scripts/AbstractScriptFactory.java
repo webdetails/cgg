@@ -44,7 +44,7 @@ public abstract class AbstractScriptFactory implements ScriptFactory
 
   public Reader getSystemLibraryScript(final String script) throws IOException
   {
-    final String resource = "org/pentaho/reporting/libraries/cgg/resources/" + script;
+    final String resource = "pt/webdetails/cgg/resources/" + script;
     final InputStream resourceAsStream = this.getClass().getClassLoader().getResourceAsStream(resource);
     if (resourceAsStream == null)
     {

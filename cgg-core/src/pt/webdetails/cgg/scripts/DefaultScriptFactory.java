@@ -24,7 +24,7 @@ public class DefaultScriptFactory extends AbstractScriptFactory
   public DefaultScriptFactory()
   {
     context = this.getClass().getClassLoader().getResource(
-        "org/pentaho/reporting/libraries/cgg/resources/Base.js");
+        "pt/webdetails/cgg/resources/Base.js");
   }
 
   public URL getContext()

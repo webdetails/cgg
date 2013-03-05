@@ -1,10 +1,3 @@
-
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
- * If a copy of the MPL was not distributed with this file, You can obtain one at
- * http://mozilla.org/MPL/2.0/.
- */
-
 window = this;
 
 
@@ -63,6 +56,7 @@ cgg.element = function(_el) {
         return new cgg.element(e);
       }
     },
+    getElementsByTagName: function (tagName) {return _el.getElementsByTagName(tagName);},    
     setAttribute: function(attrName, value) {_el.setAttribute(attrName, value);},
     setAttributeNS: function(ns, attrName, value) {_el.setAttributeNS(ns,attrName, value);},
     removeAttribute: function(attrName) {_el.removeAttribute(attrName);},
