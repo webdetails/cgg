@@ -12,16 +12,32 @@
 
 
     <target name="dist" depends="build-core">
+        <copy todir="cgg-pentaho/dev-lib" overwrite="true">
+            <fileset dir="cgg-core/dist">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
 		<ant dir="cgg-pentaho" antfile="build.xml" target="dist" inheritAll="true"/>
     </target>
 
     <target name="install-plugin" depends="build-core">
+        <copy todir="cgg-pentaho/dev-lib" overwrite="true">
+            <fileset dir="cgg-core/dist">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>    
 		<ant dir="cgg-pentaho" antfile="build.xml" target="install-plugin" inheritAll="true"/>
     </target>
 
 
 
     <target name="dist-reporting" depends="build-core">
+        <copy todir="cgg-pentaho/dev-lib" overwrite="true">
+            <fileset dir="cgg-core/dist">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    
 		<ant dir="cgg-reporting" antfile="build.xml" target="dist" inheritAll="true"/>
     </target>
 
