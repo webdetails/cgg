@@ -1,4 +1,3 @@
-// b9f03b4bbbdaf113bc0083189b1119582b196aed
 /**
  * @class The built-in Array class.
  * @name Array
@@ -312,13 +311,41 @@ pv.error = function(e) {
  * @param {function} the event handler callback.
  */
 pv.listen = function(target, type, listener) {
-  if (type == 'load' || type == 'onload')
-      return pv.listenForPageLoad (pv.listener(listener));
-
   listener = pv.listener(listener);
-  return target.addEventListener
-      ? target.addEventListener(type, listener, false)
-      : target.attachEvent("on" + type, listener);
+
+  if (type === 'load' || type === 'onload'){
+      return pv.listenForPageLoad(listener);
+  }
+
+  if(target.addEventListener){
+    target.addEventListener(type, listener, false);
+  } else {
+      if (target === window) {
+        target = document.documentElement;
+      }
+
+      target.attachEvent('on' + type, listener);
+  }
+  
+  return listener;
+};
+
+/**
+ * @private Unregisters the specified listener for events of the specified type on
+ * the specified target.
+ * 
+ * @param target a DOM element.
+ * @param {string} type the type of event, such as "click".
+ * @param {function} the event handler callback or the result of {@link pv.listen}.
+ */
+pv.unlisten = function(target, type, listener){
+    if(listener.$listener){
+        listener = listener.$listener;
+    }
+    
+    target.removeEventListener
+        ? target.removeEventListener(type, listener, false)
+        : target.detachEvent('on' + type, listener);
 };
 
 /**
@@ -331,14 +358,32 @@ pv.listen = function(target, type, listener) {
  * @returns {function} the wrapped event handler.
  */
 pv.listener = function(f) {
-  return f.$listener || (f.$listener = function(e) {
+  return f.$listener || (f.$listener = function(ev) {
       try {
-        pv.event = e;
-        return f.call(this, e);
+        pv.event = ev = pv.fixEvent(ev);
+        
+        return f.call(this, ev);
+      } catch (ex) {
+          // swallow top level error
+          pv.error(ex);
       } finally {
         delete pv.event;
       }
-    });
+  });
+};
+
+pv.fixEvent = function(ev){
+    // Fix event (adapted from jQuery)
+    if(ev.pageX == null && ev.clientX != null) {
+        var eventDoc = (ev.target && ev.target.ownerDocument) || document;
+        var doc  = eventDoc.documentElement;
+        var body = eventDoc.body;
+
+        ev.pageX = (ev.clientX * 1) + ( doc && doc.scrollLeft || body && body.scrollLeft || 0 ) - ( doc && doc.clientLeft || body && body.clientLeft || 0 );
+        ev.pageY = (ev.clientY * 1) + ( doc && doc.scrollTop  || body && body.scrollTop  || 0 ) - ( doc && doc.clientTop  || body && body.clientTop  || 0 );
+    }
+
+    return ev;
 };
 
 /**
@@ -366,17 +411,17 @@ pv.listenForPageLoad = function(listener) {
         listener();
     }
 
-    if (pv.renderer() == "svgweb") {
+    if (pv.renderer() === "svgweb") {
         // SVG web adds addEventListener to IE.
-        window.addEventListener( "SVGLoad", listener, false );
+        window.addEventListener("SVGLoad", listener, false);
     } else {
         // Mozilla, Opera and webkit nightlies currently support this event
         if ( document.addEventListener ) {
-            window.addEventListener( "load", listener, false );
+            window.addEventListener("load", listener, false);
 
         // If IE event model is used
         } else if ( document.attachEvent ) {
-            window.attachEvent( "onload", listener );
+            window.attachEvent("onload", listener);
         }
     }
 }
@@ -1113,7 +1158,158 @@ pv.Format.number = function() {
 
   return format;
 };
-/**
+(function(){
+    
+    var _cache;
+    
+    pv.Text = {};
+    
+    pv.Text.createCache = function(){
+        return new FontSizeCache();
+    };
+    
+    pv.Text.usingCache = function(cache, fun, ctx){
+        if(!(cache instanceof FontSizeCache)){
+            throw new Error("Not a valid cache.");
+        }
+        
+        var prevCache = _cache;
+        
+        _cache = cache;
+        try{
+            return fun.call(ctx);
+        } finally {
+            _cache = prevCache;
+        }
+    };
+    
+    pv.Text.measure = function(text, font){
+        if(text == null){
+            text = "";
+        } else {
+            text = "" + text;
+        }
+        
+        var bbox = _cache && _cache.get(font, text);
+        if(!bbox){
+            if(!text){
+                bbox = {width: 0, height: 0};
+            } else {
+                bbox = this.measureCore(text, font);
+            }
+            
+            if(_cache){
+                _cache.put(font, text, bbox);
+            }
+        }
+        
+        return bbox;
+    };
+    
+    pv.Text.fontHeight = function(font){
+        return pv.Text.measure('M', font).height;
+    };
+    
+    // Replace with another custom implementation if necessary
+    pv.Text.measureCore = (function(){
+        
+        // SVG implementation
+        var _svgText, _lastFont = '10px sans-serif';
+        
+        function getTextSizeElement(){
+            return _svgText || (_svgText = createTextSizeElement());
+        }
+        
+        function createTextSizeElement(){
+            var div =  document.createElement('div');
+            div.id = 'pvSVGText_' + new Date().getTime();
+            
+            var style = div.style;
+            style.position   = 'absolute';
+            style.visibility = 'hidden';
+            style.width  = 0;
+            style.height = 0;
+            style.left = 0;
+            style.top  = 0;
+            
+            var svgElem = pv.SvgScene.create('svg');
+            svgElem.setAttribute('font-size',   '10px');
+            svgElem.setAttribute('font-family', 'sans-serif');
+            div.appendChild(svgElem);
+            
+            
+            var svgText = pv.SvgScene.create('text');
+            svgElem.appendChild(svgText);
+            
+            var textNode;
+            if (pv.renderer() === "svgweb") { 
+                // SVGWeb needs an extra 'true' to create SVG text nodes properly in IE.
+                textNode = document.createTextNode('', true);
+            } else {
+                textNode = document.createTextNode('');
+            }
+            svgText.appendChild(textNode);
+            
+            document.body.appendChild(div);
+            
+            return svgText;
+        }
+        
+        return function(text, font){
+            if(!font){ font = null; }
+            
+            var svgText = getTextSizeElement();
+            if(_lastFont !== font){
+                _lastFont = font;
+                pv.SvgScene.setStyle(svgText, {'font': font});
+            }
+            
+            svgText.firstChild.nodeValue = '' + text;
+            
+            var box;
+            try{
+                box = svgText.getBBox();
+            } catch(ex){
+                if(typeof console.error === 'function'){
+                    console.error("GetBBox failed: ", ex);
+                }
+                
+                throw ex;
+            }
+            
+            return {width: box.width, height: box.height};
+        };
+    }());
+    
+    // --------
+    
+    var FontSizeCache = function(){
+        this._fontsCache = {};
+    };
+    
+    var hasOwnProp = Object.prototype.hasOwnProperty;
+    
+    FontSizeCache.prototype._getFont = function(font){
+        font = font || '';
+        return hasOwnProp.call(this._fontsCache, font) ?
+               this._fontsCache[font] :
+               (this._fontsCache[font] = {});
+    };
+        
+    FontSizeCache.prototype.get = function(font, text){
+        text = text || '';
+        
+        var fontCache = this._getFont(font);
+        return hasOwnProp.call(fontCache, text) ?
+               fontCache[text] :
+               null;
+    };
+        
+    FontSizeCache.prototype.put = function(font, text, size){
+        return this._getFont(font)[text||''] = size;
+    };
+        
+}());/**
  * @private A private variant of Array.prototype.map that supports the index
  * property.
  */
@@ -1393,7 +1589,7 @@ pv.search.index = function(array, value, f) {
 /**
  * Returns an array of numbers, starting at <tt>start</tt>, incrementing by
  * <tt>step</tt>, until <tt>stop</tt> is reached. The stop value is
- * exclusive. If only a single argument is specified, this value is interpeted
+ * exclusive. If only a single argument is specified, this value is interpreted
  * as the <i>stop</i> value, with the <i>start</i> value as zero. If only two
  * arguments are specified, the step value is implied to be one.
  *
@@ -1989,17 +2185,105 @@ pv.Dom.Node.prototype.appendChild = function(n) {
  */
 pv.Dom.Node.prototype.insertBefore = function(n, r) {
   if (!r) return this.appendChild(n);
-  var i = this.childNodes.indexOf(r);
-  if (i == -1) throw new Error("child not found");
-  if (n.parentNode) n.parentNode.removeChild(n);
-  n.parentNode = this;
-  n.nextSibling = r;
-  n.previousSibling = r.previousSibling;
-  if (r.previousSibling) {
-    r.previousSibling.nextSibling = n;
-  } else {
-    if (r == this.lastChild) this.lastChild = n;
-    this.firstChild = n;
+  
+  var ns = this.childNodes;
+  var i = ns.indexOf(r);
+  if (i === -1) throw new Error("child not found");
+  
+  return this.insertAt(n, i);
+};
+
+/**
+ * Inserts the specified child <i>n</i> at the given index. 
+ * Any child from the given index onwards will be moved one position to the end. 
+ * If <i>i</i> is null, this method is equivalent to
+ * {@link #appendChild}. 
+ * If <i>n</i> is already part of the DOM, it is first
+ * removed before being inserted.
+ *
+ * @throws Error if <i>i</i> is non-null and greater than the current number of children.
+ * @returns {pv.Dom.Node} the inserted child.
+ */
+pv.Dom.Node.prototype.insertAt = function(n, i) {
+    if (i == null){
+        return this.appendChild(n);
+    }
+    
+    var ns = this.childNodes;
+    var L  = ns.length;
+    if (i === L){
+        return this.appendChild(n);
+    }
+    
+    if(i > L){
+        throw new Error("Index out of range.");
+    }
+
+    var pn = n.parentNode;
+    if (pn) { // may be that: pn === this, but should i be corrected in case n is below i?
+        pn.removeChild(n);
+    }
+    
+    var ni = i + 1;
+    var firstDirtyIndex = this._firstDirtyChildIndex;
+    if(ni < firstDirtyIndex){
+        this._firstDirtyChildIndex = ni;
+    }
+    
+    var r = ns[i];
+    n.parentNode  = this;
+    n.nextSibling = r;
+    n._childIndex = i;
+    
+    var psib = n.previousSibling = r.previousSibling;
+    r.previousSibling = n;
+    if (psib) {
+        psib.nextSibling = n;
+    } else {
+        if (r === this.lastChild) {
+            this.lastChild = n;
+        }
+        this.firstChild = n;
+    }
+    
+    this.childNodes.splice(i, 0, n);
+    return n;
+};
+
+/**
+ * Removes the child node at the specified index from this node.
+ */
+pv.Dom.Node.prototype.removeAt = function(i) {
+  var ns = this.childNodes;
+  var n = ns[i];
+  if(n){
+      ns.splice(i, 1);
+      
+      if(i < ns.length){
+          var firstDirtyIndex = this._firstDirtyChildIndex;
+          if(i < firstDirtyIndex){
+              this._firstDirtyChildIndex = i;
+          }
+      }
+      
+      var psib = n.previousSibling;
+      var nsib = n.nextSibling;
+      if (psib) { 
+          psib.nextSibling = nsib;
+      } else {
+          this.firstChild = nsib;
+      }
+      
+      if (nsib) {
+          nsib.previousSibling = psib;
+      } else {
+          this.lastChild = psib;
+      }
+      
+      n.nextSibling = null;
+      n.previousSibling = null;
+      n.parentNode = null;
+
   }
   this.childNodes.splice(i, 0, n);
   return n;
@@ -3453,7 +3737,18 @@ pv.Scale.quantitative = function() {
    * @param {number} t a tick value.
    * @returns {string} a formatted tick value.
    */
-  scale.tickFormat = function (t) { return tickFormat(t); };
+  scale.tickFormat = function (t) {
+      var text;
+      if(tickFormatter){
+          text = tickFormatter(t, type !== Number ? usedDateTickPrecision : usedNumberExponent);
+      } else {
+          text = tickFormat(t); 
+      }
+      
+      // Make sure it is a string
+      return text == null ? '' : ('' + text);
+  };
+
 
   /**
    * "Nices" this scale, extending the bounds of the input domain to
@@ -4614,7 +4909,7 @@ pv.Color.Rgb.prototype.rgb = function() { return this; };
  * @returns {pv.Color.Rgb} a brighter color.
  */
 pv.Color.Rgb.prototype.brighter = function(k) {
-  k = Math.pow(0.7, arguments.length ? k : 1);
+  k = Math.pow(0.7, k != null ? k : 1);
   var r = this.r, g = this.g, b = this.b, i = 30;
   if (!r && !g && !b) return pv.rgb(i, i, i, this.a);
   if (r && (r < i)) r = i;
@@ -4639,7 +4934,7 @@ pv.Color.Rgb.prototype.brighter = function(k) {
  * @returns {pv.Color.Rgb} a darker color.
  */
 pv.Color.Rgb.prototype.darker = function(k) {
-  k = Math.pow(0.7, arguments.length ? k : 1);
+  k = Math.pow(0.7, k != null ? k : 1);
   return pv.rgb(
       Math.max(0, Math.floor(k * this.r)),
       Math.max(0, Math.floor(k * this.g)),
@@ -5147,8 +5442,8 @@ pv.Scene = pv.SvgScene = {
 pv.SvgScene.updateAll = function(scenes) {
   if (scenes.length
       && scenes[0].reverse
-      && (scenes.type != "line")
-      && (scenes.type != "area")) {
+      && (scenes.type !== "line")
+      && (scenes.type !== "area")) {
     var reversed = pv.extend(scenes);
     for (var i = 0, j = scenes.length - 1; j >= 0; i++, j--) {
       reversed[i] = scenes[j];
@@ -5291,7 +5586,11 @@ pv.SvgScene.dispatch = pv.listener(function(e) {
       case "mousewheel": {
         e.wheel = (window.opera ? 12 : 1) * e.wheelDelta;
         break;
-      }
+    }
+
+    if (pv.Mark.dispatch(type, t.scenes, t.index, e)) {
+      e.preventDefault();
+      e.stopPropagation();
     }
 
     if (pv.Mark.dispatch(type, t.scenes, t.index, e)) e.preventDefault();
@@ -5765,16 +6064,178 @@ pv.SvgScene.area = function(scenes) {
   return this.append(e, scenes, 0);
 };
 
-pv.SvgScene.areaSegment = function(scenes) {
-  var e = scenes.$g.firstChild, s = scenes[0], pathsT, pathsB;
-  if (s.interpolate == "basis"
-      || s.interpolate == "cardinal"
-      || s.interpolate == "monotone") {
-    var pointsT = [], pointsB = [];
+  if(s.svg) this.setAttributes(elm, s.svg);
+  if(s.css) this.setStyle(elm, s.css);
 
-    for (var i = 0, n = scenes.length; i < n; i++) {
-      var sj = scenes[n - i - 1];
-      pointsT.push(scenes[i]);
+  return this.append(elm, scenes, from);
+};
+
+pv.SvgScene.areaSegmentedSmart = function(elm, scenes) {
+  if(!elm){
+    elm = scenes.$g.appendChild(this.create("g"));
+  }
+  var gg = elm;
+  
+  // Create colored/no-events group
+  elm = gg.firstChild;
+  
+  var g1 = this.expect(elm, "g", scenes, 0, {'pointer-events': 'none'});
+  if (!g1.parentNode) {
+      gg.appendChild(g1);
+  }
+  
+  // Set current default parent
+  scenes.$g = g1;
+  elm = g1.firstChild;
+
+  var eventsSegments = scenes.mark.$hasHandlers ? [] : null;
+  
+  /* Visual only */
+  // Iterate *visible* scene segments
+  elm = this.eachLineAreaSegment(elm, scenes, function(elm, scenes, from, to){
+    
+    // Paths depend only on visibility
+    var segment = this.areaSegmentPaths(scenes, from, to);
+    var pathsT = segment.top;
+    var pathsB = segment.bottom;
+    var fromp = from;
+    
+    // Events segments also, depend only on visibility
+    if(eventsSegments){
+      eventsSegments.push(segment);
+    }
+    
+    // Split this visual scenes segment, 
+    // on key properties changes
+    var options = {
+        breakOnKeyChange: true,
+        from:  from,
+        to:    to
+      };
+    
+    return this.eachLineAreaSegment(elm, scenes, options, function(elm, scenes, from, to){
+      
+      var s1 = scenes[from];
+      
+      var fill   = s1.fillStyle;
+      var stroke = s1.strokeStyle;
+      
+      this.addFillStyleDefinition(scenes, fill);
+      this.addFillStyleDefinition(scenes, stroke);
+      
+      if(from === to){
+        // Visual and events
+        return this.lineAreaDotAlone(elm, scenes, from);
+      }
+      
+      var d = this.areaJoinPaths(pathsT, pathsB, from - fromp, to - fromp - 1); // N - 1 paths connect N points
+
+      var sop = stroke.opacity;
+      var attrs = {
+        'shape-rendering':   s1.antialias ? null : 'crispEdges',
+        'pointer-events':    'none',
+        'cursor':            s1.cursor,
+        'd':                 d,
+        'fill':              fill.color,
+        'fill-opacity':      fill.opacity || null,
+        'stroke':            stroke.color,
+        'stroke-opacity':    sop || null,
+        'stroke-width':      sop ? (s1.lineWidth / this.scale) : null,
+        'stroke-linecap':    s1.lineCap,
+        'stroke-linejoin':   s1.lineJoin,
+        'stroke-miterlimit': s1.strokeMiterLimit,
+        'stroke-dasharray':  sop ? this.parseDasharray(s1) : null
+      };
+      
+      elm = this.expect(elm, 'path', scenes, from, attrs, s1.css);
+
+      return this.append(elm, scenes, from);
+    });
+  });
+
+  // Remove any excess segments from previous render
+  this.removeSiblings(elm);
+
+  /* Events */
+  var g2;
+  if(eventsSegments){
+    // Create colored/no-events group
+    elm = g1.nextSibling;
+    g2 = this.expect(elm, "g", scenes, 0);
+    if (!g2.parentNode) {
+        gg.appendChild(g2);
+    }
+
+    // Set current default parent
+    scenes.$g = g2;
+    elm = g2.firstChild;
+
+    eventsSegments.forEach(function(segment){
+      var from  = segment.from;
+      var pathsT = segment.top;
+      var pathsB = segment.bottom;
+      var P = pathsT.length;
+      
+      var attrsBase = {
+          'shape-rendering': 'crispEdges',
+          'fill':            'rgb(127,127,127)',
+          'fill-opacity':    0.005, // VML requires this much to fire events
+          'stroke':          null
+        };
+      
+      pathsT.forEach(function(pathT, j){
+        var i = from + j;
+        var s = scenes[i];
+        
+        var events = s.events;
+        if(events && events !== "none"){
+          var pathB = pathsB[P - j - 1];
+          
+          var attrs = Object.create(attrsBase);
+          attrs['pointer-events'] = events;
+          attrs.cursor = s.cursor;
+          attrs.d = pathT.join("") + "L" + pathB[0].substr(1) + pathB[1] + "Z";
+          
+          elm = this.expect(elm, 'path', scenes, i, attrs);
+          
+          elm = this.append(elm, scenes, i);
+        }
+      }, this); 
+    }, this);
+
+    // Remove any excess paths from previous render
+    this.removeSiblings(elm);
+  }
+  
+  // Restore initial current parent
+  scenes.$g = gg;
+
+  return (g2 || g1).nextSibling;
+};
+
+pv.SvgScene.areaSegmentPaths = function(scenes, from, to) {
+  return this.areaSegmentCurvePaths   (scenes, from, to) ||
+         this.areaSegmentStraightPaths(scenes, from, to);
+};
+
+pv.SvgScene.areaSegmentCurvePaths = function(scenes, from, to){
+  var count = to - from + 1;
+  
+  // count > 0
+  
+  var s = scenes[from];
+  
+  // Interpolated paths for scenes 0 to count-1
+  var isBasis    = s.interpolate === "basis";
+  var isCardinal = !isBasis && s.interpolate === "cardinal";
+  if (isBasis || isCardinal || s.interpolate == "monotone") {
+    var pointsT = [];
+    var pointsB = [];
+    for (var i = 0 ; i < count ; i++) {
+      var si = scenes[from + i]; // from -> to
+      var sj = scenes[to   - i]; // to -> from
+      
+      pointsT.push(si);
       pointsB.push({left: sj.left + sj.width, top: sj.top + sj.height});
     }
 
@@ -6054,6 +6515,32 @@ pv.SvgScene.label = function(scenes) {
   }
   return e;
 };
+/* not segmented
+ * <g> <-> scenes.$g
+ *    <path ... /> only segment
+ * </g>
+ *
+ * segmented full
+ * <g> <-> scenes.$g
+ *    <path ... /> instance 0
+ *    <path ... /> instance 1
+ *    ...
+ * </g>
+ *
+ * segmented smart
+ * <g> <-> scenes.$g
+ *    <g> colored, no events
+ *        <path /> segment 0
+ *        <path /> segment 1
+ *        ...
+ *    </g>
+ *    <g> transparent, fully segmented, events
+ *        <path /> instance 0
+ *        <path /> instance 1
+ *        ...
+ *    </g>
+ * </g>
+ */
 pv.SvgScene.line = function(scenes) {
   var e = scenes.$g.firstChild;
   if (scenes.length < 2) return e;
@@ -6081,6 +6568,127 @@ pv.SvgScene.line = function(scenes) {
       d += this.pathSegment(scenes[i - 1], scenes[i]);
     }
   }
+  
+  var sop = stroke.opacity;
+  var attrs = {
+    'shape-rendering':   s.antialias ? null : 'crispEdges',
+    'pointer-events':    s.events,
+    'cursor':            s.cursor,
+    'd':                 d,
+    'fill':              fill.color,
+    'fill-opacity':      fill.opacity || null,
+    'stroke':            stroke.color,
+    'stroke-opacity':    sop || null,
+    'stroke-width':      sop ? (s.lineWidth / this.scale) : null,
+    'stroke-linecap':    s.lineCap,
+    'stroke-linejoin':   s.lineJoin,
+    'stroke-miterlimit': s.strokeMiterLimit,
+    'stroke-dasharray':  sop ? this.parseDasharray(s) : null
+  };
+  
+  elm = this.expect(elm, 'path', scenes, 0, attrs, s.css);
+
+  if(s.svg) this.setAttributes(elm, s.svg);
+  
+  return this.append(elm, scenes, 0);
+};
+
+pv.SvgScene.lineSegmentedSmart = function(elm, scenes) {
+  /*
+   * <g> <-> scenes.$g <-> elm --> gg
+   *    <g> colored, no events
+   *        <path /> segment 0
+   *        <path /> segment 1
+   *        ...
+   *    </g>
+   *    <g> transparent, fully segmented, events (wen existent)
+   *        <path /> instance 0
+   *        <path /> instance 1
+   *        ...
+   *    </g>
+   * </g>
+   */
+
+  if(!elm){
+    elm = scenes.$g.appendChild(this.create("g"));
+  }
+  
+  var gg = elm;
+
+  // Create colored/no-events group
+  elm = gg.firstChild;
+  
+  var g1 = this.expect(elm, "g", scenes, 0, {'pointer-events': 'none'});
+  if (!g1.parentNode) {
+      gg.appendChild(g1);
+  }
+
+  // Set current default parent
+  scenes.$g = g1;
+  elm = g1.firstChild;
+  
+  var eventsSegments = scenes.mark.$hasHandlers ? [] : null;
+  
+  /* Visual only */
+  // Iterate *visible* scene segments
+  elm = this.eachLineAreaSegment(elm, scenes, function(elm, scenes, from, to){
+    
+    // Paths depend only on visibility
+    var paths = this.lineSegmentPaths(scenes, from, to);
+    var fromp = from;
+    
+    // Events segments also, depend only on visibility
+    if(eventsSegments){
+      eventsSegments.push({
+        from:  from,
+        paths: paths
+      });
+    }
+    
+    // Split this visual scenes segment, 
+    // on key properties changes
+    var options = {
+        breakOnKeyChange: true,
+        from:  from,
+        to:    to
+      };
+    
+    return this.eachLineAreaSegment(elm, scenes, options, function(elm, scenes, from, to){
+      
+      var s1 = scenes[from];
+      
+      var fill = s1.fillStyle;
+      this.addFillStyleDefinition(scenes, fill);
+      
+      var stroke = s1.strokeStyle;
+      this.addFillStyleDefinition(scenes, stroke);
+      
+      if(from === to){
+        // Visual and events
+        return this.lineAreaDotAlone(elm, scenes, from);
+      }
+      
+      var d = this.lineJoinPaths(paths, from - fromp, to - fromp - 1); // N - 1 paths connect N points
+      
+      var sop = stroke.opacity;
+      var attrs = {
+        'shape-rendering':   s1.antialias ? null : 'crispEdges',
+        'pointer-events':    'none',
+        'cursor':            s1.cursor,
+        'd':                 d,
+        'fill':              fill.color,
+        'fill-opacity':      fill.opacity || null,
+        'stroke':            stroke.color,
+        'stroke-opacity':    sop || null,
+        'stroke-width':      sop ? (s1.lineWidth / this.scale) : null,
+        'stroke-linecap':    s1.lineCap,
+        'stroke-linejoin':   s1.lineJoin,
+        'stroke-miterlimit': s1.strokeMiterLimit,
+        'stroke-dasharray':  sop ? this.parseDasharray(s1) : null
+      };
+      
+      elm = this.expect(elm, 'path', scenes, from, attrs, s1.css);
+
 
   e = this.expect(e, "path", {
       "shape-rendering": s.antialias ? null : "crispEdges",
@@ -6095,7 +6703,65 @@ pv.SvgScene.line = function(scenes) {
       "stroke-linejoin": s.lineJoin,
       "stroke-dasharray": s.strokeDasharray || 'none'
     });
-  return this.append(e, scenes, 0);
+  });
+
+  // Remove any excess segments from previous render
+  this.removeSiblings(elm);
+  
+  /* Events */
+  var g2;
+  if(eventsSegments){
+    // Create colored/no-events group
+    elm = g1.nextSibling;
+    g2 = this.expect(elm, "g", scenes, 0);
+    if (!g2.parentNode) {
+        gg.appendChild(g2);
+    }
+   
+    // Set current default parent
+    scenes.$g = g2;
+    elm = g2.firstChild;
+    
+    eventsSegments.forEach(function(segment){
+      var from  = segment.from;
+      var paths = segment.paths;
+      
+      var attrsBase = {
+          'shape-rendering':   'crispEdges',
+          'fill':              'rgb(127,127,127)',
+          'fill-opacity':      0.005, // VML requires this much to fire events
+          'stroke':            'rgb(127,127,127)',
+          'stroke-opacity':    0.005, // VML idem
+          'stroke-width':      10,
+          'stroke-dasharray':  null
+        };
+      
+      paths.forEach(function(path, j){
+        var i = from + j;
+        var s = scenes[i];
+        
+        var events = s.events;
+        if(events && events !== 'none'){
+          var attrs = Object.create(attrsBase);
+          attrs['pointer-events'] = events;
+          attrs.cursor = s.cursor;
+          attrs.d = path.join('');
+          
+          elm = this.expect(elm, 'path', scenes, i, attrs);
+          
+          elm = this.append(elm, scenes, i);
+        }
+      }, this); 
+    }, this);
+
+    // Remove any excess paths from previous render
+    this.removeSiblings(elm);
+  }
+
+  // Restore initial current parent
+  scenes.$g = gg;
+  
+  return (g2 || g1).nextSibling;
 };
 
 pv.SvgScene.lineSegment = function(scenes) {
@@ -6166,10 +6832,97 @@ pv.SvgScene.pathSegment = function(s1, s2) {
   return "L" + s2.left + "," + s2.top;
 };
 
-/** @private Line-line intersection, per Akenine-Moller 16.16.1. */
-pv.SvgScene.lineIntersect = function(o1, d1, o2, d2) {
-  return o1.plus(d1.times(o2.minus(o1).dot(d2.perp()) / d1.dot(d2.perp())));
-}
+pv.SvgScene.lineSegmentPaths = function(scenes, from, to) {
+  var s = scenes[from];
+  
+  var paths;
+  switch (s.interpolate) {
+    case "basis":    paths = this.curveBasisSegments   (scenes, from, to); break;
+    case "cardinal": paths = this.curveCardinalSegments(scenes, s.tension, from, to); break;
+    case "monotone": paths = this.curveMonotoneSegments(scenes, from, to); break;
+  }
+  
+  //"polar-reverse", "polar", "step-before", "step-after", and linear
+  if(!paths || !paths.length){ // not curve interpolation or not enough points for it 
+    paths = [];
+    for (var i = from + 1 ; i <= to ; i++) {
+      var s1 = scenes[i - 1];
+      var s2 = scenes[i    ];
+      paths.push(["M" + s1.left + "," + s1.top, this.lineSegmentPath(s1, s2)]);
+    }
+  }
+  
+  return paths;
+};
+
+/* 
+  MITER / BEVEL JOIN calculation
+
+  Normal line p1->p2 bounding box points  (a-b-c-d)
+
+                    ^ w12 
+  a-----------------|--------------b       ^
+  |                 |              |       |
+  p1           <----+p12           p2      | w1
+  |                                |       |
+  d--------------------------------c       v
+  
+  Points are added in the following order:
+  d -> a -> b -> c
+  
+  Depending on the position of p0 in relation to the segment p1-p2,
+  'a' may be the outer corner and 'd' the inner corner, 
+  or the opposite:
+  
+  Ex1:
+       outer side
+       
+         p1 ---- p2
+       /   
+     p0    inner side
+     
+     a is outer, d is inner
+     
+  Ex2:
+      
+     p0    inner side
+       \
+         p1 ---- p2
+         
+       outer side
+       
+     a is inner, d is outer
+     
+  =====================
+  
+    ^ v1
+     \
+      am
+       *--a------ ... ----b
+        \ |               |
+          p1              p2
+          |\              |
+          d-*---- ... ----c
+            dm\
+               \
+                v
+                v1
+
+
+  NOTE: 
+  As yy points down, and because of the way Vector.perp() is written,
+  perp() corresponds to rotating 90� clockwise.
+  
+  -----
+  
+  The miter (ratio) limit is
+  the limit on the ratio of the miter length to the line width.
+  
+  The miter length is the distance between the 
+  outer corner and the inner corner of the miter.
+*/
+pv.strokeMiterLimit = 4;
+
 
 /** @private Returns the miter join path for the specified points. */
 pv.SvgScene.pathJoin = function(s0, s1, s2, s3) {
@@ -6215,11 +6968,51 @@ pv.SvgScene.pathJoin = function(s0, s1, s2, s3) {
        + " " + d.x + "," + d.y;
 };
 pv.SvgScene.panel = function(scenes) {
-  var g = scenes.$g, e = g && g.firstChild;
+  /* With clipping:
+   * <g> scenes.$g -> g
+   *     group for panel content
+   *
+   *     instance 0
+   *     <g clip-path="url(#123)"> -> c -> g -> scenes.$g
+   *        <clipPath id="123"> -> e
+   *            <rect x="s.left" y="s.top" width="s.width" height="s.height" />
+   *        </clipPath>
+   *        <rect fill="" /> -> e
+   *        <g>child 0 - childScenes $g</g>
+   *        <g>child 1 - childScenes.$g</g>
+   *        ...
+   *        <rect stroke="" /> -> e
+   *
+   *        restore initial group
+   *        scenes.$g <- g <- c.parentNode,
+   *     </g>
+   *
+   *     instance 1
+   *     
+   * </g>
+   *
+   * Without clipping:
+   * <g> -> g
+   *     group for panel content
+   *
+   *     instance 0
+   *     <rect fill="" /> -> e
+   *     <g>child 0</g>
+   *     <g>child 1</g>
+   *     ...
+   *     <rect stroke="" /> -> e
+   *     
+   *     instance 1
+   *     <rect fill="" />
+   *     ...
+   * </g>
+   */
+  var g = scenes.$g,
+      e = g && g.firstChild;
   var complete = false;
   for (var i = 0; i < scenes.length; i++) {
     var s = scenes[i];
-
+    
     /* visible */
     if (!s.visible) continue;
 
@@ -6314,7 +7107,7 @@ pv.SvgScene.panel = function(scenes) {
     }
 
     /* clip (nest children) */
-    if (s.overflow == "hidden") {
+    if (s.overflow === "hidden") {
       var id = pv.id().toString(36),
           c = this.expect(e, "g", {"clip-path": "url(#" + id + ")"});
       if (!c.parentNode) g.appendChild(c);
@@ -6338,18 +7131,23 @@ pv.SvgScene.panel = function(scenes) {
     var k = this.scale,
         t = s.transform,
         x = s.left + t.x,
-        y = s.top + t.y;
+        y = s.top  + t.y;
     this.scale *= t.k;
 
     /* children */
-    for (var j = 0; j < s.children.length; j++) {
-      s.children[j].$g = e = this.expect(e, "g", {
-          "transform": "translate(" + x + "," + y + ")"
-              + (t.k != 1 ? " scale(" + t.k + ")" : "")
+    if(s.children.length){
+        var attrs = {
+            "transform": "translate(" + x + "," + y + ")" +
+                         (t.k != 1 ? " scale(" + t.k + ")" : "")
+        };
+        
+        this.eachChild(scenes, i, function(childScenes){
+            childScenes.$g = e = this.expect(e, "g", scenes, i, attrs);
+
+            this.updateAll(childScenes);
+            if (!e.parentNode) g.appendChild(e);
+            e = e.nextSibling;
         });
-      this.updateAll(s.children[j]);
-      if (!e.parentNode) g.appendChild(e);
-      e = e.nextSibling;
     }
 
     /* transform (pop) */
@@ -6359,16 +7157,19 @@ pv.SvgScene.panel = function(scenes) {
     e = this.stroke(e, scenes, i);
 
     /* clip (restore group) */
-    if (s.overflow == "hidden") {
+    if (s.overflow === "hidden") {
       scenes.$g = g = c.parentNode;
       e = c.nextSibling;
     }
-  }
+  } // end for panel instance
+  
   complete = true;
   return e;
 };
 
 pv.SvgScene.fill = function(e, scenes, i) {
+  this.removeFillStyleDefinitions(scenes);
+
   var s = scenes[i], fill = s.fillStyle;
   if (fill.opacity || s.events == "all") {
     e = this.expect(e, "rect", {
@@ -6708,12 +7509,10 @@ pv.Mark.prototype.propertyValue = function(name, v) {
 pv.Mark.prototype
     .property("data")
     .property("visible", Boolean)
-    // DATUM - an object counterpart for each value of data.
-    // Must be added here,
-    // to ensure that it is evaluated before VISIBLE
-    // Properties are evaluated backwards in defining order...
-    // Amongst required properties the order will be: id, datum, visible
-    .property("datum", Object)
+    // CSS attributes pass-through
+    .property("css", Object)
+    // SVG attributes pass-through
+    .property("svg", Object)
     .property("left", Number)
     .property("right", Number)
     .property("top", Number)
@@ -6948,10 +7747,6 @@ pv.Mark.prototype.scale = 1;
  */
 pv.Mark.prototype.defaults = new pv.Mark()
     .data(function(d) { return [d]; })
-    // DATUM - an object counterpart for each value of data.
-    .datum(function() {
-        return this.parent ?
-                this.parent.scene[this.parent.index].datum : null; })
     .visible(true)
     .antialias(true)
     .events("painted");
@@ -7040,10 +7835,6 @@ pv.Mark.prototype.anchor = function(name) {
     .name(name)
     .data(function() {
         return this.scene.target.map(function(s) { return s.data; });
-      })
-    // DATUM - an object counterpart for each value of data.
-    .datum(function() {
-        return this.scene.target[this.index].datum;
       })
     .visible(function() {
         return this.scene.target[this.index].visible;
@@ -7225,126 +8016,202 @@ pv.Mark.prototype.cousin = function() {
  * will be rendered.
  */
 pv.Mark.prototype.render = function() {
-  var parent = this.parent,
-      stack = pv.Mark.stack;
-
-  /* For the first render, take it from the top. */
-  if (parent && !this.root.scene) {
-    this.root.render();
-    return;
-  }
-
-  /* Record the path to this mark. */
-  var indexes = [];
-  for (var mark = this; mark.parent; mark = mark.parent) {
-    indexes.unshift(mark.childIndex);
-  }
-
-  /** @private */
-  function render(mark, depth, scale) {
-    mark.scale = scale;
-    if (depth < indexes.length) {
-      stack.unshift(null);
-      if (mark.hasOwnProperty("index")) {
-        renderInstance(mark, depth, scale);
-      } else {
-        for (var i = 0, n = mark.scene.length; i < n; i++) {
-          mark.index = i;
-          renderInstance(mark, depth, scale);
-        }
-        delete mark.index;
-      }
-      stack.shift();
-    } else {
-      mark.build();
-
-      /*
-       * In the update phase, the scene is rendered by creating and updating
-       * elements and attributes in the SVG image. No properties are evaluated
-       * during the update phase; instead the values computed previously in the
-       * build phase are simply translated into SVG. The update phase is
-       * decoupled (see pv.Scene) to allow different rendering engines.
-       */
-      pv.Scene.scale = scale;
-
-      var id = null; // SVGWeb performance enhancement.
-      if (mark.scene && mark.scene.$g && mark.scene.$g.suspendRedraw)
-        id = mark.scene.$g.suspendRedraw(1000);
-
-      pv.Scene.updateAll(mark.scene);
-
-      if (id) // SVGWeb performance enhancement.
-          mark.scene.$g.unsuspendRedraw(id);
+    /* For the first render, take it from the top. */
+    if (this.parent && !this.root.scene) {
+      this.root.render();
+      return;
     }
-    delete mark.scale;
-  }
-
-  /**
-   * @private Recursively renders the current instance of the specified mark.
-   * This is slightly tricky because `index` and `scene` properties may or may
-   * not already be set; if they are set, it means we are rendering only a
-   * specific instance; if they are unset, we are rendering all instances.
-   * Furthermore, we must preserve the original context of these properties when
-   * rendering completes.
-   *
-   * <p>Another tricky aspect is that the `scene` attribute should be set for
-   * any preceding children, so as to allow property chaining. This is
-   * consistent with first-pass rendering.
-   */
-  function renderInstance(mark, depth, scale) {
-    var s = mark.scene[mark.index], i;
-    if (s.visible) {
-      var childIndex = indexes[depth],
-          child = mark.children[childIndex];
-
-      /* Set preceding child scenes. */
-      for (i = 0; i < childIndex; i++) {
-        mark.children[i].scene = s.children[i];
-      }
-
-      /* Set current child scene, if necessary. */
-      stack[0] = s.data;
-      if (child.scene) {
-        render(child, depth + 1, scale * s.transform.k);
-      } else {
-        child.scene = s.children[childIndex];
-        render(child, depth + 1, scale * s.transform.k);
-        delete child.scene;
-      }
-
-      /* Clear preceding child scenes. */
-      for (i = 0; i < childIndex; i++) {
-        delete mark.children[i].scene;
-      }
-    }
-  }
-
-  /* Bind this mark's property definitions. */
-  this.bind();
-
-  /* The render context is the first ancestor with an explicit index. */
-  while (parent && !parent.hasOwnProperty("index")) parent = parent.parent;
-
-  /* Recursively render all instances of this mark. */
-  this.context(
-      parent ? parent.scene : undefined,
-      parent ? parent.index : -1,
-      function() { render(this.root, 0, 1); });
+    
+    this.renderCore();
 };
 
-/** @private Stores the current data stack. */
-pv.Mark.stack = [];
+pv.Mark.prototype.renderCore = function() {
+    var parent = this.parent,
+        stack = pv.Mark.stack;
+
+    /* Record the path to this mark. */
+    var indexes = []; // [root excluded], ..., this.parent.childIndex, this.childIndex
+    for (var mark = this; mark.parent; mark = mark.parent) {
+      indexes.unshift(mark.childIndex);
+    }
+
+    var L = indexes.length;
+
+    /** @private
+     * Starts with mark = root with the call:
+     *   render(this.root, 0, 1);
+     *
+     * when in the context of the first ascendant of 'this'
+     * that has an index set.
+     * The stack will already be filled up to the context scene/index.
+     */
+    function render(mark, depth, scale) {
+      mark.scale = scale;
+      if (depth < L) {
+        var addStack = (depth >= stack.length);
+        if(addStack){
+            stack.unshift(null);
+        }
+        try{
+            if (mark.hasOwnProperty("index")) {
+              renderCurrentInstance(mark, depth, scale, addStack);
+            } else {
+              // Traverse every branch that leads to
+              // instances of the outer "this" mark.
+              for (var i = 0, n = mark.scene.length; i < n; i++) {
+                mark.index = i;
+                renderCurrentInstance(mark, depth, scale, addStack);
+              }
+              delete mark.index;
+            }
+        } finally {
+            if(addStack){
+                stack.shift();
+            }
+        }
+      } else {
+        // Got to a "scenes" node, of mark = outer "this".
+        // Build and UpdateAll
+        mark.build();
+
+        /*
+         * In the update phase, the scene is rendered by creating and updating
+         * elements and attributes in the SVG image. No properties are evaluated
+         * during the update phase; instead the values computed previously in the
+         * build phase are simply translated into SVG. The update phase is
+         * decoupled (see pv.Scene) to allow different rendering engines.
+         */
+        pv.Scene.scale = scale;
+        pv.Scene.updateAll(mark.scene);
+      }
+      delete mark.scale;
+    }
+
+
+    /**
+     * @private Recursively renders the current instance of the specified mark.
+     * This is slightly tricky because `index` and `scene` properties may or may
+     * not already be set; if they are set, it means we are rendering only a
+     * specific instance; if they are unset, we are rendering all instances.
+     * Furthermore, we must preserve the original context of these properties when
+     * rendering completes.
+     *
+     * <p>Another tricky aspect is that the `scene` attribute should be set for
+     * any preceding children, so as to allow property chaining. This is
+     * consistent with first-pass rendering.
+     */
+    function renderCurrentInstance(mark, depth, scale, addStack) {
+      var s = mark.scene[mark.index], i;
+      if (s.visible) {
+        var markChildren = mark.children;
+        var instChildren = s.children;
+
+        var childIndex = indexes[depth];
+        var child = markChildren[childIndex];
+
+        /* If current child's scene is not set
+         * include it in the set/unset loops below.
+         */
+        if(!child.scene){
+            childIndex++;
+        }
+
+        /* Set preceding (and self?) child marks' scenes. */
+        for (i = 0; i < childIndex; i++) {
+          markChildren[i].scene = instChildren[i];
+        }
+
+        if(addStack){
+            stack[0] = s.data;
+        }
+
+        render(child, depth + 1, scale * s.transform.k);
+
+        /* Clear preceding (and self?) child mark's scenes. */
+        for (i = 0; i < childIndex; i++) {
+          // Cheaper to set to null than to delete
+          markChildren[i].scene = undefined;
+        }
+      }
+    }
+
+    /* Bind this mark's property definitions. */
+    this.bind();
+
+    /* The render context is the first ancestor with an explicit index. */
+    while (parent && !parent.hasOwnProperty("index")) parent = parent.parent;
+
+    /* Recursively render all instances of this mark. */
+    this.context(
+        parent ? parent.scene : undefined,
+        parent ? parent.index : -1,
+        function() {
+            // Stack contains datas' until parent.scene, parent.index
+            render(this.root, 0, 1);
+        });
+};
 
 /**
  * @private In the bind phase, inherited property definitions are cached so they
  * do not need to be queried during build.
  */
 pv.Mark.prototype.bind = function() {
-  var seen = {}, types = [[], [], [], []], data, required = [],
-      // DATUM - an object counterpart for each value of data.
-      requiredPositions = {};
+  var seen = {},
+      data,
+      
+      /* Required props (no defs) */
+      required = [],    
+      
+      /* 
+       * Optional props/defs by type
+       * 0 - def/value, 
+       * 1 - def/fun, 
+       * 2 - prop/value, 
+       * 3 - prop/fun 
+       */
+      types = [[], [], [], []];
+  
+  /*
+   * **Evaluation** order (not precedence order for choosing props/defs)
+   * 0) DEF and PROP _values_ are always already "evaluated".
+   *    * Defined PROPs for which a value/fun was not specified
+   *      get the value null.
+   * 
+   * 1) DEF _functions_
+   *    * once per parent instance
+   *    * with parent instance's stack
+   *    
+   *    1.1) Defaulted
+   *        * from farthest proto mark to closest
+   *            * on each level the first defined is the first evaluated
+   *    
+   *    1.2) Explicit
+   *        * idem
+   *    
+   * 2) Data PROP _value_ or _function_
+   *    * once per all child instances
+   *    * with parent instance's stack
+   * 
+   * ONCE PER INSTANCE
+   * 
+   * 3) Required kind PROP _functions_ (id, datum, visible)
+   *    2.1) Defaulted
+   *        * idem
+   *    2.2) Explicit
+   *        * idem
+   *
+   * 3) Optional kind PROP _functions_ (when instance.visible=true)
+   *    3.1) Defaulted
+   *        * idem
+   *    3.2) Explicit
+   *        * idem
+   *
+   * 4) Implied PROPs (when instance.visible=true)
+   */
+  /** 
+   * Scans the proto chain for the specified mark.
+   */
 
-  /** Scans the proto chain for the specified mark. */
   function bind(mark) {
     do {
       var properties = mark.$properties;
@@ -7355,8 +8222,6 @@ pv.Mark.prototype.bind = function() {
           switch (p.name) {
             case "data": data = p; break;
 
-            // DATUM - an object counterpart for each value of data.
-            case "datum":
             case "visible":
             case "id":
                 required.push(p);
@@ -7367,23 +8232,12 @@ pv.Mark.prototype.bind = function() {
           }
         }
       }
-    } while (mark = mark.proto);
+    } while ((mark = mark.proto));
   }
 
   /* Scan the proto chain for all defined properties. */
   bind(this);
   bind(this.defaults);
-
-  /*
-   * DATUM - an object counterpart for each value of data.
-   * Sort required properties to respect (inverse) definition order
-   * These may be out of order when one o the properties
-   * comes form this and the other fom this.defaults
-   */
-  required.sort(function(pa, pb){
-      return requiredPositions[pb.name] - requiredPositions[pa.name];
-  });
-
   types[1].reverse();
   types[3].reverse();
 
@@ -7393,7 +8247,7 @@ pv.Mark.prototype.bind = function() {
     if (!(name in seen)) {
       types[2].push(seen[name] = {name: name, type: 2, value: null});
     }
-  } while (mark = mark.proto);
+  } while ((mark = mark.proto));
 
   /* Define setter-getter for inherited defs. */
   var defs = types[0].concat(types[1]);
@@ -7689,10 +8543,14 @@ pv.Mark.prototype.event = function(type, handler) {
   return this;
 };
 
-/** @private Evaluates the function <i>f</i> with the specified context. */
+/** @private Evaluates the function <i>f</i> with the specified context.
+ * The <tt>this</tt> mark is the JavaScript context on which
+ * the function <i>f</i> is called, but plays no other role.
+ * It may be the case that <tt>scenes.mark</tt> is not equal to <tt>this</tt>.
+ */
 pv.Mark.prototype.context = function(scene, index, f) {
-  var proto = pv.Mark.prototype,
-      stack = pv.Mark.stack,
+  var proto  = pv.Mark.prototype,
+      stack  = pv.Mark.stack,
       oscene = pv.Mark.scene,
       oindex = proto.index;
 
@@ -7704,7 +8562,7 @@ pv.Mark.prototype.context = function(scene, index, f) {
 
     var that = scene.mark,
         mark = that,
-        ancestors = [];
+        ancestors = []; // that, that.parent, ..., root
 
     /* Set ancestors' scene and index; populate data stack. */
     do {
@@ -7712,71 +8570,273 @@ pv.Mark.prototype.context = function(scene, index, f) {
       stack.push(scene[index].data);
       mark.index = index;
       mark.scene = scene;
-      index = scene.parentIndex;
-      scene = scene.parent;
-    } while (mark = mark.parent);
 
-    /* Set ancestors' scale; requires top-down. */
-    for (var i = ancestors.length - 1, k = 1; i > 0; i--) {
+      if((mark = mark.parent)){
+        index = scene.parentIndex;
+        scene = scene.parent;
+      }
+    } while(mark);
+
+    /* Set ancestors' scale, excluding "that"; requires top-down. */
+    var k = 1; // root's scale is 1
+    for (var i = ancestors.length - 1; i > 0; i--) {
       mark = ancestors[i];
-      mark.scale = k;
+      mark.scale = k; // accumulated scale on mark
+
+      // children's scale
       k *= mark.scene[mark.index].transform.k;
     }
+    that.scale = k;
 
-    /* Set children's scene and scale. */
-    if (that.children) for (var i = 0, n = that.children.length; i < n; i++) {
-      mark = that.children[i];
-      mark.scene = that.scene[that.index].children[i];
-      mark.scale = k;
+    /* Set direct children of "that"'s scene and scale. */
+    var children = that.children, n;
+    if (children && (n = children.length) > 0){
+      // "that" is a panel, has a transform.
+      var thatInst = that.scene[that.index];
+      k *= thatInst.transform.k;
+      
+      var instChildren = thatInst.children;
+      for (var i = 0 ; i < n; i++) {
+        mark = children[i];
+        mark.scene = instChildren[i];
+        mark.scale = k;
+      }
     }
   }
 
   /** @private Clears the context. */
-  function clear(scene, index) {
+  function clear(scene/*, index*/) {
     if (!scene) return;
     var that = scene.mark,
         mark;
 
     /* Reset children. */
-    if (that.children) for (var i = 0, n = that.children.length; i < n; i++) {
-      mark = that.children[i];
-      delete mark.scene;
-      delete mark.scale;
+    var children = that.children;
+    if (children){
+      for (var i = 0, n = children.length ; i < n; i++) {
+        mark = children[i];
+        // It's generally faster to set to something, than to delete
+        mark.scene = undefined;
+        mark.scale = 1;
+      }
     }
 
     /* Reset ancestors. */
     mark = that;
-    do {
+    var parent;
+    do{
       stack.pop();
-      if (mark.parent) {
-        delete mark.scene;
-        delete mark.scale;
+      delete mark.index; // must be deleted!
+      
+      if ((parent = mark.parent)) {
+        // It's generally faster to set to something, than to delete
+        mark.scene = undefined;
+        mark.scale = 1;
       }
-      delete mark.index;
-    } while (mark = mark.parent);
+    } while((mark = parent));
   }
 
   /* Context switch, invoke the function, then switch back. */
-  clear(oscene, oindex);
-  apply(scene, index);
-  try {
-    f.apply(this, stack);
-  } finally {
-    clear(scene, index);
-    apply(oscene, oindex);
+  if(scene && scene === oscene && index === oindex){
+      // already there
+      try{
+          f.apply(this, stack);
+      } catch (ex) {
+          pv.error(ex);
+          throw ex;
+      } finally {
+          // Some guys like setting index to -1...
+          pv.Mark.scene = oscene;
+          proto.index = oindex;
+      }
+    } else {
+      clear(oscene, oindex);
+      apply(scene,   index);
+      try {
+        f.apply(this, stack);
+      } catch (ex) {
+          pv.error(ex);
+          throw ex;
+      } finally {
+        clear(scene,   index);
+        apply(oscene, oindex);
+      }
+    }
+};
+
+pv.Mark.getEventHandler = function(type, scenes, index, event){
+  var handler = scenes.mark.$handlers[type];
+  if(handler){
+    return [handler, type, scenes, index, event];
+  }
+   
+  var parentScenes = scenes.parent;
+  if(parentScenes){
+    return this.getEventHandler(type, parentScenes, scenes.parentIndex, event);
   }
 };
 
-/** @private Execute the event listener, then re-render. */
-pv.Mark.dispatch = function(type, scene, index, event) {
-  var m = scene.mark, p = scene.parent, l = m.$handlers[type];
-  if (!l) return p && pv.Mark.dispatch(type, p, scene.parentIndex, event);
-  m.context(scene, index, function() {
-      m = l.apply(m, pv.Mark.stack.concat(event));
-      if (m && m.render) m.render();
-    });
+/** @private Execute the event listener, then re-render the returned mark. */
+pv.Mark.dispatch = function(type, scenes, index, event) {
+  
+  var root = scenes.mark.root;
+  if(root.animatingCount){
+      return true;
+  }
+  var handlerInfo;
+  var interceptors = root.$interceptors && root.$interceptors[type];
+  if(interceptors){
+    for(var i = 0, L = interceptors.length ; i < L ; i++){
+      handlerInfo = interceptors[i](type, event);
+      if(handlerInfo){
+        break;
+      }
+
+      if(handlerInfo === false){
+        // Consider handled
+        return true;
+      }
+    }
+  }
+
+  if(!handlerInfo){
+    handlerInfo = this.getEventHandler(type, scenes, index, event);
+    if(!handlerInfo){
+      return false;
+    }
+  }
+
+  return this.handle.apply(this, handlerInfo);
+};
+
+pv.Mark.handle = function(handler, type, scenes, index, event){
+    var m = scenes.mark;
+    
+    m.context(scenes, index, function(){
+      var stack = pv.Mark.stack.concat(event);
+      if(handler instanceof Array){
+          var ms;
+          handler.forEach(function(hi){
+            var mi = hi.apply(m, stack);
+            if(mi && mi.render) {
+                (ms || (ms = [])).push(mi);
+            }
+          });
+        
+          if(ms) {
+              ms.forEach(function(mi){
+                mi.render();
+              });
+          }
+      } else {
+        m = handler.apply(m, stack);
+        if (m && m.render) {
+            m.render();
+        }
+      }
+  });
+  
   return true;
 };
+
+/**
+ * Registers an event interceptor function.
+ * 
+ * @param {string} type the event type
+ * @param {function} handler the interceptor function
+ * @param {boolean} [before=false] indicates that the interceptor should be applied <i>before</i> "after" interceptors
+ */
+pv.Mark.prototype.addEventInterceptor = function(type, handler, before){
+    var root = this.root;
+    if(root){
+        var interceptors = root.$interceptors || (root.$interceptors = {});
+        var list = interceptors[type] || (interceptors[type] = []);
+        if(before){
+            list.unshift(handler);
+        } else {
+            list.push(handler);
+        }
+    }
+};
+
+/**
+ * Iterates through all visible instances that
+ * this mark has rendered.
+ */
+pv.Mark.prototype.eachInstance = function(fun, ctx){
+    var mark = this,
+        indexes = [];
+
+    /* Go up to the root and register our way back.
+     * The root mark never "looses" its scene.
+     */
+    while(mark.parent){
+        indexes.unshift(mark.childIndex);
+        mark = mark.parent;
+    }
+
+    // mark != null
+
+    // root scene exists if rendered at least once
+    var rootScene = mark.scene;
+    if(!rootScene){
+        return;
+    }
+    
+    var L = indexes.length;
+
+    function mapRecursive(scene, level, toScreen){
+        var D = scene.length;
+        if(D > 0){
+            var isLastLevel = level === L,
+                childIndex;
+
+            if(!isLastLevel) {
+                childIndex = indexes[level];
+            }
+
+            for(var index = 0 ; index < D ; index++){
+                var instance = scene[index];
+                if(instance.visible){
+                    if(level === L){
+                        fun.call(ctx, scene, index, toScreen);
+                    } else {
+                        var childScene = instance.children[childIndex];
+                        if(childScene){ // Some nodes might have not been rendered???
+                        var childToScreen = toScreen
+                                            .times(instance.transform)
+                                            .translate(instance.left, instance.top);
+
+                            mapRecursive(childScene, level + 1, childToScreen);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    mapRecursive(rootScene, 0, pv.Transform.identity);
+};
+
+pv.Mark.prototype.toScreenTransform = function(){
+    var t = pv.Transform.identity;
+    
+    if(this instanceof pv.Panel) {
+        t = t.translate(this.left(), this.top())
+             .times(this.transform());
+    }
+
+    var parent = this.parent; // TODO : this.properties.transform ? this : this.parent
+    if(parent){
+        do {
+            t = t.translate(parent.left(), parent.top())
+                 .times(parent.transform());
+        } while((parent = parent.parent));
+    }
+    
+    return t;
+};
+
 
 pv.Mark.prototype.transition = function() {
   return new pv.Transition(this);
@@ -7785,6 +8845,41 @@ pv.Mark.prototype.transition = function() {
 pv.Mark.prototype.on = function(state) {
   return this["$" + state] = new pv.Transient(this);
 };
+
+// --------------
+
+// inset - percentage of width/height to discount on the shape, on each side
+pv.Mark.prototype.getShape = function(scenes, index, inset){
+    var s = scenes[index];
+    if(!s.visible){
+        return null;
+    }
+    if(inset == null){
+        inset = 0;
+    }
+    
+    var key = '_shape_inset_' + inset;
+    return s[key] || (s[key] = this.getShapeCore(scenes, index, inset));
+};
+
+pv.Mark.prototype.getShapeCore = function(scenes, index, inset){
+    var s  = scenes[index];
+    var l = s.left;
+    var t = s.top;
+    var w = s.width;
+    var h = s.height;
+    if(inset > 0 && inset <= 1){
+        var dw = inset * w;
+        var dh = inset * h;
+        l += dw;
+        t += dh;
+        w -= dw*2;
+        h -= dh*2;
+    }
+    
+    return new pv.Shape.Rect(l, t, w, h);
+};
+
 /**
  * Constructs a new mark anchor with default properties.
  *
@@ -8596,6 +9691,86 @@ pv.Label.prototype.defaults = new pv.Label()
     .textAlign("left")
     .textBaseline("bottom")
     .textMargin(3);
+
+
+pv.Label.prototype.getShapeCore = function(scenes, index, inset){
+    var s = scenes[index];
+
+    var size = pv.Text.measure(s.text, s.font);
+    var l = s.left;
+    var t = s.top;
+    var w = size.width;
+    var h = size.height;
+    if(inset > 0 && inset <= 1){
+        var dw = inset * w;
+        var dh = inset * h;
+        l += dw;
+        t += dh;
+        w -= dw*2;
+        h -= dh*2;
+    }
+    
+    return pv.Label.getPolygon(
+            w,
+            h,
+            s.textAlign,
+            s.textBaseline,
+            s.textAngle,
+            s.textMargin)
+            .apply(pv.Transform.identity.translate(l, t));
+};
+
+pv.Label.getPolygon = function(textWidth, textHeight, align, baseline, angle, margin){
+    // x, y are the position of the left-bottom corner
+    // of the text relative to its anchor point (at x=0,y=0)
+    // x points right, y points down
+    var x, y;
+    
+    switch (baseline) {
+        case "middle":
+            y = textHeight / 2; // estimate middle (textHeight is not em, the height of capital M)
+            break;
+          
+        case "top":
+            y = margin + textHeight;
+            break;
+      
+        case "bottom":
+            y = -margin; 
+            break;
+    }
+    
+    switch (align) {
+        case "right": 
+            x = -margin -textWidth; 
+            break;
+      
+        case "center": 
+            x = -textWidth / 2;
+            break;
+      
+        case "left": 
+            x = margin;
+            break;
+    }
+    
+    var bl = new pv.Vector(x, y);
+    var br = bl.plus(textWidth, 0);
+    var tr = br.plus(0, -textHeight);
+    var tl = bl.plus(0, -textHeight);
+    
+    // Rotate
+    
+    if(angle !== 0){
+        bl = bl.rotate(angle);
+        br = br.rotate(angle);
+        tl = tl.rotate(angle);
+        tr = tr.rotate(angle);
+    }
+    
+    return new pv.Shape.Polygon([bl, br, tr, tl]);
+};
+
 /**
  * Constructs a new line mark with default properties. Lines are not typically
  * constructed directly, but by adding to a panel or an existing mark via
