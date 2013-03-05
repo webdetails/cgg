@@ -1,0 +1,228 @@
+
+<!-- Generator: Adobe Illustrator 15.0.0, SVG Export Plug-In . SVG Version:
+6.00 Build 0) -->
+<svg contentScriptType="text/ecmascript" zoomAndPan="magnify"
+     xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css"
+     enable-background="new 0 0 600 300" version="1.1" xml:space="preserve"
+     width="300px" preserveAspectRatio="xMidYMid meet" viewBox="0 0 600 300"
+     height="150px" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px">
+    <g id="Guides"></g>
+    <g id="numeros"></g>
+    <g id="fundo_dial_1_"></g>
+    <g id="tick"></g>
+    <g id="ponteiro_1_"></g>
+    <g id="Layer_4">
+        <rect width="7.098" x="31.656" fill="none" height="17.402" y="266.402"/>
+        <g>
+
+            <radialGradient gradientTransform="matrix(5 0 0 5 -1200 -720)"
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                            gradientUnits="userSpaceOnUse" xlink:type="simple"
+                            r="54.1722" xlink:actuate="onLoad" cx="300"
+                            cy="198.9277" id="fundo_x5F_dial_1_"
+                            xlink:show="other" fx="298.8476" fy="198.9714">
+                <stop style="stop-color:#FFFFFF" offset="0.8528"/>
+                <stop style="stop-color:#66CCFF" offset="1"/>
+                <stop style="stop-color:#B5B5B5" offset="1"/></radialGradient>
+            <path fill="url(#fundo_x5F_dial_1_)"
+                  d="M50,275C50,136.926,161.926,25,300,25c138.07,0,250,111.926,250,250    H50z"
+                  id="fundo_x5F_dial"/>
+            <path fill="none"
+                  d="M50,275    C50,136.926,161.926,25,300,25c138.07,0,250,111.926,250,250"
+                  stroke-miterlimit="3.8637" stroke-width="0.3409"
+                  id="outline_azul_x5F__dial" stroke="#66CCFF"/></g>
+
+        <line stroke-linecap="square" fill="none" x1="50" x2="63.395" y1="275"
+              fill-rule="evenodd" y2="275" stroke="#66CCFF" clip-rule="evenodd"
+              stroke-width="0.3409" stroke-miterlimit="3.8637"/>
+        <path fill="none"
+              d="M85.002,275   L85,273.754C85,155.699,181.258,60,300,60c118.74,0,215,95.699,215,213.754L514.996,275"
+              stroke-miterlimit="3.8637" stroke-width="2"
+              id="linha_x5F_indicadora" stroke="#FE860C"/>
+        <g id="escala_cor">
+            <g font-size="10px" fill="none" width="600" font-family="sans-serif"
+               height="300" stroke="none" stroke-width="1.5">
+                <g>
+                    <path fill="rgb(255,0,0)"
+                          d="M-225,-2.7554552980815446e-14A225,225 0 0,1 -159.09902576697317,-159.0990257669732L-148.49242404917496,-148.49242404917499A210,210 0 0,0 -210,-2.5717582782094416e-14Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(255,255,0)"
+                          d="M-159.09902576697317,-159.0990257669732A225,225 0 0,1 1.3777276490407723e-14,-225L1.2858791391047208e-14,-210A210,210 0 0,0 -148.49242404917496,-148.49242404917499Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(0,128,0)"
+                          d="M1.3777276490407723e-14,-225A225,225 0 0,1 225,0L210,0A210,210 0 0,0 1.2858791391047208e-14,-210Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/></g>
+                <g>
+                    <path fill="rgb(102,204,255)"
+                          d="M-249.9992187504069,0.6249993489584929A250,250 0 0,1 -249.9992187504069,-0.6249993489585541L-235.4992640628833,-0.5887493867189579A235.5,235.5 0 0,0 -235.4992640628833,0.5887493867189003Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-237.95652148157347,-76.65959747082854A250,250 0 0,1 -237.57025064097056,-77.848416877843L-223.79117610379427,-73.3332086989281A235.5,235.5 0 0,0 -224.1550432356422,-72.21334081752049Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-202.6209819495494,-146.44021877134838A250,250 0 0,1 -201.88625114952896,-147.45148896090984L-190.17684858285628,-138.89930260117708A235.5,235.5 0 0,0 -190.8689649964755,-137.94668608261017Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-147.4514889609098,-201.886251149529A250,250 0 0,1 -146.44021877134836,-202.62098194954942L-137.94668608261014,-190.86896499647554A235.5,235.5 0 0,0 -138.89930260117706,-190.1768485828563Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-77.84841687784295,-237.57025064097056A250,250 0 0,1 -76.65959747082849,-237.95652148157347L-72.21334081752043,-224.1550432356422A235.5,235.5 0 0,0 -73.33320869892806,-223.79117610379427Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-0.6249993489585082,-249.9992187504069A250,250 0 0,1 0.6249993489585388,-249.9992187504069L0.5887493867189436,-235.4992640628833A235.5,235.5 0 0,0 -0.5887493867189146,-235.4992640628833Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M76.65959747082853,-237.95652148157347A250,250 0 0,1 77.84841687784298,-237.57025064097056L73.33320869892809,-223.79117610379427A235.5,235.5 0 0,0 72.21334081752047,-224.1550432356422Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M146.44021877134838,-202.6209819495494A250,250 0 0,1 147.45148896090984,-201.88625114952896L138.89930260117708,-190.17684858285628A235.5,235.5 0 0,0 137.94668608261017,-190.8689649964755Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M201.886251149529,-147.4514889609098A250,250 0 0,1 202.62098194954942,-146.44021877134836L190.86896499647554,-137.94668608261014A235.5,235.5 0 0,0 190.1768485828563,-138.89930260117706Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M237.57025064097056,-77.84841687784298A250,250 0 0,1 237.95652148157347,-76.6595974708285L224.1550432356422,-72.21334081752045A235.5,235.5 0 0,0 223.79117610379427,-73.33320869892809Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M249.9992187504069,-0.6249993489585368A250,250 0 0,1 249.9992187504069,0.6249993489585368L235.4992640628833,0.5887493867189416A235.5,235.5 0 0,0 235.4992640628833,-0.5887493867189416Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/></g>
+                <g>
+                    <path fill="rgb(102,204,255)"
+                          d="M-264.99917187543133,0.6624993098960025A265,265 0 0,1 -264.99917187543133,0.6624993098960025L-263.99917500042966,0.6599993125001684A264,264 0 0,0 -263.99917500042966,0.6599993125001684Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-252.2339127704679,-81.25917331907826A265,265 0 0,1 -252.2339127704679,-81.25917331907826L-251.28208668454158,-80.95253492919494A264,264 0 0,0 -251.28208668454158,-80.95253492919494Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-214.77824086652234,-155.2266318976293A265,265 0 0,1 -214.77824086652234,-155.2266318976293L-213.96775693872416,-154.6408710225439A264,264 0 0,0 -213.96775693872416,-154.6408710225439Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-156.2985782985644,-213.99942621850073A265,265 0 0,1 -156.2985782985644,-213.99942621850073L-155.70877234272078,-213.1918812139026A264,264 0 0,0 -155.70877234272078,-213.1918812139026Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-82.51932189051354,-251.8244656794288A265,265 0 0,1 -82.51932189051354,-251.8244656794288L-82.20792822300216,-250.87418467686493A264,264 0 0,0 -82.20792822300216,-250.87418467686493Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M-0.6624993098960186,-264.99917187543133A265,265 0 0,1 -0.6624993098960186,-264.99917187543133L-0.6599993125001846,-263.99917500042966A264,264 0 0,0 -0.6599993125001846,-263.99917500042966Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M81.25917331907824,-252.2339127704679A265,265 0 0,1 81.25917331907824,-252.2339127704679L80.95253492919493,-251.28208668454158A264,264 0 0,0 80.95253492919493,-251.28208668454158Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M155.2266318976293,-214.77824086652234A265,265 0 0,1 155.2266318976293,-214.77824086652234L154.6408710225439,-213.96775693872416A264,264 0 0,0 154.6408710225439,-213.96775693872416Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M213.99942621850073,-156.2985782985644A265,265 0 0,1 213.99942621850073,-156.2985782985644L213.1918812139026,-155.70877234272078A264,264 0 0,0 213.1918812139026,-155.70877234272078Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M251.8244656794288,-82.51932189051357A265,265 0 0,1 251.8244656794288,-82.51932189051357L250.87418467686493,-82.20792822300218A264,264 0 0,0 250.87418467686493,-82.20792822300218Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/>
+                    <path fill="rgb(102,204,255)"
+                          d="M264.99917187543133,-0.662499309896049A265,265 0 0,1 264.99917187543133,-0.662499309896049L263.99917500042966,-0.6599993125002148A264,264 0 0,0 263.99917500042966,-0.6599993125002148Z"
+                          fill-rule="evenodd" transform="translate(300,275)"/></g>
+                <g>
+                    <text fill="rgb(98,106,110)" dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(35.00082812456867,275.662499309896)"
+                          text-anchor="middle">0</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(47.766087229532104,193.74082668092174)"
+                          text-anchor="middle">10</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(85.22175913347766,119.77336810237071)"
+                          text-anchor="middle">20</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(143.7014217014356,61.00057378149927)"
+                          text-anchor="middle">30</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(217.48067810948646,23.175534320571188)"
+                          text-anchor="middle">40</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(299.337500690104,10.00082812456867)"
+                          text-anchor="middle">50</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(381.25917331907823,22.766087229532104)"
+                          text-anchor="middle">60</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(455.2266318976293,60.22175913347766)"
+                          text-anchor="middle">70</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(513.9994262185007,118.7014217014356)"
+                          text-anchor="middle">80</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(551.8244656794288,192.48067810948643)"
+                          text-anchor="middle">90</text><text fill="rgb(98,106,110)"
+                          dy=".35em"
+                          style="font-family: sans-serif;
+font-style: normal;
+font-variant: normal;
+font-weight: normal;
+font-size: 12.4;
+" pointer-events="none"
+                          transform="translate(564.9991718754313,274.3375006901039)"
+                          text-anchor="middle">100</text></g></g></g>
+        <polygon fill="#626A6E" clip-rule="evenodd" id="ponteiro"
+                 fill-rule="evenodd" transform="rotate(NaN,300,275)"
+                 points="300,265 300,285 75,275.016  "/>
+        <path fill="#626A6E"
+              d="M257.512,285l-0.012-0.918c0-4.57,0.85-8.945,2.418-13.023   c4.943-12.871,17.014-22.65,31.852-25.32c2.662-0.484,5.42-0.738,8.23-0.738c23.473,0,42.5,17.496,42.5,39.082L342.49,285H257.512z   "
+              id="base_ponteiro"/></g></svg>
