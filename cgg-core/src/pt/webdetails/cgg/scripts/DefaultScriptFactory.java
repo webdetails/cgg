@@ -42,7 +42,7 @@ public class DefaultScriptFactory extends AbstractScriptFactory
     try
     {
      if (!script.startsWith("file://"))
-    	script = "file://" + script;
+    	script = "file:///" + script;
     	
       final URL url = new URL(context, script);
       return url.toURI().toASCIIString();
@@ -62,7 +62,7 @@ public class DefaultScriptFactory extends AbstractScriptFactory
     try
     {
     	if (!script.startsWith("file://"))
-    		script = "file://" + script;
+    		script = "file:///" + script;
     	
       final URL url = new URL(context, script);
       return new BufferedInputStream(url.openStream());
