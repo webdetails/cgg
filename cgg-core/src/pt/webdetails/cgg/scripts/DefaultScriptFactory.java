@@ -7,6 +7,7 @@
 package pt.webdetails.cgg.scripts;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -41,17 +42,11 @@ public class DefaultScriptFactory extends AbstractScriptFactory
   {
     try
     {
-     if (!script.startsWith("file://"))
-    	script = "file:///" + script;
-    	
-      final URL url = new URL(context, script);
-      return url.toURI().toASCIIString();
+      return new File(script).toURI().toASCIIString();
+//      final URL url = new URL(context, script);
+ //     return url.toURI().toASCIIString();
     }
-    catch (MalformedURLException e)
-    {
-      throw new IOException(e);
-    }
-    catch (URISyntaxException e)
+    catch (Exception e)
     {
       throw new IOException(e);
     }
@@ -61,10 +56,11 @@ public class DefaultScriptFactory extends AbstractScriptFactory
   {
     try
     {
+    	/*
     	if (!script.startsWith("file://"))
     		script = "file:///" + script;
-    	
-      final URL url = new URL(context, script);
+    	*/
+      final URL url = new File(script).toURI().toURL();//  new URL(context, script);
       return new BufferedInputStream(url.openStream());
     }
     catch (MalformedURLException e)
