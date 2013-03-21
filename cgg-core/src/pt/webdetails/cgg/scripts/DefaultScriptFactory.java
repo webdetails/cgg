@@ -7,6 +7,7 @@
 package pt.webdetails.cgg.scripts;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -44,11 +45,7 @@ public class DefaultScriptFactory extends AbstractScriptFactory
       final URL url = new URL(context, script);
       return url.toURI().toASCIIString();
     }
-    catch (MalformedURLException e)
-    {
-      throw new IOException(e);
-    }
-    catch (URISyntaxException e)
+    catch (Exception e)
     {
       throw new IOException(e);
     }

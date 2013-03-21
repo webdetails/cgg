@@ -97,7 +97,8 @@ public class CggContentGenerator extends SimpleContentGenerator {
             
             final URL context = new File(RepositoryAccess.getSolutionPath(scriptName)).getParentFile().toURI().toURL();
             final WebCgg cgg = new WebCgg(context, response, out, delegate);
-            cgg.draw(RepositoryAccess.getSolutionPath(scriptName), scriptTypeParam, outputTypeParam,
+            //Need to indicate that script is an actual file
+            cgg.draw("file:///" + RepositoryAccess.getSolutionPath(scriptName), scriptTypeParam, outputTypeParam,
                 width.intValue(), height.intValue(), buildParameterMap(requestParams));
         }
         catch (FileNotFoundException fe) {
