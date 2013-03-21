@@ -38,13 +38,12 @@ public class DefaultScriptFactory extends AbstractScriptFactory
     this.context = context;
   }
 
-  public String getContextResourceURI(String script) throws IOException
+  public String getContextResourceURI(final String script) throws IOException
   {
     try
     {
-      return new File(script).toURI().toASCIIString();
-//      final URL url = new URL(context, script);
- //     return url.toURI().toASCIIString();
+      final URL url = new URL(context, script);
+      return url.toURI().toASCIIString();
     }
     catch (Exception e)
     {
@@ -52,15 +51,11 @@ public class DefaultScriptFactory extends AbstractScriptFactory
     }
   }
 
-  public InputStream getContextResource(String script) throws IOException
+  public InputStream getContextResource(final String script) throws IOException
   {
     try
     {
-    	/*
-    	if (!script.startsWith("file://"))
-    		script = "file:///" + script;
-    	*/
-      final URL url = new File(script).toURI().toURL();//  new URL(context, script);
+      final URL url = new URL(context, script);
       return new BufferedInputStream(url.openStream());
     }
     catch (MalformedURLException e)
