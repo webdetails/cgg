@@ -65,7 +65,7 @@ public class BaseScope extends ImporterTopLevel
       // Define some global functions particular to the shell. Note
       // that these functions are not part of ECMA.
       initStandardObjects(cx, sealedStdLib);
-      final String[] names = {"print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG"};
+      final String[] names = {"print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG", "res"};
       defineFunctionProperties(names, BaseScope.class, ScriptableObject.DONTENUM);
       initialized = true;
     }
@@ -197,6 +197,41 @@ public class BaseScope extends ImporterTopLevel
     return Context.toBoolean(true);
   }
 
+  
+  //A res is an auxiliary script which is defined by a relative path from the original script.  
+  public static Object res(final Context cx, final Scriptable thisObj,
+		  final Object[] args, final Function funObj)
+  {
+	  final Object arg = unwrapFirstArgument(args[0]);
+
+	  if (arg == null)
+	  {
+		  return Context.toBoolean(false);
+	  }
+	  final String file = arg.toString();
+	  try
+	  {
+		  final BaseScope scope = (BaseScope) thisObj;
+		  final Reader resourceScript = scope.scriptFactory.getContextLibraryScript(file);
+		  try
+		  {
+			  cx.evaluateReader(scope, resourceScript, file, 1, null);
+		  }
+		  finally
+		  {
+			  resourceScript.close();
+		  }
+	  }
+	  catch (Exception e)
+	  {
+		  logger.warn("Failed to call 'res'" , e);
+		  return Context.toBoolean(false);
+	  }
+	  return Context.toBoolean(true);
+  }
+  
+  
+  
   public static Object _xmlToString(final Context cx, final Scriptable thisObj,
                                     final Object[] args, final Function funObj)
   {
