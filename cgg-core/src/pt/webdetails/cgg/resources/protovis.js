@@ -11069,10 +11069,6 @@ pv.Mark.prototype._zOrder = 0;
 pv.Mark.prototype.defaults = new pv.Mark()
     // If the root panel has no data, this default function receives d === undefined -> [undefined]
     .data(function(d) { return [d]; })
-    // DATUM - an object counterpart for each value of data.
-    .datum(function() {
-        return this.parent ?
-                this.parent.scene[this.parent.index].datum : null; })
     .visible(true)
     .antialias(true)
     .events("painted");
@@ -11187,10 +11183,6 @@ pv.Mark.prototype.anchor = function(name) {
     .name(name)
     .data(function() {
         return this.scene.target.map(function(s) { return s.data; });
-      })
-    // DATUM - an object counterpart for each value of data.
-    .datum(function() {
-        return this.scene.target[this.index].datum;
       })
     .visible(function() {
         return this.scene.target[this.index].visible;
@@ -11622,17 +11614,6 @@ pv.Mark.prototype.bind = function() {
   /* Scan the proto chain for all defined properties. */
   bind(this);
   bind(this.defaults);
-
-  /*
-   * DATUM - an object counterpart for each value of data.
-   * Sort required properties to respect (inverse) definition order
-   * These may be out of order when one o the properties
-   * comes form this and the other fom this.defaults
-   */
-  required.sort(function(pa, pb){
-      return requiredPositions[pb.name] - requiredPositions[pa.name];
-  });
-
   types[1].reverse();
   types[3].reverse();
 
