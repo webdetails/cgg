@@ -133,7 +133,7 @@
 	    &lt;branch>TRUNK&lt;/branch>
 		&lt;version>${distribution.version}&lt;/version>
 		&lt;name>Trunk&lt;/name>
-		&lt;package_url>http://ci.analytical-labs.com/job/Webdetails-CGG/lastSuccessfulBuild/artifact/dist/cgg-TRUNK-SNAPSHOT.zip&lt;/package_url>
+		&lt;package_url>http://ci.analytical-labs.com/job/Webdetails-CGG/lastSuccessfulBuild/artifact/cgg-pentaho/dist/cgg-TRUNK-SNAPSHOT.zip&lt;/package_url>
 		&lt;description>Trunk Snapshot. Get the latest, edgy, still work in progress features here...&lt;/description>
 		&lt;build_id>${sequential.build.id}&lt;/build_id>
 		&lt;/version>	</echo>         
