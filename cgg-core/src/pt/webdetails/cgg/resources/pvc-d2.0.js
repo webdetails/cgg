@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-//VERSION TRUNK-20130424
+//VERSION TRUNK-20130506
 
 var pvc = (function(def, pv) {
 
@@ -8186,10 +8186,18 @@ def.type('pvc.data.Data', pvc.data.Complex)
     /**
      * Obtains an enumerable of the child data instances of this data.
      * 
-     * @type pvc.data.Data | def.Query
+     * @type def.Query
      */
     children: function() { return this._children ? def.query(this._children) : def.query(); },
-
+    
+    /**
+     * Obtains a child data given its key.
+     * 
+     * @param {string} key The key of the child data.
+     * @type pvc.data.Data
+     */
+    child: function(key) { return this._childrenByKey ? (this._childrenByKey[key] || null) : null; },
+    
     /**
      * Obtains the number of children.
      *
@@ -11819,6 +11827,7 @@ var pvc_ValueLabelVar = pvc.visual.ValueLabelVar = function(value, label, rawVal
 def.set(
     pvc_ValueLabelVar.prototype,
     'rawValue', undefined,
+    'absLabel', undefined,
     'setValue', function(v) {
         this.value = v;
         return this;
@@ -20228,17 +20237,19 @@ pvc.BaseChart
      * @param {string|string[]} [dataPartValue=null] The desired data part value or values.
      * @param {object} [ka=null] Optional keyword arguments object.
      * @param {boolean} [ka.ignoreNulls=true] Indicates that null datums should be ignored.
+     * @param {boolean} [ka.inverted=false] Indicates that the inverted data grouping is desired.
      * 
      * @type pvc.data.Data
      */
     visibleData: function(dataPartValue, ka) {
         var ignoreNulls = def.get(ka, 'ignoreNulls', true);
+        var inverted    = def.get(ka, 'inverted', false);
         
         // If already globally ignoring nulls, there's no need to do it explicitly anywhere
         if(ignoreNulls && this.options.ignoreNulls) { ignoreNulls = false; }
         
         var cache = def.lazy(this, '_visibleDataCache');
-        var key   = ignoreNulls + '|' + dataPartValue; // relying on Array#toString, when an array
+        var key   = inverted + '|' + ignoreNulls + '|' + dataPartValue; // relying on Array#toString, when an array
         var data  = cache[key];
         if(!data) {
             ka = ka ? Object.create(ka) : {};
@@ -20793,69 +20804,64 @@ pvc.BaseChart
      * @virtual
      * @type pv.Scale
      */
-    _createNumericScaleByAxis: function(axis){
+    _createNumericScaleByAxis: function(axis) {
         /* DOMAIN */
         var extent = this._getContinuousVisibleExtentConstrained(axis);
         
         var scale = new pv.Scale.linear();
-        if(!extent){
+        if(!extent) {
             scale.isNull = true;
         } else {
             var tmp;
             var dMin = extent.min;
             var dMax = extent.max;
+            var epsi = 1e-12;
             
-            if(dMin > dMax){
-                tmp = dMin;
-                dMin = dMax;
-                dMax = tmp;
-            }
+            var normalize = function() {
+                /* If bounds are not greater than epsilon, things break.
+                 * So, we add a wee bit of variation.
+                 */
+                if(dMax - dMin <= epsi) {
+                    if(extent.minLocked) {
+                        // If extent.maxLocked ignore the max lock :-(
+                        dMax = Math.abs(dMin) > epsi ? dMin * 1.01 : +0.1;
+                    } else if(extent.maxLocked) {
+                        dMin = Math.abs(dMax) > epsi ? dMax * 0.99 : -0.1;
+                    } else {
+                        tmp = dMin;
+                        dMin = dMax;
+                        dMax = tmp;
+                    }
+                }
+            };
+            
+            normalize();
             
             var originIsZero = axis.option('OriginIsZero');
-            if(originIsZero){
-                if(dMin === 0){
+            if(originIsZero) {
+                if(dMin === 0) {
                     extent.minLocked = true;
-                } else if(dMax === 0){
+                } else if(dMax === 0) {
                     extent.maxLocked = true;
-                } else if((dMin * dMax) > 0){
+                } else if((dMin * dMax) > 0) {
                     /* If both negative or both positive
                      * the scale does not contain the number 0.
                      */
-                    if(dMin > 0){
-                        if(!extent.minLocked){
+                    if(dMin > 0) {
+                        if(!extent.minLocked) {
                             extent.minLocked = true;
                             dMin = 0;
                         }
                     } else {
-                        if(!extent.maxLocked){
+                        if(!extent.maxLocked) {
                             extent.maxLocked = true;
                             dMax = 0;
                         }
                     }
                 }
             }
-    
-            /*
-             * If the bounds (still) are the same, things break,
-             * so we add a wee bit of variation.
-             * Ignoring locks.
-             */
-            if(dMin > dMax){
-                tmp = dMin;
-                dMin = dMax;
-                dMax = tmp;
-            }
-            
-            if(dMax - dMin <= 1e-12) {
-                if(!extent.minLocked){
-                    dMin = dMin !== 0 ? (dMin * 0.99) : -0.1;
-                }
-                
-                // If both are locked, ignore max lock
-                if(!extent.maxLocked || extent.minLocked){
-                    dMax = dMax !== 0 ? dMax * 1.01 : 0.1;
-                }
-            }
+
+            normalize();
             
             scale.domain(dMin, dMax);
             scale.minLocked = extent.minLocked;
@@ -21972,6 +21978,8 @@ def
 
     visibleData: function(ka) { return this.chart.visibleData(this.dataPartValue, ka); },
 
+    partData: function() { return this.chart.partData(this.dataPartValue); },
+    
     /* LAYOUT PHASE */
     
     /** 
@@ -23122,7 +23130,7 @@ def
             if(group) {
                 pct = group.dimensions(dimName).percentOverParent(visibleKeyArgs);
             } else {
-                pct = data.dimensions(dimName).percent(atom.value);
+                pct = data.dimensions(dimName).percent(atom.value, visibleKeyArgs);
             }
             
             return percentValueFormat(pct);
@@ -26789,13 +26797,14 @@ def
         var partData    = this.partData(dataPartValue);
         
         var ignoreNulls = def.get(keyArgs, 'ignoreNulls');
+        var inverted    = def.get(keyArgs, 'inverted', false);
         
         // Allow for more caching when isNull is null
         var groupKeyArgs = {visible: true, isNull: ignoreNulls ? false : null};
         
         return serGrouping ?
            // <=> One multi-dimensional, two-levels data grouping
-           partData.groupBy([catGrouping, serGrouping], groupKeyArgs) :
+           partData.groupBy(inverted ? [serGrouping, catGrouping] : [catGrouping, serGrouping], groupKeyArgs) :
            partData.groupBy(catGrouping, groupKeyArgs);
     },
     
