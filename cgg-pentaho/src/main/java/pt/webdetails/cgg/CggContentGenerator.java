@@ -20,7 +20,7 @@ import org.pentaho.platform.api.engine.IParameterProvider;
 import pt.webdetails.cpf.SimpleContentGenerator;
 import pt.webdetails.cpf.annotations.AccessLevel;
 import pt.webdetails.cpf.annotations.Exposed;
-import pt.webdetails.cpf.repository.RepositoryAccess;
+import pt.webdetails.cpf.repository.PentahoRepositoryAccess;
 
 /**
  *
@@ -88,6 +88,8 @@ public class CggContentGenerator extends SimpleContentGenerator {
             String scriptTypeParam = requestParams.getStringParameter("type", "svg");
             String outputTypeParam = requestParams.getStringParameter("outputType", "png");
 
+            scriptName = scriptName.startsWith("/") ? scriptName.substring(1) : scriptName;
+            
             final String attachmentName = requestParams.getStringParameter("attachmentName", null);
             InternalSetResponseHeaderDelegate delegate = new InternalSetResponseHeaderDelegate(attachmentName, outputTypeParam);
 
@@ -95,10 +97,10 @@ public class CggContentGenerator extends SimpleContentGenerator {
             Long height = requestParams.getLongParameter("height", 0L);
             logger.debug("Starting:" + new Date().getTime());
             
-            final URL context = new File(RepositoryAccess.getSolutionPath(scriptName)).getParentFile().toURI().toURL();
+            final URL context = new File(PentahoRepositoryAccess.getPentahoSolutionPath(scriptName)).getParentFile().toURI().toURL();
             final WebCgg cgg = new WebCgg(context, response, out, delegate);
             //Need to indicate that script is an actual file
-            cgg.draw("file:///" + RepositoryAccess.getSolutionPath(scriptName), scriptTypeParam, outputTypeParam,
+            cgg.draw("file://" + PentahoRepositoryAccess.getPentahoSolutionPath(scriptName), scriptTypeParam, outputTypeParam, 
                 width.intValue(), height.intValue(), buildParameterMap(requestParams));
         }
         catch (FileNotFoundException fe) {

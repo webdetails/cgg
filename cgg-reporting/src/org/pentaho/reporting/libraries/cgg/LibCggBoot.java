@@ -4,9 +4,9 @@ import pt.webdetails.cgg.CggBoot;
 import org.pentaho.reporting.libraries.base.boot.AbstractBoot;
 import org.pentaho.reporting.libraries.base.config.Configuration;
 import org.pentaho.reporting.libraries.base.versioning.ProjectInformation;
-import org.pentaho.reporting.libraries.cgg.output.DefaultOutputFactory;
-import org.pentaho.reporting.libraries.cgg.output.PngOutputHandler;
-import org.pentaho.reporting.libraries.cgg.output.SVGOutputHandler;
+//import org.pentaho.reporting.libraries.cgg.output.DefaultOutputFactory;
+//import org.pentaho.reporting.libraries.cgg.output.PngOutputHandler;
+//import org.pentaho.reporting.libraries.cgg.output.SVGOutputHandler;
 
 public class LibCggBoot extends AbstractBoot
 {
