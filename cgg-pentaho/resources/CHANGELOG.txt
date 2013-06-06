@@ -1,3 +1,8 @@
+13.06.05
+    * Sync CCC with that of the CDF branch
+    * New logging capabilities
+    * [FIX] (CCC protovis) The window.getComputedStyle shim installed by protovis-msie caused problems to other libraries (ace). Refactored some of the code so that the shim is no longer necessary
+
 13.03.25
     * Support for CCC v2
     * Internal architectural changes - refactored cgg to cgg-core and cgg-pentaho.
