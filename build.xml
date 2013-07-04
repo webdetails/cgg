@@ -86,8 +86,14 @@
       <fileset dir="${dist.dir}">
         <include name="${ivy.artifact.id}-${project.revision}.jar"/>
       </fileset>
-      <fileset dir="${runtimelib.dir}">
-        <include name="**/*.jar"/>
+      <fileset dir="${lib.dir}">
+        <include name="**/avalon-framework-*.jar"/>      
+        <include name="**/batik-*.jar"/>
+        <include name="**/fop-*.jar"/>        
+        <include name="**/crimson-*.jar"/>                
+        <include name="**/xalan-*.jar"/>                        
+        <include name="**/xmlgraphics-*.jar"/>                                
+        <include name="**/xml-apis-*.jar"/>                                        
         <exclude name="**/batik-js-1.7.jar"/>
       </fileset>
       <fileset dir="dev-lib">
@@ -259,9 +265,11 @@
           depends="resolve-default, resolve-test, resolve-codegen, resolve-runtime, ivy.check-releasable"
           description="Retrieves all the dependent libraries" />
 
+<!--
+
   <target name="resolve-runtime" depends="resolve-init">
     <ivy:resolve file="${ivyfile}" conf="runtime" />
     <ivy:retrieve conf="runtime" pattern="${runtimelib.dir}/[module]-[revision](-[classifier]).[ext]" />
   </target>
-
+-->
 </project>
