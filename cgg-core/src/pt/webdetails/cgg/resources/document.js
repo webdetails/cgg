@@ -5,9 +5,11 @@ var cgg = cgg || {};
 cgg.document = function(_doc){
   var doc = {
     get _node() {return _doc;},
-    get implementation() {return _doc.getImplementation();},
-    get svgImplementation() {return 'batik';},
-    get lastChild() {return new cgg.element(_doc.getLastChild());},
+    get implementation()    { return _doc.getImplementation(); },
+    get svgImplementation() { return 'batik'; },
+    get documentElement()   { return new cgg.element(_doc.getDocumentElement()); },
+    get lastChild()  { return new cgg.element(_doc.getLastChild());  },
+    get firstChild() { return new cgg.element(_doc.getFirstChild()); },
 
     appendChild: function(e) {
       /* We need to appendChild() the raw Java element, but
