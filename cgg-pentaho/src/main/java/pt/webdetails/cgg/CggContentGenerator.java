@@ -95,13 +95,19 @@ public class CggContentGenerator extends SimpleContentGenerator {
 
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
+            
             logger.debug("Starting:" + new Date().getTime());
             
             final URL context = new File(PentahoRepositoryAccess.getPentahoSolutionPath(scriptName)).getParentFile().toURI().toURL();
             final WebCgg cgg = new WebCgg(context, response, out, delegate);
-            //Need to indicate that script is an actual file
-            cgg.draw("file://" + PentahoRepositoryAccess.getPentahoSolutionPath(scriptName), scriptTypeParam, outputTypeParam, 
-                width.intValue(), height.intValue(), buildParameterMap(requestParams));
+            
+            // Need to indicate that script is an actual file
+            // In Windows, we need to have "file:///C:/" instead of "file://C:/"
+            String filePath = PentahoRepositoryAccess.getPentahoSolutionPath(scriptName);
+            if(!filePath.startsWith("/")) { filePath = "/" + filePath; }
+            filePath = "file://" + filePath;
+            
+            cgg.draw(filePath, scriptTypeParam, outputTypeParam, width.intValue(), height.intValue(), buildParameterMap(requestParams));
         }
         catch (FileNotFoundException fe) {
             logger.error(fe);
