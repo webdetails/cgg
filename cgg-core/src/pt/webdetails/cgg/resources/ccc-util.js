@@ -245,10 +245,13 @@ function renderCccFromComponent(component, data) {
         
         // Set the SVG element with the final chart width/height
         //  so that the PNGTranscoder can detect the image size.
+        // When no data, no basePanel.
         var basePanel = chart.basePanel;
-        w = basePanel.width ;
-        h = basePanel.height;
-        
+        if(basePanel) {
+            w = basePanel.width ;
+            h = basePanel.height;
+        }
+
         svgElem.setAttribute('width',  w);
         svgElem.setAttribute('height', h);
         
