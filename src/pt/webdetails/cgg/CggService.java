@@ -71,20 +71,32 @@ public class CggService {
     return Response.ok().build();
  }
        
-       
-  @GET
-  @Path("/draw")
-//  @Produces("text/plain")
-  @Consumes({ APPLICATION_XML, APPLICATION_JSON })
-  public void draw(
-          @QueryParam("script") String script,
-          @DefaultValue("svg") @QueryParam("type") String type,
-          @DefaultValue("png") @QueryParam("outputType") String outputType,
-          @DefaultValue("") @QueryParam("attachmentName") String attachmentName,
-          @DefaultValue("0") @QueryParam("width") Long width,
-          @DefaultValue("0") @QueryParam("height") Long height,
-          
-          @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest) {
+ @GET
+ @Path("/draw")
+// @Produces("text/plain")
+ @Consumes({ APPLICATION_XML, APPLICATION_JSON }) 
+ public void draw(
+         @QueryParam("script") String script,
+         @DefaultValue("svg") @QueryParam("type") String type,
+         @DefaultValue("png") @QueryParam("outputType") String outputType,
+         @DefaultValue("") @QueryParam("attachmentName") String attachmentName,
+         @DefaultValue("0") @QueryParam("width") Long width,
+         @DefaultValue("0") @QueryParam("height") Long height,
+         @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest) 
+ {
+    this.draw(script, type, outputType, attachmentName, null, width, height, servletResponse, servletRequest);
+ }
+
+ public void draw(
+          String script,
+          String type,
+          String outputType,
+          String attachmentName,
+          String multiChartOverflow,
+          Long width,
+          Long height,
+          HttpServletResponse servletResponse, 
+          HttpServletRequest servletRequest) {
   
         try {
 
@@ -102,6 +114,10 @@ public class CggService {
                         params.put(pName, servletRequest.getParameter(paramName));
                     }
                 }
+            }
+            
+            if(multiChartOverflow != null && !multiChartOverflow.isEmpty()) {
+            	params.put("multiChartOverflow", multiChartOverflow);
             }
             
             OutputType scriptOutputType = OutputType.parse(outputType);

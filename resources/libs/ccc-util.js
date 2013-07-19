@@ -175,33 +175,94 @@ function preProcessChartDefinition(chartDef){
 }
 
 function renderCccFromComponent(component, data) {
-
-	if(typeof component.postFetch === 'function'){
-		try{
-			data = component.postFetch(data);
-		} catch(e) {
-            // ignore
-            print("Error in postfetch: " + e);
+    try {
+        // Adding ability to process external height and width
+        var cd = component.chartDefinition;
+        var w = cd.width  = +(parseFloat(params.get('width' )) || cd.width );
+        var h = cd.height = +(parseFloat(params.get('height')) || cd.height);
+        
+        var multiChartOverflow = params.get('multiChartOverflow');
+        if(multiChartOverflow) { cd.multiChartOverflow = multiChartOverflow; }
+        
+        var noChartBg = params.get('noChartBg') === 'true';
+        
+        var svgElem = document.documentElement;
+        
+        print("\nCGG PRINT CCC CHART " + component.type + " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+              " Debug:     " + pvc.debug + "\n" + 
+              " Width:     " + w         + "\n" + 
+              " Height:    " + h         + "\n" +
+              " NoChartBg: " + noChartBg + "\n" +
+              " MultiChartOverflow: " + (cd.multiChartOverflow || 'grow'));
+        
+        // Chart Background
+        var bg;
+        if(!noChartBg) {
+            bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+            bg.setAttribute('id',     'foo_35434765');
+            bg.setAttribute('x',      '0');
+            bg.setAttribute('y',      '0');
+            bg.setAttribute('width',   w);
+            bg.setAttribute('height',  h);
+            bg.setAttribute('style',   'fill:white');
+            svgElem.appendChild(bg);
         }
-	}
+        
+        // This may cause problems to older dashboards
+        // that trusted on preExecution not being called in CGG.
+        if(typeof component.preExecution === 'function') {
+            try {
+                var contin = component.preExecution();
+                if(contin != undefined && !contin) {
+                    print("Ignoring 'preExecution' falsy result.");
+                }
+            } catch(ex) {
+                // ignore
+                print("Error in 'preExecution': " + ex);
+            }
+        }
+
+        if(typeof component.postFetch === 'function'){
+            try {
+              var newData = data = component.postFetch(data);
+              if(newData !== undefined) { data = newData; }
+            } catch(ex) {
+                // ignore
+                print("Error in 'postFetch': " + ex);
+            }
+        }
     
-    preProcessChartDefinition(component.chartDefinition);
+        preProcessChartDefinition(component.chartDefinition);
     
-    var o = $.extend({}, component.chartDefinition);
-    o.showTooltips = false;
-    o.clickable    = false;
-    o.selectable   = false;
-    o.hoverable    = false;
-    o.tooltipFormat = function(){};
+        cd = $.extend({}, component.chartDefinition);
+        cd.interactive = false;
     
-    var ChartType = getCccType(component.type);
-    var chart = new ChartType(o);
+        var ChartType = getCccType(component.type);
+        var chart = new ChartType(cd);
+        chart.setData(data);
+        chart.render();
     
-    chart.setData(data, {
-        crosstabMode: component.crosstabMode,
-        seriesInRows: component.seriesInRows
-    });
-    chart.render();
+        // Set the SVG element with the final chart width/height
+        //  so that the PNGTranscoder can detect the image size.
+        // When no data, there's no basePanel.
+        var basePanel = chart.basePanel;
+        if(basePanel) {
+            w = basePanel.width ;
+            h = basePanel.height;
+        }
+        
+        svgElem.setAttribute('width',  w);
+        svgElem.setAttribute('height', h);
+        
+        // Also, fix the bg size
+        if(bg) {
+            bg.setAttribute('width',  w);
+            bg.setAttribute('height', h);
+        }
+    } catch(ex) {
+        print("Error while rendering CCC chart: " + ex);
+        throw ex;
+    }
 }
 
 
@@ -224,8 +285,5 @@ Dashboards.objectToPropertiesArray = function(obj) {
 };
 
 Dashboards.log = function(m,type){ 
-	if (type)
-		print(type + ": " + m);
-	else
-		print("LOG: " + m);
+    print((type || 'LOG').toUpperCase() + ": " + m);
 };

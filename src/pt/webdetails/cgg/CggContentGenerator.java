@@ -60,6 +60,7 @@ public class CggContentGenerator extends SimpleContentGenerator {
         String type = requestParams.getStringParameter("type","svg");
         String outputType = requestParams.getStringParameter("outputType","png");
         String attachmentName = requestParams.getStringParameter("attachmentName","");
+        String multiChartOverflow = requestParams.getStringParameter("multiChartOverflow", "");
         
         String widthAsStr = requestParams.getStringParameter("width","0");
         Long width = 0L;
@@ -73,18 +74,15 @@ public class CggContentGenerator extends SimpleContentGenerator {
           height = Long.parseLong(heightAsStr);
         } catch (NumberFormatException nfe) {}
         
-        
-        HttpServletRequest request = getRequest();
+        HttpServletRequest  request  = getRequest();
         HttpServletResponse response = getResponse();
         
-
-       
         CggService service = new CggService();
         
-        if(response == null){
+        if(response == null) {
             service.setOutputStream(out);
         }
-        service.draw(script, type, outputType, attachmentName, height, width, response, request);
+        service.draw(script, type, outputType, attachmentName, multiChartOverflow, height, width, response, request);
     }
    
 }
