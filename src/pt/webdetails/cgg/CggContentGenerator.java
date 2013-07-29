@@ -124,8 +124,12 @@ public class CggContentGenerator extends BaseContentGenerator {
             String scriptName = requestParams.getStringParameter("script", "");
             String scriptType = requestParams.getStringParameter("type", "svg");
             String outputType = requestParams.getStringParameter("outputType", "png");
-
-
+            
+            String multiChartOverflow = requestParams.getStringParameter("multiChartOverflow", "");
+            if(multiChartOverflow != null && !multiChartOverflow.isEmpty()) {
+            	params.put("multiChartOverflow", multiChartOverflow);
+            }
+            
             final String attachmentName = requestParams.getStringParameter("attachmentName", null);
             if (attachmentName != null) {
                 final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
