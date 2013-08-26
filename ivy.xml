@@ -58,8 +58,8 @@
                 rev="${dependency.bi-platform.revision}" changing="true" transitive="false" >
       <artifact name="common-ui" type="zip" />
     </dependency>
-		<!--<dependency org="pentaho" name="cpf"
-			rev="TRUNK-SNAPSHOT" transitive="false" changing="true" conf='runtime->default'/>-->
+    <dependency org="pentaho" name="cpf"
+			rev="5.0.0" transitive="false" changing="true"/>
 
 		<dependency org="rhino" name="js" rev="1.7R1" />
 
