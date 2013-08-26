@@ -59,7 +59,7 @@
       <artifact name="common-ui" type="zip" />
     </dependency>
     <dependency org="pentaho" name="cpf"
-			rev="${dependency.cpf.version}" transitive="false" changing="true"/>
+			rev="${dependency.pentaho-cpf-plugin.revision}" transitive="false" changing="true"/>
 
 		<dependency org="rhino" name="js" rev="1.7R1" />
 
