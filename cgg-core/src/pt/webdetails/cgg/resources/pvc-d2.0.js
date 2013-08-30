@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-//VERSION TRUNK-20130731
+//VERSION TRUNK-20130828
 
 var pvc = (function(def, pv) {
 
@@ -23,9 +23,11 @@ var pvc = def.globalSpace('pvc', {
 // Check URL debug and debugLevel
 (function() {
     /*global window:true*/
-    if((typeof window.location) !== 'undefined') {
-        var url = window.location.href;
-        if(url && (/\bdebug=true\b/).test(url)) {
+    if((typeof window !== 'undefined')  && window.location) {
+        var urlIfHasDebug = function(url) { return url && (/\bdebug=true\b/).test(url) ? url : null; };
+        var url = urlIfHasDebug(window.location.href) ||
+                  urlIfHasDebug(window.top.location.href);
+        if(url) {
             var m = /\bdebugLevel=(\d+)/.exec(url);
             pvc.debug = m ? (+m[1]) : 3;
         }
@@ -2904,6 +2906,13 @@ def
  */
 def.global.NoDataException = function(){};
 
+/**
+ * @name InvalidDataException
+ * @class An error thrown when data exists but the chart cannot be rendered from it.
+ */
+def.global.InvalidDataException = function(msg) {
+    this.message = msg ? msg : "Invalid Data.";
+};
 
 pvc.data = {
     visibleKeyArgs: {visible: true}
@@ -2993,6 +3002,7 @@ function data_removeColChild(parent, childrenProp, child, parentProp) {
     
     child[parentProp] = null;
 }
+
 
 /**
  * Initializes a dimension type
@@ -8953,9 +8963,7 @@ def.type('pvc.data.GroupingLevelSpec')
             if(result !== 0) { return result; }
         }
         
-        // At last, use datum source order
-        return (a.id - b.id);
-        //return 0;
+        return 0;
     },
     
     key: function(datum) {
@@ -9010,14 +9018,12 @@ def.type('pvc.data.GroupingDimensionSpec')
     },
 
     compareDatums: function(a, b) {
-        if(this.type.isComparable) {
-          var name = this.name;
-          var result =  this.comparer(a.atoms[name], b.atoms[name]);
-          if(result !== 0) { return result; }
-        }
+        //if(this.type.isComparable) {
+            return this.comparer(a.atoms[this.name], b.atoms[this.name]);
+        //}
         
         // Use datum source order
-        return this.reverse ? (b.id - a.id) : (a.id - b.id);
+        //return this.reverse ? (b.id - a.id) : (a.id - b.id);
     },
 
     toString: function() { return this.name + (this.reverse ? ' desc' : ''); }
@@ -19141,11 +19147,17 @@ def
                     }
                 } catch (e) {
                     /*global NoDataException:true*/
-                    if (e instanceof NoDataException) {
+                    if (e instanceof NoDataException)
+                    {
                         if(pvc.debug > 1){ this._log("No data found."); }
-
                         this._addErrorPanelMessage("No data found", true);
-                    } else {
+                    }
+                    else if (e instanceof InvalidDataException)
+                    {
+                        if(pvc.debug > 1) { this._log(e.message);}
+                        this._addErrorPanelMessage(e.message, true);
+                    }
+                    else {
                         hasError = true;
 
                         // We don't know how to handle this
@@ -29506,11 +29518,18 @@ def
 
     /* Create child category scenes */
     data.children().each(function(categData) {
-        // Value may be negative
-        // Don't create 0-value scenes
+        // Value may be negative.
+        // Don't create 0-value scenes.
+        // null is returned as 0.
         var value = categData.dimensions(valueDimName).sum(pvc.data.visibleKeyArgs);
         if(value !== 0) { new CategSceneClass(categData, value); }
     });
+
+    // Not possible to represent as pie if there are no child scenes (=> sumAbs === 0)
+    // If this is a small chart, don't show message, which results in a pie with no slices..., a blank plot.
+    if (!sumAbs && !panel.visualRoles.multiChart.isBound()) {
+       throw new InvalidDataException("Unable to create a pie chart, please check the data values.");
+    }
 
     // -----------
 
@@ -29767,6 +29786,7 @@ def
     this.y = y;
 })
 .add(pv.Vector);
+
 
 /*global pvc_PercentValue:true */
 
