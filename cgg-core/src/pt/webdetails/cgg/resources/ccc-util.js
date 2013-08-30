@@ -209,7 +209,7 @@ function renderCccFromComponent(component, data) {
             svgElem.appendChild(bg);
         }
         
-        // This may cause problems to older dashboards
+        // This may start causing problems to older dashboards
         // that trusted on preExecution not being called in CGG.
         if(typeof component.preExecution === 'function') {
             try {
@@ -223,14 +223,19 @@ function renderCccFromComponent(component, data) {
             }
         }
         
-        if(typeof component.postFetch === 'function') {
-            try {
-                var newData = data = component.postFetch(data);
-                if(newData !== undefined) { data = newData; }
-            } catch(ex) {
-                // ignore
-                print("Error in 'postFetch': " + ex);
-            }
+        if(data) {
+          if(typeof component.postFetch === 'function') {
+              try {
+                  var newData = data = component.postFetch(data);
+                  if(newData !== undefined) { data = newData; }
+              } catch(ex) {
+                  // ignore
+                  print("Error in 'postFetch': " + ex);
+              }
+          }
+        } else {
+          // May be set in preExecution
+          data = component.valuesArray;
         }
         
         preProcessChartDefinition(component.chartDefinition);
@@ -243,6 +248,17 @@ function renderCccFromComponent(component, data) {
         chart.setData(data);
         chart.render();
         
+        // This may start causing problems to older dashboards
+        // that trusted on postExecution not being called in CGG.
+        if(typeof component.postExecution === 'function') {
+            try {
+                component.postExecution();
+            } catch(ex) {
+                // ignore
+                print("Error in 'postExecution': " + ex);
+            }
+        }
+
         // Set the SVG element with the final chart width/height
         //  so that the PNGTranscoder can detect the image size.
         // When no data, no basePanel.
