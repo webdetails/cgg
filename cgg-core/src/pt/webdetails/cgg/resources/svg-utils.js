@@ -1,4 +1,5 @@
 var cgg = cgg || {};
+
 cgg.utils = cgg.utils || {};
 
 cgg.utils.loadSvg = function(path) {
