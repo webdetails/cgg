@@ -47,9 +47,9 @@
     <dependency org="pentaho" name="pentaho-bi-platform-engine-services"
         rev="${dependency.bi-platform.revision}" transitive="false" />
 
-    <dependency org="pt.webdetails" name="cpf-core" rev="TRUNK-SNAPSHOT" transitive="false" 
+    <dependency org="pt.webdetails" name="cpf-core" rev="13.09.10" transitive="false" 
         changing="true" conf='runtime->default'/>
-    <dependency org="pt.webdetails" name="cpf-pentaho" rev="TRUNK-SNAPSHOT" transitive="false" 
+    <dependency org="pt.webdetails" name="cpf-pentaho" rev="13.09.10" transitive="false" 
         changing="true" conf='runtime->default'/>
 
 
