@@ -97,8 +97,41 @@ cgg.style = function(_style) {
 
 document = new cgg.document(_document);
 
-window.console = {
-  log: function() {
-    print("LOG: " + Array.prototype.join.call(arguments, ','));
+// window console shim
+(function() {
+  var level = 1;
+  var A_slice = Array.prototype.slice;
+
+  // Must be == to work
+  if(params.get('debug') == 'true') {
+    var debugLevel = parseFloat(params.get('debugLevel'));
+    if(!isNaN(debugLevel) && isFinite(debugLevel)) { level = debugLevel; }
   }
-};
+
+  cgg.debug = level;
+  cgg.logStringify = String;
+
+  function _callLog(mask) {
+    try {
+      var args = A_slice.call(arguments);
+
+      if(mask) { args[0] = mask.replace('%s', ''); }
+
+      var text = args.map(function(s) {
+          return !s || typeof s !== 'object' ?  (''+s) : cgg.logStringify(s);
+      }).join(' ');
+
+      print(text);
+    } catch(ex) {
+      print('Error writting to log: ' + ex);
+    }
+  }
+
+  window.console = {};
+
+  // Create console object's methods
+  ['log', 'debug', 'info', 'warn', 'group', 'groupCollapsed', 'groupEnd', 'error']
+  .forEach(function(p) { console[p] = _callLog; });
+
+  // Execute immediately
+}());
