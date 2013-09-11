@@ -206,19 +206,6 @@ function renderCccFromComponent(component, data) {
             svgElem.appendChild(bg);
         }
         
-        // This may cause problems to older dashboards
-        // that trusted on preExecution not being called in CGG.
-        if(typeof component.preExecution === 'function') {
-            try {
-                var contin = component.preExecution();
-                if(contin != undefined && !contin) {
-                    print("Ignoring 'preExecution' falsy result.");
-                }
-            } catch(ex) {
-                // ignore
-                print("Error in 'preExecution': " + ex);
-            }
-        }
         
         if(typeof component.postFetch === 'function') {
             try {
