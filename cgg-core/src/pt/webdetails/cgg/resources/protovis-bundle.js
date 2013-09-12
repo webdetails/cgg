@@ -9,15 +9,21 @@ lib("document.js")  &&
 lib("svg-utils.js") &&
 
 // CCC library
-lib("lib/CCC/jquery-shim.js") && 
-lib("lib/CCC/protovis.js") && 
-lib("lib/CCC/protovis-cgg.js") && 
-lib("lib/CCC/tipsy-shim.js") && 
-lib("lib/CCC/def.js") &&
-lib("lib/CCC/pvc-d2.0.js") &&
-lib("lib/CCC/compatVersion.js") && 
+lib_CCC_2_0() &&
 
 // CDF layer
 lib("Dashboards.js") &&
 lib("components/core.js") &&
 lib("components/ccc.js");
+
+function lib_CCC_2_0() {
+    var basePath = "lib/CCC/2.0/";
+
+    return lib(basePath + "jquery-shim.js") && 
+        lib(basePath + "protovis.js") && 
+        lib(basePath + "protovis-cgg.js") && 
+        lib(basePath + "tipsy-shim.js") && 
+        lib(basePath + "def.js") &&
+        lib(basePath + "pvc-d2.0.js") &&
+        lib(basePath + "compatVersion.js");
+}

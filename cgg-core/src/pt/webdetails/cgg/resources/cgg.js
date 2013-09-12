@@ -42,7 +42,7 @@ cgg.setParameterValue = function(pname, v) {
 
 cgg.init = function(component) {
   var out;
-  if(cgg.debug > 2) { out = ["CGG - RENDER1 " + component.type]; }
+  if(cgg.debug > 2) { out = ["CGG - RENDER " + (component ? component.type : "")]; }
 
   var lparams = new CggParameters();
   
