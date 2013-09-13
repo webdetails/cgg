@@ -4,6 +4,8 @@
 
 lib("protovis-bundle.js");
 
+cgg.init && cgg.init();
+
 cgg.utils.initDocument("dial.svg");
 
 var scale = params.get("scale"),
@@ -19,8 +21,6 @@ var scale = params.get("scale"),
  * so we handle values bigger than the declared maximum
  */
 
-print(typeof value);
-print(typeof max);
 min = (value < min ? value : min);
 max = (value > max ? value : max);
 scale[scale.length - 1] = max;
