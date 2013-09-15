@@ -100,8 +100,6 @@ public class CggContentGenerator extends SimpleContentGenerator {
             Long width = requestParams.getLongParameter("width", 0L);
             Long height = requestParams.getLongParameter("height", 0L);
             
-            logger.debug("Starting:" + new Date().getTime());
-            
             final URL context = new File(PentahoRepositoryAccess.getPentahoSolutionPath(scriptName)).getParentFile().toURI().toURL();
             final WebCgg cgg = new WebCgg(context, response, out, delegate);
             

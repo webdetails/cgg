@@ -74,23 +74,24 @@ public abstract class AbstractCgg
     long start = System.currentTimeMillis();
     try
     {
-      
+      logger.info("Rendering Script \"" + scriptFile + "\" of type \"" + scriptType + "\" into \"" + outputType + "\"");
+
       final ScriptFactory factory = getScriptFactory();
       final Script script = factory.createScript(scriptFile, scriptType);
       script.configure(width, height, getDataSourceFactory(), factory);
       long end = System.currentTimeMillis();
-      logger.debug("Time after Script created: " + (end - start));
+      logger.debug("Time to create Script: " + (end - start));
       
       start = System.currentTimeMillis();
       final Chart chart = script.execute(params);
       end = System.currentTimeMillis();
-      logger.debug("Time after Script executed: " + (end - start));
+      logger.debug("Time to execute Script: " + (end - start));
 
       start = System.currentTimeMillis();      
       final OutputHandler outputHandler = getOutputFactory().create(outputType);
       produceOutput(chart, outputHandler);
       end = System.currentTimeMillis();
-      logger.debug("Time after Image exported: " + (end - start));
+      logger.debug("Time to export Image: " + (end - start));
     }
     catch (ScriptCreationException se)
     {
