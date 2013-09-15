@@ -240,10 +240,15 @@ Dashboards._registerControlClassHandler(function(typeName) {
 
 // --------------
 
-cgg.logStringify = function(s) {
-  return pvc.stringify(s, {ownOnly: false}); 
-};
+// Not all versions of CCC have pvc.stringify.
+if(pvc.stringify) {
+  cgg.logStringify = function(s) {
+    return pvc.stringify(s, {ownOnly: false}); 
+  };
+}
 
 // --------------
-
-pvc.setDebug(cgg.debug);
+// idem
+if(pvc.setDebug) {
+  pvc.setDebug(cgg.debug);
+}

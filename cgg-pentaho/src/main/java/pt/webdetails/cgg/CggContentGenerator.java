@@ -32,6 +32,10 @@ public class CggContentGenerator extends SimpleContentGenerator {
     
     private static final Log logger = LogFactory.getLog(CggContentGenerator.class);
 
+    private static final String CCC_VERSION_PARAM = "cccVersion";
+    private static final String CCC_VERSION_ANALYZER_4_8 = "2.0-analyzer";
+      
+
     private class InternalSetResponseHeaderDelegate implements SetResponseHeaderDelegate
     {
       private String attachmentName;
@@ -107,7 +111,11 @@ public class CggContentGenerator extends SimpleContentGenerator {
             if(!filePath.startsWith("/")) { filePath = "/" + filePath; }
             filePath = "file://" + filePath;
             
-            cgg.draw(filePath, scriptTypeParam, outputTypeParam, width.intValue(), height.intValue(), buildParameterMap(requestParams));
+            Map<String, Object> paramMap = buildParameterMap(requestParams);
+
+            this.defaultCccLibVersion(paramMap, scriptName);
+            
+            cgg.draw(filePath, scriptTypeParam, outputTypeParam, width.intValue(), height.intValue(), paramMap);
         }
         catch (FileNotFoundException fe) {
             logger.error(fe);
@@ -119,29 +127,46 @@ public class CggContentGenerator extends SimpleContentGenerator {
         }
     }
 
-  private Map<String, Object> buildParameterMap(final IParameterProvider requestParams)
-  {
-    HashMap<String, Object> params = new HashMap<String, Object>();
-    Iterator inputParams = requestParams.getParameterNames();
-    while (inputParams.hasNext())
+    private Map<String, Object> buildParameterMap(final IParameterProvider requestParams)
     {
-      String paramName = inputParams.next().toString();
-      if (paramName.startsWith("param"))
+      HashMap<String, Object> params = new HashMap<String, Object>();
+      Iterator inputParams = requestParams.getParameterNames();
+      while (inputParams.hasNext())
       {
-        String pName = paramName.substring(5);
-        Object[] p = requestParams.getArrayParameter(paramName, null);
-        if (p.length == 1)
-        { // not *really* an array, is it?
-          params.put(pName, p[0]);
-        }
-        else
+        String paramName = inputParams.next().toString();
+        if (paramName.startsWith("param"))
         {
-          params.put(pName, p);
+          String pName = paramName.substring(5);
+          Object[] p = requestParams.getArrayParameter(paramName, null);
+          if (p.length == 1)
+          { // not *really* an array, is it?
+            params.put(pName, p[0]);
+          }
+          else
+          {
+            params.put(pName, p);
+          }
         }
       }
+      return params;
     }
-    return params;
-  }
+
+    private void defaultCccLibVersion(Map<String, Object> paramMap, String scriptName)
+    {
+      if(!paramMap.containsKey(CCC_VERSION_PARAM)) {
+        // TODO: detect 4.8
+        // If this is an analyzer call in 4.8, use "2.0-analyzer"
+        String normalizedScriptName = scriptName
+            .toLowerCase()
+            .replaceAll("\\\\+", "/")
+            .replaceAll("/+",    "/");
+
+        if(normalizedScriptName.indexOf("system/analyzer") >= 0) {
+          paramMap.put(CCC_VERSION_PARAM, CCC_VERSION_ANALYZER_4_8);
+        }
+        // else, use latest
+      }
+    }
 
     @Exposed(accessLevel = AccessLevel.PUBLIC)
     public void refresh(OutputStream out) {
