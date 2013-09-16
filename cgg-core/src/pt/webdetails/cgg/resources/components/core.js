@@ -148,7 +148,7 @@ var UnmanagedComponent = BaseComponent.extend({
     .names()
     .forEach(function(pname) {
       if(this.filterDataSourceParameter(pname)) {
-        ds.setParameter(pname, cgg.getParameterValue(pname));
+        ds.setParameter(pname, cgg.jsToJava(cgg.getParameterValue(pname)));
       }
     }, this);
   },

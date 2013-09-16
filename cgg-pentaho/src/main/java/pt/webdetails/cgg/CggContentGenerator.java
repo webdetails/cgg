@@ -8,15 +8,20 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.net.URL;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
+import mondrian.tui.MockHttpServletResponse;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IParameterProvider;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.util.VersionHelper;
+import org.pentaho.platform.util.VersionInfo;
+
 import pt.webdetails.cpf.SimpleContentGenerator;
 import pt.webdetails.cpf.annotations.AccessLevel;
 import pt.webdetails.cpf.annotations.Exposed;
@@ -84,7 +89,7 @@ public class CggContentGenerator extends SimpleContentGenerator {
     @Exposed(accessLevel = AccessLevel.PUBLIC)
     public void draw(final OutputStream out) {
 
-      final HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
+      final HttpServletResponse response = this.getHttpResponse();
       try {
 
             IParameterProvider requestParams = getRequestParameters();
@@ -124,7 +129,17 @@ public class CggContentGenerator extends SimpleContentGenerator {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
+    
+    private HttpServletResponse getHttpResponse() {
+    	HttpServletResponse response = (HttpServletResponse) parameterProviders.get("path").getParameter("httpresponse");
+        if (response == null) {
+            logger.debug("No response passed, adding mock response.");
+            response = new MockHttpServletResponse();
+        }
 
+        return response;
+    }
+    
     private Map<String, Object> buildParameterMap(final IParameterProvider requestParams)
     {
       HashMap<String, Object> params = new HashMap<String, Object>();
@@ -152,16 +167,21 @@ public class CggContentGenerator extends SimpleContentGenerator {
     private void defaultCccLibVersion(Map<String, Object> paramMap, String scriptName)
     {
       if(!paramMap.containsKey(CCC_VERSION_PARAM)) {
-        // TODO: detect 4.8
-        // If this is an analyzer call in 4.8, use "2.0-analyzer"
-        String normalizedScriptName = scriptName
-            .toLowerCase()
-            .replaceAll("\\\\+", "/")
-            .replaceAll("/+",    "/");
+    	
+    	// If this is an analyzer call in 4.8, use "2.0-analyzer"
+    	VersionInfo versionInfo = VersionHelper.getVersionInfo(PentahoSystem.class);
+    	String v = versionInfo.getVersionNumber();
+    	if(v.startsWith("4.8")) 
+    	{
+    		String normalizedScriptName = scriptName
+                .toLowerCase()
+                .replaceAll("\\\\+", "/")
+                .replaceAll("/+",    "/");
 
-        if(normalizedScriptName.indexOf("system/analyzer") >= 0) {
-          paramMap.put(CCC_VERSION_PARAM, CCC_VERSION_ANALYZER_4_8);
-        }
+            if(normalizedScriptName.indexOf("system/analyzer") >= 0) {
+              paramMap.put(CCC_VERSION_PARAM, CCC_VERSION_ANALYZER_4_8);
+            }
+    	}
         // else, use latest
       }
     }

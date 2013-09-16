@@ -20,6 +20,24 @@ cgg.javaToJS = function(v) {
   return v;
 };
 
+cgg.jsToJava = function(v) {
+  if(v == null) { return v; }
+  if(typeof v === 'object') {
+      if(typeof v === 'string')  { return new java.lang.String(v);  }
+      if(typeof v === 'number')  { return new java.lang.Double(v);  }
+      if(typeof v === 'boolean') { return new java.lang.Boolean(v); }
+      if(v instanceof Array) { // !(v instanceof Array) && 
+        var L = v.length;
+        var a = java.lang.reflect.Array.newInstance(java.lang.String, L);
+        for(var i = 0 ; i < L ; i++) {
+          a[i] = cgg.jsToJava(v[i]);
+        }
+        return a;
+      }
+  }
+  return v;
+};
+
 var _parameterDefaults = {};
 
 cgg.initParameter = function(pname, dv) {
