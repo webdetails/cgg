@@ -40,8 +40,11 @@
               stroke-miterlimit="3.8637" stroke-width="2"
               id="linha_x5F_indicadora" stroke="#FE860C"/>
         <g id="escala_cor">
-            <g font-size="10px" fill="none" width="600" font-family="sans-serif"
-               height="300" stroke="none" stroke-width="1.5">
+            <g font-size="10px" fill="none" width="600"
+               style="-webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;"
+               font-family="sans-serif" height="300" stroke="none"
+               stroke-width="1.5">
+                <defs/>
                 <g>
                     <path fill="rgb(255,0,0)"
                           d="M-225,-2.7554552980815446e-14A225,225 0 0,1 -159.09902576697317,-159.0990257669732L-148.49242404917496,-148.49242404917499A210,210 0 0,0 -210,-2.5717582782094416e-14Z"
@@ -221,7 +224,7 @@ font-size: 12.4;
                           transform="translate(564.9991718754313,274.3375006901039)"
                           text-anchor="middle">100</text></g></g></g>
         <polygon fill="#626A6E" clip-rule="evenodd" id="ponteiro"
-                 fill-rule="evenodd" transform="rotate(NaN,300,275)"
+                 fill-rule="evenodd" transform="rotate(1.8,300,275)"
                  points="300,265 300,285 75,275.016  "/>
         <path fill="#626A6E"
               d="M257.512,285l-0.012-0.918c0-4.57,0.85-8.945,2.418-13.023   c4.943-12.871,17.014-22.65,31.852-25.32c2.662-0.484,5.42-0.738,8.23-0.738c23.473,0,42.5,17.496,42.5,39.082L342.49,285H257.512z   "

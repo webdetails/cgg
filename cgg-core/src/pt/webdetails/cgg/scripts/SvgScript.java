@@ -25,12 +25,10 @@ import org.apache.batik.dom.svg.SVGOMDocument;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.NativeJavaObject;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.w3c.dom.Document;
-
 import pt.webdetails.cgg.Chart;
 import pt.webdetails.cgg.SVGChart;
 import pt.webdetails.cgg.ScriptExecuteException;
@@ -50,7 +48,12 @@ public class SvgScript extends BaseScript
   @Override
   public Chart execute(final Map<String, Object> params) throws ScriptExecuteException
   {
-    ContextFactory.getGlobal().enter();
+    if (Context.getCurrentContext() == null)
+    {
+      throw new ScriptExecuteException();
+    }
+
+    Context.getCurrentContext().getFactory().enterContext();
     try
     {
       addSVGDocumentToScope();

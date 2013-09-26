@@ -22,18 +22,12 @@ import java.io.OutputStream;
 import java.net.URL;
 import javax.servlet.http.HttpServletResponse;
 
-
-import pt.webdetails.cgg.datasources.DataSourceFactory;
 import pt.webdetails.cgg.datasources.WebDataSourceFactory;
-import pt.webdetails.cgg.output.DefaultOutputFactory;
-import pt.webdetails.cgg.output.OutputFactory;
 import pt.webdetails.cgg.output.OutputHandler;
 import pt.webdetails.cgg.scripts.DefaultScriptFactory;
-import pt.webdetails.cgg.scripts.ScriptFactory;
 
 public class WebCgg extends AbstractCgg
 {
-  private URL context;
   private HttpServletResponse servletResponse;
   private OutputStream out;
   private SetResponseHeaderDelegate delegate;
@@ -43,36 +37,22 @@ public class WebCgg extends AbstractCgg
                 final OutputStream out,
                 final SetResponseHeaderDelegate delegate)
   {
-    this.context = context;
     this.servletResponse = servletResponse;
     this.out = out;
     this.delegate = delegate;
+    setDataSourceFactory(new WebDataSourceFactory());
+    setScriptFactory(new DefaultScriptFactory(context));
   }
 
-  protected DataSourceFactory createDataSourceFactory()
+  protected void produceOutput(final Chart chart,
+                               final String requestedOutputHandler) throws IOException, ScriptExecuteException
   {
-    return new WebDataSourceFactory();
-  }
-
-  protected void produceOutput(final Chart chart, final OutputHandler cggOutputHandler) throws IOException
-  {
+    OutputHandler cggOutputHandler = getOutputFactory().create(requestedOutputHandler);
     servletResponse.setContentType(cggOutputHandler.getMimeType());
     servletResponse.setHeader("Cache-Control", "max-age=0, no-store");
 
     delegate.setResponseHeader(cggOutputHandler.getMimeType());
 
     cggOutputHandler.render(out, chart);
-  }
-
-  protected OutputFactory createOutputFactory()
-  {
-    return DefaultOutputFactory.getInstance();
-  }
-
-  protected ScriptFactory createScriptFactory()
-  {
-    final DefaultScriptFactory scriptFactory = new DefaultScriptFactory();
-    scriptFactory.setContext(context);
-    return scriptFactory;
   }
 }

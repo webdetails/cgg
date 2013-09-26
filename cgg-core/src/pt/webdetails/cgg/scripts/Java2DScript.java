@@ -16,13 +16,9 @@ package pt.webdetails.cgg.scripts;
 import java.awt.image.BufferedImage;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
-
 import pt.webdetails.cgg.Chart;
 import pt.webdetails.cgg.Java2DChart;
 import pt.webdetails.cgg.ScriptExecuteException;
@@ -33,7 +29,6 @@ import pt.webdetails.cgg.datasources.DataSourceFactory;
  */
 public class Java2DScript extends BaseScript
 {
-  private static final Log logger = LogFactory.getLog(Java2DScript.class);
   private BufferedImage imageBuffer;
   private long width;
   private long height;
@@ -46,7 +41,7 @@ public class Java2DScript extends BaseScript
   public void configure(final int width,
                         final int height,
                         final DataSourceFactory dataSourceFactory,
-                        final ScriptFactory scriptFactory)
+                        final ScriptFactory scriptFactory) throws ScriptExecuteException
   {
     super.configure(width, height, dataSourceFactory, scriptFactory);
     this.width = width;
@@ -56,7 +51,12 @@ public class Java2DScript extends BaseScript
   @Override
   public Chart execute(final Map<String, Object> params) throws ScriptExecuteException
   {
-    ContextFactory.getGlobal().enter();
+    if (Context.getCurrentContext() == null)
+    {
+      throw new ScriptExecuteException();
+    }
+
+    Context.getCurrentContext().getFactory().enterContext();
     try
     {
       addGraphicsToScope();
@@ -69,10 +69,7 @@ public class Java2DScript extends BaseScript
     }
     finally
     {
-      if (Context.getCurrentContext() != null)
-      {
-        Context.exit();
-      }
+      Context.exit();
     }
   }
 

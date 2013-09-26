@@ -40,7 +40,7 @@ public class SVGChart implements Chart
     this.svg = doc;
   }
 
-  public Document getSvg()
+  public Document getRawObject()
   {
     return svg;
   }
