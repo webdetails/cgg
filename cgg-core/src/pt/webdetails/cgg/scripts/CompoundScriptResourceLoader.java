@@ -80,7 +80,7 @@ public class CompoundScriptResourceLoader implements ScriptResourceLoader
         // ignored
       }
     }
-    throw new ScriptResourceNotFoundException();
+    throw new ScriptResourceNotFoundException(script);
   }
 
   public String getContextResourceURI(final String script) throws IOException, ScriptResourceNotFoundException
@@ -96,7 +96,7 @@ public class CompoundScriptResourceLoader implements ScriptResourceLoader
         // ignored
       }
     }
-    throw new ScriptResourceNotFoundException();
+    throw new ScriptResourceNotFoundException(script);
   }
 
   public InputStream getContextResource(final String script) throws IOException, ScriptResourceNotFoundException
@@ -112,6 +112,6 @@ public class CompoundScriptResourceLoader implements ScriptResourceLoader
         // ignored
       }
     }
-    throw new ScriptResourceNotFoundException();
+    throw new ScriptResourceNotFoundException(script);
   }
 }

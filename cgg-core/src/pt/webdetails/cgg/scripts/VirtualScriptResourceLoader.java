@@ -58,6 +58,11 @@ public class VirtualScriptResourceLoader implements ScriptResourceLoader
 
   public String getContextResourceURI(final String script) throws IOException, ScriptResourceNotFoundException
   {
+    String s = scripts.get(script);
+    if (s != null)
+    {
+      return "virtual://" + script;
+    }
     throw new ScriptResourceNotFoundException();
   }
 

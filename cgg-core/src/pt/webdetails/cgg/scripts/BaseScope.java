@@ -231,7 +231,7 @@ public class BaseScope extends ImporterTopLevel
       return false;
     }
 
-    String contextResourceURI = scriptFactory.getContextResourceURI(file);
+    String contextResourceURI = file;
     org.mozilla.javascript.Script s = processed.get(contextResourceURI);
     if (s == null)
     {

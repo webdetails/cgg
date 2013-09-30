@@ -115,11 +115,11 @@ public abstract class BaseScript implements Script
     }
     catch (ScriptResourceNotFoundException e)
     {
-      logger.error("Failed to read " + source + ": " + e.toString());
+      logger.error("Failed to read " + source + ": " + e.toString(), e);
     }
     catch (IOException e)
     {
-      logger.error("Failed to read " + source + ": " + e.toString());
+      logger.error("Failed to read " + source + ": " + e.toString(), e);
     }
   }
 }
