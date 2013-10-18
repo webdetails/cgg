@@ -41,6 +41,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 @Path("/cgg/api/services")
 public class CggService {
   
+  private static final String CCC_VERSION_PARAM = "cccVersion";
+  private static final String CCC_MULTICHART_OVERFLOW_PARAM = "multiChartOverflow";
   
   private static final Log logger = LogFactory.getLog(CggService.class);
   private OutputStream outputStream;
@@ -84,15 +86,29 @@ public class CggService {
          @DefaultValue("0") @QueryParam("height") Long height,
          @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest) 
  {
-    this.draw(script, type, outputType, attachmentName, null, width, height, servletResponse, servletRequest);
+    this.draw(script, type, outputType, attachmentName, null, null, width, height, servletResponse, servletRequest);
  }
-
+ 
  public void draw(
           String script,
           String type,
           String outputType,
           String attachmentName,
           String multiChartOverflow,
+          Long width,
+          Long height,
+          HttpServletResponse servletResponse, 
+          HttpServletRequest servletRequest) {
+     this.draw(script, type, outputType, attachmentName, multiChartOverflow, null, width, height, servletResponse, servletRequest);
+ }
+  
+ public void draw(
+          String script,
+          String type,
+          String outputType,
+          String attachmentName,
+          String multiChartOverflow,
+          String cccLibVersion,
           Long width,
           Long height,
           HttpServletResponse servletResponse, 
@@ -111,13 +127,26 @@ public class CggService {
                     String paramName = inputParams.nextElement();
                     if (paramName.startsWith("param")) {
                         String pName = paramName.substring(5);
-                        params.put(pName, servletRequest.getParameter(paramName));
+                        
+                        String[] p = servletRequest.getParameterValues(paramName);
+                        if(p.length == 1)
+                        { // not *really* an array, is it?
+                          params.put(pName, p[0]);
+                        }
+                        else
+                        {
+                          params.put(pName, p);
+                        }
                     }
                 }
             }
             
-            if(multiChartOverflow != null && !multiChartOverflow.isEmpty()) {
-            	params.put("multiChartOverflow", multiChartOverflow);
+            if(!StringUtils.isEmpty(multiChartOverflow)) {
+            	params.put(CCC_MULTICHART_OVERFLOW_PARAM, multiChartOverflow);
+            }
+            
+            if(!StringUtils.isEmpty(cccLibVersion)) {
+            	params.put(CCC_VERSION_PARAM, cccLibVersion);
             }
             
             OutputType scriptOutputType = OutputType.parse(outputType);
@@ -144,9 +173,8 @@ public class CggService {
             logger.fatal(ex);
         }  
   }
-  
-  
-   public enum FileType
+
+    public enum FileType
     {
       JPG, JPEG, PNG, GIF, BMP, JS, CSS, HTML, HTM, XML,
       SVG, PDF, TXT, DOC, DOCX, XLS, XLSX, PPT, PPTX;
@@ -315,9 +343,5 @@ public class CggService {
       {
         response.setHeader("Cache-Control", "max-age=0, no-store");
       }
-    }    
-    
-    
-  
-  
+    }
 }

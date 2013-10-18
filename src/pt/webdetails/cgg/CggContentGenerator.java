@@ -33,7 +33,8 @@ import sun.print.resources.serviceui;
  */
 public class CggContentGenerator extends SimpleContentGenerator {
 
-    
+    private static final String CCC_VERSION_PARAM = "cccVersion";
+
     private static final Log logger = LogFactory.getLog(CggContentGenerator.class);
 
     @Override
@@ -74,6 +75,8 @@ public class CggContentGenerator extends SimpleContentGenerator {
           height = Long.parseLong(heightAsStr);
         } catch (NumberFormatException nfe) {}
         
+        String cccLibVersion = requestParams.getStringParameter(CCC_VERSION_PARAM, "");
+        
         HttpServletRequest  request  = getRequest();
         HttpServletResponse response = getResponse();
         
@@ -82,7 +85,6 @@ public class CggContentGenerator extends SimpleContentGenerator {
         if(response == null) {
             service.setOutputStream(out);
         }
-        service.draw(script, type, outputType, attachmentName, multiChartOverflow, height, width, response, request);
+        service.draw(script, type, outputType, attachmentName, multiChartOverflow, cccLibVersion, height, width, response, request);
     }
-   
 }
