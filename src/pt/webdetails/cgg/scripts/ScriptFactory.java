@@ -4,16 +4,12 @@
 
 package pt.webdetails.cgg.scripts;
 
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
-import java.util.UUID;
-import javax.security.auth.callback.TextOutputCallback;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -60,52 +56,41 @@ public class ScriptFactory {
             logger.error(e);
         }
         
-        if(!path.startsWith("/")){
+        if(!path.startsWith("/"))
+        {
             path = "/" + path;
         }
         
-        if(!path.startsWith("/system") && !RepositoryAccess.getRepository().resourceExists(path)){
-          throw new FileNotFoundException("Couldn't find " + path);
-        }
-        
-        
-        if (!path.startsWith("/system")) {
-          try {
-          String script = RepositoryAccess.getRepository().getResourceAsString(path);
-          
-          String newPath = RepositoryAccess.getSystemDir() + "/cgg/.temp/c" + UUID.randomUUID().toString() + ".js";
-          
-          File f = new File(newPath);
-          f.getParentFile().mkdirs();
-          
-          FileOutputStream fos = new FileOutputStream(f);
-          fos.write(script.getBytes());
-          fos.flush();
-          fos.close();
-
-          path = newPath;
-          } catch (IOException e) {
-            logger.error("IOException while copying script to system",e);
+        GenericPath source;
+        if(!path.startsWith("/system"))
+        {
+          if(!RepositoryAccess.getRepository().resourceExists(path))
+          {
+            throw new FileNotFoundException("Couldn't find repository file '" + path + "'.");
           }
           
-        } else
-          path = RepositoryAccess.getSolutionPath(path);
+          source = new GenericPath(path, GenericPath.PathType.REPOSITORY);
+        }
+        else
+        {
+          path = path.replaceAll("^/system", "/");
+          source = new GenericPath(path, GenericPath.PathType.SYSTEM);
+        }
         
-        Script script = null;
+        Script script;
         switch (scriptType) {
             case SVG:
-                script = new SvgScript(path);
+                script = new SvgScript(source);
                 break;
             case J2D:
-                script = new Java2DScript(path, width, height);
+                script = new Java2DScript(source, width, height);
                 break;
             default:
                 script = null;
                 break;
-
         }
         
-        if(script!= null) {
+        if(script != null) {
           script.setScope(getScope(scriptType));
         }
 
@@ -136,7 +121,7 @@ public class ScriptFactory {
                 break;
         }
         BaseScope scope = new BaseScope();
-        scope.setSystemPath(systemPath);
+        scope.setSystemLibPath(systemPath);
         scope.init(cx);
         for (String file : dependencies) {
             try {

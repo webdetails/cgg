@@ -29,7 +29,7 @@ class SvgScript extends BaseScript {
     SvgScript() {
     }
 
-    SvgScript(String source) {
+    SvgScript(GenericPath source) {
         super(source);
     }
 

@@ -26,7 +26,7 @@ class Java2DScript extends BaseScript {
     Java2DScript() {
     }
 
-    Java2DScript(String source, long width, long height) {
+    Java2DScript(GenericPath source, long width, long height) {
         super(source);
         this.width = width;
         this.height = height;
