@@ -153,7 +153,7 @@ public class CggService {
             ScriptType scriptType = ScriptType.parse(type);
 
             if (!attachmentName.isEmpty()) {
-                String fileName = attachmentName.indexOf(".") > 0 ? attachmentName : attachmentName + "." + type;
+                String fileName = attachmentName.indexOf(".") > 0 ? attachmentName : attachmentName + "." + outputType;
                 setResponseHeaders(getMimeType(fileName), fileName, servletResponse);
             }
             else{
