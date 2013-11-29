@@ -18,10 +18,7 @@ package pt.webdetails.cgg.scripts;
  */
 public class Java2DScope extends BaseScope
 {
-
   public Java2DScope()
   {
-    super();
-    sealedStdLib = false;
   }
 }

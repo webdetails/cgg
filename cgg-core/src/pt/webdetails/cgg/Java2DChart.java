@@ -34,7 +34,7 @@ public class Java2DChart implements Chart
     this.buffer = buffer;
   }
 
-  public RenderedImage getBuffer()
+  public RenderedImage getRawObject()
   {
     return buffer;
   }
