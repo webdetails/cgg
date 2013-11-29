@@ -13,15 +13,7 @@
 
 package pt.webdetails.cgg;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -259,6 +251,8 @@ public class CggGoldTestBase
                                final File goldSample,
                                final String outputType) throws Exception
   {
+    FileOutputStream fos = new FileOutputStream(goldSample.getName());
+    fos.write(cggChartOutput);
     if ("svg".equals(outputType))
     {
       final Reader reader = new InputStreamReader(new FileInputStream(goldSample), "UTF-8");
