@@ -46,7 +46,7 @@ public class DefaultDataSourceFactory implements DataSourceFactory
     {
       throw new IllegalArgumentException();
     }
-    final DataSource datasource = getSource(className); 
+    final DataSource datasource = getSource(className);
     if (datasource == null)
     {
       throw new IllegalArgumentException();
@@ -58,7 +58,7 @@ public class DefaultDataSourceFactory implements DataSourceFactory
   private DataSource getSource(String type) {
 
     try {
-      return (DataSource)Class.forName(type).newInstance();    
+      return (DataSource)Class.forName(type).newInstance();
     } catch (ClassNotFoundException cnfe) {
       logger.fatal("Class for data source " + type + " not found.", cnfe);
     } catch (InstantiationException ie) {

@@ -24,9 +24,9 @@ public class WebDataSourceFactory implements DataSourceFactory
   {
   }
 
-  public DataSource createDatasource(final String type)
+  public DataSource createDatasource( final String type )
   {
-    if ("CDA".equalsIgnoreCase(type))
+    if ( "CDA".equalsIgnoreCase(type) )
     {
       return new CdaDatasource();
     }

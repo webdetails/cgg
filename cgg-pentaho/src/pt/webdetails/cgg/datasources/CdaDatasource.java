@@ -19,36 +19,34 @@ import java.util.Map;
 import pt.webdetails.cpf.InterPluginCall;
 
 /**
- *
  * @author pdpi
  */
-public class CdaDatasource implements DataSource
-{
+public class CdaDatasource implements DataSource {
 
-    private Map<String, Object> requestMap = new HashMap<String, Object>();
+  private Map<String, Object> requestMap = new HashMap<String, Object>();
 
-    public CdaDatasource() {
-    }
-    
-    private String getQueryData() {
-      InterPluginCall cdaCall = new InterPluginCall(InterPluginCall.CDA, "doQuery");
-      cdaCall.setRequestParameters(requestMap);
-      return cdaCall.callInPluginClassLoader();
-    }
+  public CdaDatasource() {
+  }
 
-    public String execute() {
-        return getQueryData();
-    }
-    
-    public void setParameter(String param, Object val){
-      requestMap.put("param" + param, val);
-    }
+  private String getQueryData() {
+    InterPluginCall cdaCall = new InterPluginCall( InterPluginCall.CDA, "doQuery" );
+    cdaCall.setRequestParameters( requestMap );
+    return cdaCall.callInPluginClassLoader();
+  }
 
-    public void setDataAccessId(String id) {
-        requestMap.put("dataAccessId", id);
-    }
+  public String execute() {
+    return getQueryData();
+  }
 
-    public void setDefinitionFile(String file) {
-        requestMap.put("path", file);
-    }
+  public void setParameter( String param, Object val ) {
+    requestMap.put( "param" + param, val );
+  }
+
+  public void setDataAccessId( String id ) {
+    requestMap.put( "dataAccessId", id );
+  }
+
+  public void setDefinitionFile( String file ) {
+    requestMap.put( "path", file );
+  }
 }
