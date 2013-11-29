@@ -29,5 +29,10 @@
 
 	<!-- Override default dist target to do a dist-full instead -->
 	<target name="dist" depends="resolve, dist-full"/>
+	
+    <target name="publish" depends="dist, dist-source, cobertura, publish-nojar">
+    </target>
+	
+	
 
 </project>
