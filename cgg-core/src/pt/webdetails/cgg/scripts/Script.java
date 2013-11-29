@@ -15,8 +15,6 @@ package pt.webdetails.cgg.scripts;
 
 import java.util.Map;
 
-import org.mozilla.javascript.Scriptable;
-
 import pt.webdetails.cgg.Chart;
 import pt.webdetails.cgg.ScriptExecuteException;
 import pt.webdetails.cgg.datasources.DataSourceFactory;
@@ -29,9 +27,9 @@ public interface Script
   public void configure(final int width,
                         final int height,
                         final DataSourceFactory dataSourceFactory,
-                        final ScriptFactory scriptFactory);
+                        final ScriptFactory scriptFactory) throws ScriptExecuteException;
 
-  public void setScope(Scriptable scope);
+  public void setScope(BaseScope scope) throws ScriptExecuteException;
 
   public Chart execute(Map<String, Object> params) throws ScriptExecuteException;
 }

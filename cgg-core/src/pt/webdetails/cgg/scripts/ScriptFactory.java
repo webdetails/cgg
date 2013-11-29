@@ -13,27 +13,22 @@
 
 package pt.webdetails.cgg.scripts;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 
 import pt.webdetails.cgg.ScriptCreationException;
+import pt.webdetails.cgg.ScriptExecuteException;
 
 /**
  * @author pdpi
  */
-public interface ScriptFactory
+public interface ScriptFactory extends ScriptResourceLoader
 {
-  public Reader getSystemLibraryScript(String script) throws IOException;
+  public void enterContext();
 
-  public Reader getContextLibraryScript(String script) throws IOException;
-  
-  public String getContextResourceURI(String script) throws IOException;
-  public InputStream getContextResource(String script) throws IOException;
+  public void exitContext();
 
   public Script createScript(String path, String scriptType)
-      throws FileNotFoundException, IOException, ScriptCreationException;
+      throws ScriptResourceNotFoundException, IOException, ScriptCreationException, ScriptExecuteException;
 
   public void clearCachedScopes();
 }

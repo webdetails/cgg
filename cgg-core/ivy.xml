@@ -50,6 +50,7 @@
     <!-- XALAN is required by batik-dom -->
     <dependency org="xalan" name="xalan" rev="2.6.0" conf='default_external->default' transitive="false" />
     <dependency org="xerces" name="xercesImpl" rev="2.9.0" conf="default_external->default" transitive="false"/>
+    <dependency org="xml-apis" name="xml-apis-ext" rev="1.3.04" conf="default_external->default" transitive="false"/>
 
     <!-- Not using batik-js, as this is a patched rhino-1.6R5. the patch concerns swing-filechoosers
          (see https://bugzilla.mozilla.org/show_bug.cgi?id=367627 ) and therefore is of no concern

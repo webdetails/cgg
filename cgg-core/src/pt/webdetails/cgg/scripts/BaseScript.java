@@ -14,17 +14,14 @@
 package pt.webdetails.cgg.scripts;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
-
+import pt.webdetails.cgg.ScriptExecuteException;
 import pt.webdetails.cgg.datasources.DataSourceFactory;
 
 
@@ -35,7 +32,7 @@ public abstract class BaseScript implements Script
 {
   private static final Log logger = LogFactory.getLog(BaseScript.class);
   private String source;
-  private Scriptable scope;
+  private BaseScope scope;
   private DataSourceFactory dataSourceFactory;
   private ScriptFactory scriptFactory;
 
@@ -47,33 +44,55 @@ public abstract class BaseScript implements Script
   public void configure(final int width,
                         final int height,
                         final DataSourceFactory dataSourceFactory,
-                        final ScriptFactory scriptFactory)
+                        final ScriptFactory scriptFactory) throws ScriptExecuteException
   {
     this.dataSourceFactory = dataSourceFactory;
     this.scriptFactory = scriptFactory;
     initializeObjects(dataSourceFactory);
   }
 
-  public Scriptable getScope()
+  protected DataSourceFactory getDataSourceFactory()
+  {
+    return dataSourceFactory;
+  }
+
+  protected ScriptFactory getScriptFactory()
+  {
+    return scriptFactory;
+  }
+
+  public BaseScope getScope()
   {
     return scope;
   }
 
-  public void initializeObjects(final DataSourceFactory dataSourceFactory)
+  private void initializeObjects(final DataSourceFactory dataSourceFactory) throws ScriptExecuteException
   {
-    ContextFactory.getGlobal().enter();
+    if (Context.getCurrentContext() == null)
+    {
+      throw new ScriptExecuteException();
+    }
+
     final Object wrappedFactory = Context.javaToJS(dataSourceFactory, scope);
     ScriptableObject.putProperty(scope, "datasourceFactory", wrappedFactory);
   }
 
-  public void setScope(final Scriptable scope)
+  public void setScope(final BaseScope scope)
   {
     this.scope = scope;
-    initializeObjects(dataSourceFactory);
   }
 
-  protected void executeScript(final Map<String, Object> params)
+  protected void executeScript(final Map<String, Object> params) throws ScriptExecuteException
   {
+    if (params == null)
+    {
+      throw new NullPointerException();
+    }
+    if (Context.getCurrentContext() == null)
+    {
+      throw new ScriptExecuteException();
+    }
+
     final Context cx = Context.getCurrentContext();
     // env.js has methods that pass the 64k Java limit, so we can't compile
     // to bytecode. Interpreter mode to the rescue!
@@ -92,19 +111,15 @@ public abstract class BaseScript implements Script
 
     try
     {
-      final Reader contextLibraryScript = scriptFactory.getContextLibraryScript(source);
-      try
-      {
-        cx.evaluateReader(scope, contextLibraryScript, this.source, 1, null);
-      }
-      finally
-      {
-        contextLibraryScript.close();
-      }
+      scope.loadScript(cx, source);
     }
-    catch (IOException ex)
+    catch (ScriptResourceNotFoundException e)
     {
-      logger.error("Failed to read " + source + ": " + ex.toString());
+      logger.error("Failed to read " + source + ": " + e.toString(), e);
+    }
+    catch (IOException e)
+    {
+      logger.error("Failed to read " + source + ": " + e.toString(), e);
     }
   }
 }

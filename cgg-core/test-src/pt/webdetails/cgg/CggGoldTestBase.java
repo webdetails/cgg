@@ -31,14 +31,11 @@ import java.util.Map;
 import java.util.Properties;
 
 import junit.framework.AssertionFailedError;
+import org.apache.commons.io.IOUtils;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.XMLAssert;
 import org.junit.Assert;
 import org.junit.Before;
-import org.apache.commons.io.IOUtils;
-
-
-
 
 
 public class CggGoldTestBase
@@ -238,24 +235,12 @@ public class CggGoldTestBase
 
   protected FilenameFilter createChartFilter()
   {
-    return new FilenameFilter() {      
-      @Override
-      public boolean accept(File file, String name) {
-        return name.endsWith("-svg-test.js") || name.endsWith("-j2d-test.js");
-      }
-    };
+    return new FilesystemFilter(new String[]{"-svg-test.js", "-j2d-test.js"}, "Test scripts", true);
   }
 
   public static File locateGoldenSample(final String name)
   {
-    final FilenameFilter filesystemFilter = 
-            new FilenameFilter() {
-              @Override
-              public boolean accept(File file, String fileName) {
-                return fileName.equals(name);
-              }              
-            };
-            
+    final FilesystemFilter filesystemFilter = new FilesystemFilter(name, "Charts", true);
     final File marker = findMarker();
     final File gold = new File(marker, "gold");
     final File cggCharts = new File(marker, "cggCharts");

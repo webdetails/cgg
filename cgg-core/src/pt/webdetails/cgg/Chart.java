@@ -20,4 +20,5 @@ public interface Chart
 {
   public void renderAsPng(OutputStream out) throws IOException;
   public void renderAsSVG(OutputStream out) throws IOException;
+  public Object getRawObject();
 }

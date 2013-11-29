@@ -17,13 +17,13 @@ cgg.init && cgg.init();
 
 cgg.utils.initDocument("dial.svg");
 
-var scale = params.get("scale"),
-    colors = params.get("colors"),
-    scale = (scale !== null && scale.length > 0 ? scale : [0,25,50,100]),
-    colors = (colors !== null && colors.length > 0 ? colors : ["red", "yellow", "green"]),
-    min = parseFloat(scale[0]),
-    max = parseFloat(scale[scale.length - 1]),
-    value = parseFloat(params.get("value"));
+var scale = params.get("scale");
+var colors = params.get("colors");
+scale = (scale !== undefined && scale.length > 0 ? scale : [0,25,50,100]);
+colors = (colors !== undefined && colors.length > 0 ? colors : ["red", "yellow", "green"]);
+var min = parseFloat(scale[0]);
+var max = parseFloat(scale[scale.length - 1]);
+var value = parseFloat(params.get("value"));
 
 /*
  * reset max to biggest of the original maximum or the actual value

@@ -13,62 +13,35 @@
 
 package pt.webdetails.cgg.scripts;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 public class DefaultScriptFactory extends AbstractScriptFactory
 {
-  private static final Log logger = LogFactory.getLog(DefaultScriptFactory.class);
-  private URL context;
+  private ScriptResourceLoader resourceLoader;
 
   public DefaultScriptFactory()
   {
-    context = this.getClass().getClassLoader().getResource(
-        "pt/webdetails/cgg/resources/Base.js");
+    resourceLoader = new SystemScriptResourceLoader();
   }
 
-  public URL getContext()
+  public void setResourceLoader(final ScriptResourceLoader resourceLoader)
   {
-    return context;
+    if (resourceLoader == null)
+    {
+      throw new NullPointerException();
+    }
+    this.resourceLoader = resourceLoader;
   }
 
-  public void setContext(final URL context)
+  public DefaultScriptFactory(URL url)
   {
-    this.context = context;
+    resourceLoader = new CompoundScriptResourceLoader
+        (new DefaultScriptResourceLoader(url), new SystemScriptResourceLoader());
   }
 
-  public String getContextResourceURI(final String script) throws IOException
+  public ScriptResourceLoader getResourceLoader()
   {
-    try
-    {
-      final URL url = new URL(context, script);
-      return url.toURI().toASCIIString();
-    }
-    catch (Exception e)
-    {
-      throw new IOException(e);
-    }
+    return resourceLoader;
   }
-
-  public InputStream getContextResource(final String script) throws IOException
-  {
-    try
-    {
-      final URL url = new URL(context, script);
-      return new BufferedInputStream(url.openStream());
-    }
-    catch (MalformedURLException e)
-    {
-      throw new IOException(e);
-    }
-  }
-
 }
+
