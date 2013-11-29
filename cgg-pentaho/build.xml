@@ -70,6 +70,23 @@
   <property name="plugin.solution.zipfile" value="${plugin.artifact.id}-solution-${distribution.version}.zip"/>
 
 
+  <target name="compile.compile" depends="init">
+    <javac destdir="${classes.dir}"
+           debug="${javac.debug}"
+           deprecation="${javac.deprecation}"
+           fork="true"
+           memorymaximumsize="${javac.maxmemory}"
+           source="${javac.source}"
+           target="${javac.target}">
+      <classpath>
+        <path refid="classpath" />
+      </classpath>
+      <src path="${src.dir}" />
+    <src path="../cgg-pentaho-base/src"/>      
+    </javac>
+  </target>
+
+
   <!--=======================================================================
               dist
 
