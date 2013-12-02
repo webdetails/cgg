@@ -36,6 +36,13 @@
     </target>
   -->
 
+
+  <property name="runtimelib.dir"
+            value="runtime-lib"
+            description="Runtime dependencies folder"/>
+
+
+
   <property name="plugin.name"
             value="cgg"
             description="Name of the plugin"/>
