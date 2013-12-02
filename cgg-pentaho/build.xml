@@ -53,6 +53,22 @@
             description="Name of the resource directory" />
 
 
+  <!-- Setup the compile classpath -->
+  <path id="classpath">
+    <fileset dir="${devlib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${lib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    <fileset dir="${runtimelib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+    
+  </path>
+
+
+
   <tstamp/>
 
 
