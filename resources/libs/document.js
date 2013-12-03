@@ -56,7 +56,7 @@ cgg.element = function(_el) {
         return new cgg.element(e);
       }
     },
-    getElementsByTagName: function (tagName) {return _el.getElementsByTagName(tagName);},    
+    getElementsByTagName: function (tagName) {return _el.getElementsByTagName(tagName);},
     setAttribute: function(attrName, value) {_el.setAttribute(attrName, value);},
     setAttributeNS: function(ns, attrName, value) {_el.setAttributeNS(ns,attrName, value);},
     removeAttribute: function(attrName) {_el.removeAttribute(attrName);},
@@ -77,14 +77,49 @@ cgg.style = function(_style) {
     },
     removeProperty: function(name) {_style.removeProperty(name);},
     getProperty: function(name) {
-     return _style.getPropertyValue(name); 
+     return _style.getPropertyValue(name);
     }
   };
   return style;
 }
 document = new cgg.document(_document);
 
-window.console = {};
-console.log = function() {
-print("LOG: " + Array.prototype.join.call(arguments,','));
-}
+// window console shim
+(function() {
+  var level = 1;
+  var A_slice = Array.prototype.slice;
+
+  // Must be == to work
+  if(params.get('debug') == 'true') {
+    var debugLevel = parseFloat(params.get('debugLevel'));
+    if(!isNaN(debugLevel) && isFinite(debugLevel)) { level = debugLevel; }
+  }
+
+  cgg.debug = level;
+  cgg.logStringify = String;
+
+  function _callLog(mask) {
+    try {
+      var args = A_slice.call(arguments);
+
+      if(mask) { args[0] = mask.replace('%s', ''); }
+
+      var text = args.map(function(s) {
+          return !s || typeof s !== 'object' ?  (''+s) : cgg.logStringify(s);
+      }).join(' ');
+
+      print(text);
+    } catch(ex) {
+      print('Error writing to log: ' + ex);
+    }
+  }
+
+  var console = window.console = {};
+
+  // Create console object's methods
+  ['log', 'debug', 'info', 'warn', 'group', 'groupCollapsed', 'groupEnd', 'error']
+  .forEach(function(p) { console[p] = _callLog; });
+
+  // Execute immediately
+}());
+

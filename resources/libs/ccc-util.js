@@ -1,4 +1,4 @@
-// Portions Copyright (c) 2012 jQuery Foundation and other contributors, http://jquery.com/ 
+// Portions Copyright (c) 2012 jQuery Foundation and other contributors, http://jquery.com/
 
 
 var hasOwn = Object.prototype.hasOwnProperty;
@@ -12,20 +12,20 @@ jQuery.isPlainObject = function(ele){
   if ( !obj || jQuery.type(obj) !== "object" || obj.nodeType || jQuery.isWindow( obj ) ) {
      return false;
   }
-  
+
   // Not own constructor property must be Object
   if ( obj.constructor &&
      !hasOwn.call(obj, "constructor") &&
      !hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
      return false;
   }
-  
+
   // Own properties are enumerated firstly, so to speed up,
   // if last one is own, then all properties are own.
 
   var key;
   for ( key in obj ) {}
-  
+
   return key === undefined || hasOwn.call( obj, key );
 }
 jQuery.isArray = Array.isArray || function( obj ) {
@@ -47,20 +47,20 @@ jQuery.isPlainObject = function( obj ) {
   if ( !obj || jQuery.type(obj) !== "object" || obj.nodeType || jQuery.isWindow( obj ) ) {
      return false;
   }
-  
+
   // Not own constructor property must be Object
   if ( obj.constructor &&
      !hasOwn.call(obj, "constructor") &&
      !hasOwn.call(obj.constructor.prototype, "isPrototypeOf") ) {
      return false;
   }
-  
+
   // Own properties are enumerated firstly, so to speed up,
   // if last one is own, then all properties are own.
 
   var key;
   for ( key in obj ) {}
-  
+
   return key === undefined || hasOwn.call( obj, key );
 }
 $.support = {};
@@ -145,7 +145,7 @@ function getCccType(type) {
         "cccStackedLineChart": pvc.mStackedLineChart,
         "cccStackedAreaChart": pvc.mStackedAreaChart,
         "cccWaterfallChart": pvc.WaterfallChart,
-        "cccBoxplotChart": pvc.BoxplotChart        
+        "cccBoxplotChart": pvc.BoxplotChart
     }[type];
 };
 
@@ -160,16 +160,22 @@ function convertExtensionPoints(extPoints) {
 
 function renderCccFromComponent(component, data) {
 
-	if(typeof component.postFetch === 'function'){
-		try{
-			data = component.postFetch(data);
-		}
-		catch(e){print("Error in postfetch: " + e)} // ignore
-	}
-    component.chartDefinition.extensionPoints = convertExtensionPoints(component.chartDefinition.extensionPoints);
-    var o = $.extend({},component.chartDefinition);
+    var cd = component.chartDefinition;
+    var multiChartOverflow = params.get('multiChartOverflow');
+    if(multiChartOverflow) { cd.multiChartOverflow = multiChartOverflow; }
+
+    if(typeof component.postFetch === 'function') {
+      try {
+        var newData = component.postFetch(data);
+        if(newData !== undefined) data = newData;
+      } catch(e) { print("Error in postfetch: " + e); } // ignore
+    }
+
+    cd.extensionPoints = convertExtensionPoints(cd.extensionPoints);
+
+    var o = $.extend({}, cd);
     o.showTooltips = false;
-    o.tooltipFormat = function(){};
+    o.tooltipFormat = function() {};
     var chartType = getCccType(component.type);
     var chart = new chartType(o);
 
@@ -182,9 +188,22 @@ function renderCccFromComponent(component, data) {
 
 
 var Dashboards = Dashboards || {};
-Dashboards.log = function(m,type){ 
-	if (type)
+Dashboards.log = function(m,type) {
+	if(type)
 		print(type + ": " + m);
 	else
 		print("LOG: " + m);
+}
+
+// Basic JSON shim
+if(!this.JSON) {
+    /** @ignore */
+    this.JSON = {};
+}
+
+if(!this.JSON.stringify) {
+    /** @ignore */
+    this.JSON.stringify = function(t) {
+        return '' + t;
+    };
 }
