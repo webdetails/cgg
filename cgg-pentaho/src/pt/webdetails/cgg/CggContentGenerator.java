@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -107,15 +107,11 @@ public class CggContentGenerator extends SimpleContentGenerator {
       String filePath = StringUtils.replace(
               PentahoSystem.getApplicationContext().getSolutionPath( scriptName ),
               "\\", "/" );
+
       final URL context = new File( filePath ).getParentFile().toURI().toURL();
       final WebCgg cgg = new WebCgg( context, response, out, delegate );
 
-      // Need to indicate that script is an actual file
-      // In Windows, we need to have "file:///C:/" instead of "file://C:/"
-      if ( !filePath.startsWith( "/" ) ) {
-        filePath = "/" + filePath;
-      }
-      filePath = "file://" + filePath;
+      filePath = new File( filePath ).toURI().toASCIIString();
 
       Map<String, Object> paramMap = buildParameterMap( requestParams );
 
