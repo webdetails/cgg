@@ -480,7 +480,7 @@
         // Packages resolve paths as if the main.js file was executing.
         var module = !isRelative      ? this.shared.root :
                      this.isPackage() ? this :
-                     this.parent;
+                     (this.parent || this); // root can't go further up
 
         var midTerms = mid.split('/');
         while(midTerms.length) {
