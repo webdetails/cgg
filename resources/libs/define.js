@@ -1,18 +1,20 @@
+/*!
+ * Yet Another Synchronous (A)MD JS Loader
+ *
+ * amdjs spec: https://github.com/amdjs/amdjs-api/wiki
+ *
+ * Copyright (c) 2013 Duarte Cunha Leão
+ * Provided under the MIT license.
+ *
+ * Features that are not implemented:
+ * * sniffing the factory function for `require` argument and inline `require` calls.
+ * * require.toUrl
+ * * path normalization, loading of an url only once.
+ * * stricter signature of `require`.
+ *
+ * Also, need many more tests.
+ */
 (function(global) {
-    /**
-     * Yet Another Synchronous (A)MD JS Loader
-     *
-     * amdjs spec: https://github.com/amdjs/amdjs-api/wiki
-     *
-     * Features that are not implemented:
-     * * sniffing the factory function for `require` argument and inline `require` calls.
-     * * require.toUrl
-     * * path normalization, loading of an url only once.
-     * * stricter signature of `require`.
-     *
-     * Also, need many more tests.
-     */
-
     var U; // undefined
     var DEBUG = 0;
     var O_hasOwn = Object.prototype.hasOwnProperty;
