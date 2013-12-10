@@ -10,23 +10,32 @@
 * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
 * the license for the specific language governing your rights and limitations.
 */
+define([
+    './util'
+], function(util) {
+    "use strict";
 
-// ATTENTION: this file is now **deprecated** and intended to be used only
-// by Analyzer <= 4.8.2 print scripts.
-//
-// Use cdf-env.js instead!
+    var EA = [];
 
-lib('cdf-env.js');
+    return createEvents;
 
-// <= ~2013-09-12 Legacy scripts; did not execute pre/postExec and received data directly.
-var renderCccFromComponent = function (component, data) {
-    cgg.init(component);
+    function createEvents() {
+        var _listenersByEvName = {};
 
-    var CggLegacy1CccComponent = require('cdf/components/CggLegacy1CccComponent');
+        trigger.on = on;
 
-    Dashboards.bindControl(component, CggLegacy1CccComponent);
+        return trigger;
 
-    component.setPreFetchedData(data);
+        function trigger(evName, args) {
+            var liz = util.getOwn.call(_listenersByEvName, evName);
+            if(liz) liz.forEach(function(lis) { lis.apply(null, args || EA); });
+        }
 
-    component.update();
-};
+        function on(evName, lis) {
+            var liz = util.getOwn.call(_listenersByEvName, evName) ||
+                      (_listenersByEvName[evName] = []);
+
+            liz.push(lis);
+        }
+    }
+});

@@ -10,23 +10,27 @@
 * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
 * the license for the specific language governing your rights and limitations.
 */
+define(function() {
 
-// ATTENTION: this file is now **deprecated** and intended to be used only
-// by Analyzer <= 4.8.2 print scripts.
-//
-// Use cdf-env.js instead!
+    var global   = (function() { return this; }());
+    var O_hasOwn = Object.prototype.hasOwnProperty;
 
-lib('cdf-env.js');
+    return {
+        global: global,
+        hasOwn: O_hasOwn,
+        getOwn: O_getOwn,
+        makeInstance: makeInstance
+    };
 
-// <= ~2013-09-12 Legacy scripts; did not execute pre/postExec and received data directly.
-var renderCccFromComponent = function (component, data) {
-    cgg.init(component);
+    // LIB
 
-    var CggLegacy1CccComponent = require('cdf/components/CggLegacy1CccComponent');
+    function O_getOwn(p, dv) {
+        return O_hasOwn.call(this, p) ? this[p] : dv;
+    }
 
-    Dashboards.bindControl(component, CggLegacy1CccComponent);
-
-    component.setPreFetchedData(data);
-
-    component.update();
-};
+    function makeInstance(Class, args) {
+        var o = Object.create(Class.prototype);
+        if(args) { Class.apply(o, args); } else { Class.apply(o); }
+        return o;
+    }
+});

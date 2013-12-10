@@ -10,23 +10,27 @@
 * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
 * the license for the specific language governing your rights and limitations.
 */
+define(['cgg'], function(cgg) {
 
-// ATTENTION: this file is now **deprecated** and intended to be used only
-// by Analyzer <= 4.8.2 print scripts.
-//
-// Use cdf-env.js instead!
+    // Defines an AMD loader plugin.
+    return {load: load};
 
-lib('cdf-env.js');
+    function load(id, require, callback) {
+        var cccVersion = getCccVersion();
 
-// <= ~2013-09-12 Legacy scripts; did not execute pre/postExec and received data directly.
-var renderCccFromComponent = function (component, data) {
-    cgg.init(component);
+        // When no id, => all 3 ccc exports in one (as exported by main).
 
-    var CggLegacy1CccComponent = require('cdf/components/CggLegacy1CccComponent');
+        var mid = './' + cccVersion + '/' + (id || 'main');
 
-    Dashboards.bindControl(component, CggLegacy1CccComponent);
+        // Will write multiple times, for each id of ccc...
+        (cgg.debug > 2) && cgg.print("Using CCC v" + cccVersion);
 
-    component.setPreFetchedData(data);
+        require([mid], callback);
+    }
 
-    component.update();
-};
+    function getCccVersion() {
+        var version = cgg.params.get('cccVersion');
+        version = version == null ? '' : String(version);
+        return version || '2.0';
+    }
+});

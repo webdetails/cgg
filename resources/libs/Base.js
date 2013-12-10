@@ -1,7 +1,7 @@
-/*
-	Base.js, version 1.1a
-	Copyright 2006-2010, Dean Edwards
-	License: http://www.opensource.org/licenses/mit-license.php
+/*!
+Base.js, version 1.1a
+Copyright 2006-2010, Dean Edwards
+License: http://www.opensource.org/licenses/mit-license.php
 */
 
 var Base = function() {
@@ -15,9 +15,10 @@ Base.extend = function(_instance, _static) { // subclass
 	Base._prototyping = true;
 	var proto = new this;
 	extend.call(proto, _instance);
-  proto.base = function() {
-    // call this method from any other method to invoke that method's ancestor
-  };
+	proto.base = function() {
+	   // call this method from any other method to invoke that method's ancestor
+	};
+
 	delete Base._prototyping;
 
 	// create the wrapper for the constructor function

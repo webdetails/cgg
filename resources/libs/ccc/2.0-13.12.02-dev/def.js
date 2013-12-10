@@ -10,9 +10,9 @@
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
  * the license for the specific language governing your rights and limitations.
  */
- 
+
 /*! VERSION TRUNK-20131202 */
-var def = (function() {
+define(function() {
 
 
 /** @private */
@@ -2667,6 +2667,6 @@ def.query = function(q) {
 def.range = function(start, count, step) { return new def.RangeQuery(start, count, step); };
 
 // Reset namespace to global, instead of 'def'
-currentNamespace = def.global;    
+currentNamespace = def.global;
     return def;
-}());
+});
