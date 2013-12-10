@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -11,9 +11,11 @@
 * the license for the specific language governing your rights and limitations.
 */
 
-lib("protovis-bundle.js");
+lib("cgg-env.js");
 
-cgg.init && cgg.init();
+cgg.init();
+
+var pv = require('ccc!protovis-standalone');
 
 cgg.utils.initDocument("dial.svg");
 

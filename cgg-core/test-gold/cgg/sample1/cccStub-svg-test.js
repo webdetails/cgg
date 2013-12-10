@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -11,7 +11,7 @@
 * the license for the specific language governing your rights and limitations.
 */
 
-lib('protovis-bundle.js');
+lib('cgg-env.js');
 load('cccSupport/q01-01.js');
 load('cccSupport/boilerplate.js');
 
@@ -20,7 +20,7 @@ load('cccSupport/boilerplate.js');
  * Get the settings. Ideally, we'd have a JSON
  * file here, but we don't have a way to load JSON files quite yet,
  * so we're using an actual .js that declares a settings variable.
- * Plus, I'm not sure how we'd handle the cases where CCC fields 
+ * Plus, I'm not sure how we'd handle the cases where CCC fields
  * are /supposed/ to be functions rather than data.
  */
 var definitionsScript = params.get("chart").toString();

@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -12,10 +12,10 @@
 */
 
 /* These are the necessary includes. In this case I created a couple of
- * ad hoc includes for the data and boilerplate code, 
+ * ad hoc includes for the data and boilerplate code,
  */
 
-lib('protovis-bundle.js');
+lib('cgg-env.js');
 load('cccSupport/q01-01.js');
 load('cccSupport/boilerplate.js');
 
@@ -29,11 +29,11 @@ var settings = {
   legend: true,
   legendPosition: "top",
   legendAlign: "right",
-  
+
   orientation: 'horizontal',
   timeSeries: true,
   timeSeriesFormat: "%Y-%m-%d",
-  
+
   showValues: false,
   showTooltips: false,
   showDots: true,
