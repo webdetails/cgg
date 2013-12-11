@@ -21,7 +21,7 @@ public class CdaDatasource implements Datasource {
     }
     
     private String getQueryData() {
-      InterPluginCall cdaCall = new InterPluginCall(InterPluginCall.CDA, "doQueryGet");
+      InterPluginCall cdaCall = new InterPluginCall(InterPluginCall.CDA, "doQueryInterPluginOld");
       cdaCall.setRequestParameters(requestMap);
       return cdaCall.callInPluginClassLoader();
     }
