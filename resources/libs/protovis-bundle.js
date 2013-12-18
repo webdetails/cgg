@@ -24,7 +24,9 @@ if(params.get('cccVersion') != '2.0-analyzer') {
     "ATTENTION!\n" +
     "Using 'protovis-bundle.js' CGG print script.\n" +
     "This script is *deprecated* and will be dropped in a future release.\n" +
-    "Please regenerate the print script by re-saving the associated CDE dashboard.");
+        "Please regenerate the print script by re-saving the associated CDE dashboard.\n" + 
+        "If this is a hand-crafted print script, use instead: `lib('cdf-env.js')` or the minimal: `lib('cgg-env.js')`.\n" + 
+        "Then, if needed, also add any of: `var pvc = require('ccc!').pvc'` and `var pv = require('ccc!').pv'`.");
 
     lib('cdf-env.js');
 
@@ -110,12 +112,14 @@ if(params.get('cccVersion') != '2.0-analyzer') {
     // Yet, that is done right after this file is loaded, and
     //  the CCC globals are only exported when a CDF/CCC component is actually created
     // (which Analyzer doesn't even create...).
-    // Bottom-line, we must explicitly export these.
-    require(['ccc!', 'jquery'], function(ccc, _$) {
-        pv  = ccc.pv;
-        pvc = ccc.pvc;
-        def = ccc.def;
-
-        jQuery = $ = _$;
-    });
+    // Bottom-line, we must explicitly export pv, pvc, def, $...
 }
+
+// Publish globally for backward compatibility.
+require(['ccc!', 'jquery'], function(ccc, _$) {
+    pv  = ccc.pv;
+    pvc = ccc.pvc;
+    def = ccc.def;
+
+    jQuery = $ = _$;
+});
