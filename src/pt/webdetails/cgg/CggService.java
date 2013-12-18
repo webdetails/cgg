@@ -40,28 +40,28 @@ import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 
 @Path("/cgg/api/services")
 public class CggService {
-  
-  
+
+
   private static final Log logger = LogFactory.getLog(CggService.class);
   private OutputStream outputStream;
-  
+
    private enum OutputType {
 
         SVG, PNG, PDF;
-        
+
         public static OutputType parse(String value){
           return valueOf(StringUtils.upperCase(value));
         }
-    }  
-  
-   
+    }
+
+
  private static final String MIME_SVG = "image/svg+xml";
- 
- 
+
+
  public void setOutputStream(final OutputStream stream){
      outputStream = stream;
  }
-  
+
  @GET
  @Path("/refresh")
  @Produces("text/plain")
@@ -70,11 +70,11 @@ public class CggService {
     ScriptFactory.getInstance().clearCachedScopes();
     return Response.ok().build();
  }
-       
+
  @GET
  @Path("/draw")
 // @Produces("text/plain")
- @Consumes({ APPLICATION_XML, APPLICATION_JSON }) 
+ @Consumes({ APPLICATION_XML, APPLICATION_JSON })
  public void draw(
          @QueryParam("script") String script,
          @DefaultValue("svg") @QueryParam("type") String type,
@@ -82,9 +82,9 @@ public class CggService {
          @DefaultValue("") @QueryParam("attachmentName") String attachmentName,
          @DefaultValue("0") @QueryParam("width") Long width,
          @DefaultValue("0") @QueryParam("height") Long height,
-         @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest) 
+         @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest)
  {
-    this.draw(script, type, outputType, attachmentName, null, width, height, servletResponse, servletRequest);
+    this.draw(script, type, outputType, attachmentName, null, null, width, height, servletResponse, servletRequest);
  }
 
  public void draw(
@@ -95,15 +95,29 @@ public class CggService {
           String multiChartOverflow,
           Long width,
           Long height,
-          HttpServletResponse servletResponse, 
+          HttpServletResponse servletResponse,
           HttpServletRequest servletRequest) {
-  
+    this.draw(script, type, outputType, attachmentName, multiChartOverflow, null, width, height, servletResponse, servletRequest);
+ }
+
+ public void draw(
+          String script,
+          String type,
+          String outputType,
+          String attachmentName,
+          String multiChartOverflow,
+          String cccVersion,
+          Long width,
+          Long height,
+          HttpServletResponse servletResponse,
+          HttpServletRequest servletRequest) {
+
         try {
 
             HashMap<String, Object> params = new HashMap<String, Object>();
             @SuppressWarnings("unchecked")
-            
-             
+
+
             Enumeration<String> inputParams;
             if(servletRequest != null){
                 inputParams = servletRequest.getParameterNames();
@@ -115,11 +129,15 @@ public class CggService {
                     }
                 }
             }
-            
+
             if(multiChartOverflow != null && !multiChartOverflow.isEmpty()) {
-            	params.put("multiChartOverflow", multiChartOverflow);
+                params.put("multiChartOverflow", multiChartOverflow);
             }
-            
+
+            if(cccVersion != null && !cccVersion.isEmpty()) {
+                params.put("cccVersion", cccVersion);
+            }
+
             OutputType scriptOutputType = OutputType.parse(outputType);
             ScriptType scriptType = ScriptType.parse(type);
 
@@ -129,10 +147,10 @@ public class CggService {
             }
             else{
                 setResponseHeaders(getMimeType(scriptOutputType.name()), servletResponse);
-            }          
-            
+            }
+
             logger.debug("Starting:" + new Date().getTime());
-            
+
             try {
                 Chart chart = evaluateChart(params, script, scriptType, width, height);
                 getOutput(chart, scriptOutputType, servletResponse == null ? outputStream : servletResponse.getOutputStream(), servletResponse);
@@ -142,20 +160,20 @@ public class CggService {
             }
         } catch (Exception ex) {
             logger.fatal(ex);
-        }  
+        }
   }
-  
-  
+
+
    public enum FileType
     {
       JPG, JPEG, PNG, GIF, BMP, JS, CSS, HTML, HTM, XML,
       SVG, PDF, TXT, DOC, DOCX, XLS, XLSX, PPT, PPTX;
-      
+
       public static FileType parse(String value){
         return valueOf(StringUtils.upperCase(value));
       }
     }
-    
+
     public static class MimeType {
       public static final String CSS = "text/css";
       public static final String JAVASCRIPT = "text/javascript";
@@ -171,16 +189,16 @@ public class CggService {
 
       public static final String DOC = "application/msword";
       public static final String DOCX = "application/msword";
-      
-      public static final String XLS = "application/msexcel";      
+
+      public static final String XLS = "application/msexcel";
       public static final String XLSX = "application/msexcel";
-      
+
       public static final String PPT = "application/mspowerpoint";
       public static final String PPTX = "application/mspowerpoint";
     }
-    
+
     protected static final EnumMap<FileType, String> mimeTypes = new EnumMap<FileType, String>(FileType.class);
-    
+
     static
     {
       /*
@@ -203,7 +221,7 @@ public class CggService {
       mimeTypes.put(FileType.XML, MimeType.XML);
       mimeTypes.put(FileType.TXT, MimeType.PLAIN_TEXT);
     }
-    
+
     protected String getMimeType(String fileName){
       String[] fileNameSplit = StringUtils.split(fileName, '.');// fileName.split("\\.");
       try{
@@ -214,16 +232,16 @@ public class CggService {
         return "";
       }
     }
-    
+
     protected String getMimeType(FileType fileType){
       if(fileType == null) return "";
       String mimeType = mimeTypes.get(fileType);
       return mimeType == null ? "" : mimeType;
     }
-  
-  
-  
-  
+
+
+
+
 
     /**
      * @param params
@@ -232,15 +250,15 @@ public class CggService {
      * @param width
      * @param height
      * @return
-     * @throws FileNotFoundException 
+     * @throws FileNotFoundException
      */
     private Chart evaluateChart(HashMap<String, Object> params, String scriptName, ScriptType scriptType, Long width, Long height) {
       ScriptFactory factory = ScriptFactory.getInstance();
       factory.setSystemPath(RepositoryAccess.getSystemDir() + "/cgg/libs/");
-      
+
       try {
           Script script = factory.createScript(scriptName, scriptType, width, height);
-      
+
           logger.debug("Script created:" + new Date().getTime());
           Chart chart = script.execute(params);
           logger.debug("Script executed:" + new Date().getTime());
@@ -248,7 +266,7 @@ public class CggService {
       } catch (FileNotFoundException e) {
           logger.error(e);
           return null;
-      }   
+      }
     }
 
     private void getOutput(Chart chart, OutputType outputType, OutputStream out,HttpServletResponse response) {
@@ -277,22 +295,22 @@ public class CggService {
             default:
         }
     }
-  
-  
-  
+
+
+
    protected void setResponseHeaders(final String mimeType, final HttpServletResponse response){
       setResponseHeaders(mimeType, 0, null, response);
     }
-    
+
     protected void setResponseHeaders(final String mimeType, final String attachmentName, final HttpServletResponse response){
       setResponseHeaders(mimeType, 0, attachmentName, response);
     }
-    
+
     protected void setResponseHeaders(final String mimeType, final int cacheDuration, final String attachmentName, final HttpServletResponse response)
     {
       // Make sure we have the correct mime type
-      
-     
+
+
 
       if (response == null)
       {
@@ -315,9 +333,9 @@ public class CggService {
       {
         response.setHeader("Cache-Control", "max-age=0, no-store");
       }
-    }    
-    
-    
-  
-  
+    }
+
+
+
+
 }

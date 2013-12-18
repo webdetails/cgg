@@ -10,7 +10,22 @@
 * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
 * the license for the specific language governing your rights and limitations.
 */
-// Pretend there is actually a separate "def.js" file.
-define(['./pvc'], function(pvc) {
-    return pvc._def;
+define([
+    './protovis',
+    './def',
+    './pvc',
+    '../protovis-cgg'
+], function(pv, def, pvc, pvCgg) {
+
+    // Set the default compatibility version to CCC v1.
+    pvc.defaultCompatVersion(1);
+
+    // Install protovis CGG
+    pvCgg(pv);
+
+    return {
+        pv:  pv,
+        def: def,
+        pvc: pvc
+    };
 });

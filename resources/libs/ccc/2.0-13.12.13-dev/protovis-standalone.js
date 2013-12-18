@@ -11,21 +11,11 @@
 * the license for the specific language governing your rights and limitations.
 */
 define([
-    'cgg',
     './protovis',
-    './pvc'
-], function(cgg, pv, pvc) {
-    // Let cgg init, as well.
-    cgg.debug = 4;
-    cgg.init();
+    '../protovis-cgg'
+], function(pv, pvCgg) {
 
-    // Needed otherwise debugging mode throws...
-    cgg.debug = 0;
-    JSON.stringify = String;
+    pvCgg(pv);
 
-    return {
-        pv:  pv,
-        def: pvc._def,
-        pvc: pvc
-    };
+    return pv;
 });

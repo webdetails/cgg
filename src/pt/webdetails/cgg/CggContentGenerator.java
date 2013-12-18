@@ -33,14 +33,14 @@ import sun.print.resources.serviceui;
  */
 public class CggContentGenerator extends SimpleContentGenerator {
 
-    
+
     private static final Log logger = LogFactory.getLog(CggContentGenerator.class);
 
     @Override
     public Log getLogger() {//TODO:?
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
+
     @Override
     public String getPluginName() {
       return "cgg";
@@ -54,14 +54,15 @@ public class CggContentGenerator extends SimpleContentGenerator {
 
     @Exposed(accessLevel = AccessLevel.PUBLIC)
     public void draw(final OutputStream out) {
-        IParameterProvider requestParams = parameterProviders.get(IParameterProvider.SCOPE_REQUEST); 
-       
+        IParameterProvider requestParams = parameterProviders.get(IParameterProvider.SCOPE_REQUEST);
+
         String script = requestParams.getStringParameter("script","");
         String type = requestParams.getStringParameter("type","svg");
         String outputType = requestParams.getStringParameter("outputType","png");
         String attachmentName = requestParams.getStringParameter("attachmentName","");
         String multiChartOverflow = requestParams.getStringParameter("multiChartOverflow", "");
-        
+        String cccVersion = requestParams.getStringParameter("cccVersion", "");
+
         String widthAsStr = requestParams.getStringParameter("width","0");
         Long width = 0L;
         try {
@@ -73,16 +74,16 @@ public class CggContentGenerator extends SimpleContentGenerator {
         try {
           height = Long.parseLong(heightAsStr);
         } catch (NumberFormatException nfe) {}
-        
+
         HttpServletRequest  request  = getRequest();
         HttpServletResponse response = getResponse();
-        
+
         CggService service = new CggService();
-        
+
         if(response == null) {
             service.setOutputStream(out);
         }
-        service.draw(script, type, outputType, attachmentName, multiChartOverflow, height, width, response, request);
+        service.draw(script, type, outputType, attachmentName, multiChartOverflow, cccVersion, height, width, response, request);
     }
-   
+
 }
