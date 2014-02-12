@@ -26,8 +26,8 @@ font-size: 14px;
                 </g>
             </g>
             <g transform="translate(3,3)">
-                <g clip-path="url(#h9)">
-                    <clipPath id="h9">
+                <g clip-path="url(#hb)">
+                    <clipPath id="hb">
                         <rect x="0" width="294" height="25" y="40"/>
                     </clipPath>
                     <g transform="translate(0,40)">
