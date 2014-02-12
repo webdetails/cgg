@@ -251,6 +251,11 @@ public class CggGoldTestBase
                                final File goldSample,
                                final String outputType) throws Exception
   {
+    
+    FileOutputStream fos = new FileOutputStream(goldSample.getName());
+
+    fos.write(cggChartOutput);  
+    
     if ("svg".equals(outputType))
     {
       final Reader reader = new InputStreamReader(new FileInputStream(goldSample), "UTF-8");
