@@ -147,6 +147,8 @@ public class CggGoldTestBase
       }
       catch (Throwable re)
       {
+        System.out.printf(re.getMessage());
+        re.printStackTrace(System.out);
         throw new Exception("Failed at " + file, re);
       }
     }
