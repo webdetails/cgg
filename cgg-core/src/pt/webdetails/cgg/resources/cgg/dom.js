@@ -381,7 +381,7 @@ define([
                                 for( j=0; j<m; j++) {
                                     switch(subs[j].charAt(0)) {
                                         case ".":
-                                            if( !check[x].className.match(new RegExp("\\b"+(""+subs[j]).substr(1)+"\\b"))) ok = false;
+                                            if( !check[x].className.match(new RegExp("\\b"+subs[j].substr(1)+"\\b"))) ok = false;
                                             break;
                                         case "[":
                                             as = subs[j].substr(1,subs[j].length-2).split("=");
