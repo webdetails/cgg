@@ -5,18 +5,18 @@
 package pt.webdetails.cgg.scripts;
 
 import java.util.Map;
-import org.apache.batik.bridge.BridgeContext;
-import org.apache.batik.bridge.DocumentLoader;
-import org.apache.batik.bridge.UserAgent;
-import org.apache.batik.bridge.UserAgentAdapter;
+
+import org.apache.batik.bridge.*;
 import org.apache.batik.css.engine.CSSEngine;
 
+import org.apache.batik.dom.util.XMLHttpRequest;
+
 import org.mozilla.javascript.*;
+import org.w3c.dom.*;
 import pt.webdetails.cgg.charts.Chart;
 import pt.webdetails.cgg.charts.SVGChart;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.dom.svg.SVGOMDocument;
-import org.w3c.dom.Document;
 
 /**
  *
@@ -75,6 +75,7 @@ class SvgScript extends BaseScript {
         BridgeContext ctx = new BridgeContext(userAgent, loader);
         ctx.setDynamic(true);
         ctx.setDynamicState(BridgeContext.DYNAMIC);
+        new GVTBuilder().build(ctx, document);
         CSSEngine eng = impl.createCSSEngine((SVGOMDocument) document, ctx);
         ((SVGOMDocument) document).setCSSEngine(eng);
 
