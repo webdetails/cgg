@@ -39,6 +39,8 @@ define([
 
         document: dom.document,
         element:  dom.element,
+        Element: dom.Element,
+        CSSStyleDeclaration: dom.CSSStyleDeclaration,
         style:    dom.style,
         registerRenderer: function(v) { _renderer = v; },
         get win()       { return _useGlobal ? util.global : _win; },
@@ -50,7 +52,9 @@ define([
     _win = dom.window(
         cgg,
         util.global._document,
-        dom.console(/*printer*/cgg));
+        dom.console(/*printer*/cgg),
+        util.global._nodeSelector
+    );
 
     // Create parameters
     var _params = parameters(cgg);
