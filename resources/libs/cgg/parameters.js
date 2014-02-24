@@ -135,7 +135,7 @@ define([
             if(cgg.useGlobal) {
                 // Prefer global value, if there is one.
                 var varName = parameterVar(name);
-                if(varName in util.global) return util.global[varName];
+                if(varName in cgg.global) return cgg.global[varName];
             }
             return cgg.params.get(name);
         }
@@ -144,7 +144,7 @@ define([
             if(cgg.useGlobal) {
                 // Sync global value, if there is one already
                 var varName = parameterVar(name);
-                if(varName in util.global) util.global[varName] = v;
+                if(varName in cgg.global) cgg.global[varName] = v;
             }
             cgg.params.put(name, v);
         }
