@@ -1,20 +1,19 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
- * If a copy of the MPL was not distributed with this file, You can obtain one at
- * http://mozilla.org/MPL/2.0/.
- */
+/*!
+* Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
+* 
+* This software was developed by Webdetails and is provided under the terms
+* of the Mozilla Public License, Version 2.0, or any later version. You may not use
+* this file except in compliance with the license. If you need a copy of the license,
+* please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
+*
+* Software distributed under the Mozilla Public License is distributed on an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
+* the license for the specific language governing your rights and limitations.
+*/
 
 package pt.webdetails.cgg;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,14 +23,11 @@ import java.util.Map;
 import java.util.Properties;
 
 import junit.framework.AssertionFailedError;
+import org.apache.commons.io.IOUtils;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.XMLAssert;
 import org.junit.Assert;
 import org.junit.Before;
-import org.apache.commons.io.IOUtils;
-
-
-
 
 
 public class CggGoldTestBase
@@ -151,6 +147,8 @@ public class CggGoldTestBase
       }
       catch (Throwable re)
       {
+        System.out.printf(re.getMessage());
+        re.printStackTrace(System.out);
         throw new Exception("Failed at " + file, re);
       }
     }
@@ -231,24 +229,12 @@ public class CggGoldTestBase
 
   protected FilenameFilter createChartFilter()
   {
-    return new FilenameFilter() {      
-      @Override
-      public boolean accept(File file, String name) {
-        return name.endsWith("-svg-test.js") || name.endsWith("-j2d-test.js");
-      }
-    };
+    return new FilesystemFilter(new String[]{"-svg-test.js", "-j2d-test.js"}, "Test scripts", true);
   }
 
   public static File locateGoldenSample(final String name)
   {
-    final FilenameFilter filesystemFilter = 
-            new FilenameFilter() {
-              @Override
-              public boolean accept(File file, String fileName) {
-                return fileName.equals(name);
-              }              
-            };
-            
+    final FilesystemFilter filesystemFilter = new FilesystemFilter(name, "Charts", true);
     final File marker = findMarker();
     final File gold = new File(marker, "gold");
     final File cggCharts = new File(marker, "cggCharts");
@@ -267,6 +253,11 @@ public class CggGoldTestBase
                                final File goldSample,
                                final String outputType) throws Exception
   {
+    
+    FileOutputStream fos = new FileOutputStream(goldSample.getName());
+
+    fos.write(cggChartOutput);  
+    
     if ("svg".equals(outputType))
     {
       final Reader reader = new InputStreamReader(new FileInputStream(goldSample), "UTF-8");

@@ -1,17 +1,26 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
- * If a copy of the MPL was not distributed with this file, You can obtain one at
- * http://mozilla.org/MPL/2.0/.
- */
+/*!
+* Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
+* 
+* This software was developed by Webdetails and is provided under the terms
+* of the Mozilla Public License, Version 2.0, or any later version. You may not use
+* this file except in compliance with the license. If you need a copy of the license,
+* please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
+*
+* Software distributed under the Mozilla Public License is distributed on an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
+* the license for the specific language governing your rights and limitations.
+*/
 
 package pt.webdetails.cgg.scripts;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Toolkit;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.util.HashMap;
 import javax.swing.JLabel;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
@@ -31,8 +40,8 @@ import org.apache.batik.css.engine.CSSEngine;
 import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.batik.dom.svg.SVGOMDocument;
-import org.apache.batik.gvt.font.GVTFontFamily;
 import org.apache.batik.gvt.font.FontFamilyResolver;
+import org.apache.batik.gvt.font.GVTFontFamily;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
@@ -46,16 +55,21 @@ import org.w3c.dom.Node;
 /**
  * @author pdpi
  */
+
 public class BaseScope extends ImporterTopLevel
 {
   protected static final Log logger = LogFactory.getLog(BaseScope.class);
-  protected boolean sealedStdLib = false;
+  protected boolean sealedStdLib;
   private boolean initialized;
   private ScriptFactory scriptFactory;
+  private HashMap<String, org.mozilla.javascript.Script> userScripts;
+  private HashMap<String, org.mozilla.javascript.Script> processed;
 
   public BaseScope()
   {
-    super();
+    userScripts = new HashMap<String, org.mozilla.javascript.Script>();
+    processed = new HashMap<String, org.mozilla.javascript.Script>();
+    sealedStdLib = false;
   }
 
   public void init(final Context cx)
@@ -92,26 +106,48 @@ public class BaseScope extends ImporterTopLevel
     {
       return Context.toBoolean(false);
     }
+
     try
     {
       final String file = arg.toString();
       final BaseScope scope = (BaseScope) thisObj;
-      final Reader r = scope.scriptFactory.getContextLibraryScript(file);
-      try
-      {
-        cx.evaluateReader(scope, r, file, 1, null);
-      }
-      finally
-      {
-        r.close();
-      }
+      return Context.toBoolean(scope.loadScript(cx, file));
     }
     catch (Exception e)
     {
-      logger.warn("Failed to call 'load'" , e);
+      logger.warn("Failed to call 'load'", e);
       return Context.toBoolean(false);
     }
-    return Context.toBoolean(true);
+  }
+
+  public boolean loadScript(Context cx, String file) throws IOException, ScriptResourceNotFoundException
+  {
+    if (file == null)
+    {
+      return false;
+    }
+
+    String contextResourceURI = scriptFactory.getContextResourceURI(file);
+    org.mozilla.javascript.Script s = userScripts.get(contextResourceURI);
+    if (s == null)
+    {
+      Reader contextLibraryScript = scriptFactory.getContextLibraryScript(file);
+      try
+      {
+        logger.info("Compiled context reader for " + file);
+        s = cx.compileReader(contextLibraryScript, file, 1, null);
+        userScripts.put(contextResourceURI, s);
+      }
+      finally
+      {
+        contextLibraryScript.close();
+      }
+    }
+    if (s != null)
+    {
+      s.exec(cx, this);
+    }
+    return true;
   }
 
   private static Object unwrapFirstArgument(final Object arg)
@@ -161,7 +197,7 @@ public class BaseScope extends ImporterTopLevel
     }
     catch (Exception e)
     {
-      logger.warn("Failed to call '_loadSVG'" , e);
+      logger.warn("Failed to call '_loadSVG'", e);
       return Context.getUndefinedValue();
     }
   }
@@ -175,63 +211,57 @@ public class BaseScope extends ImporterTopLevel
     {
       return Context.toBoolean(false);
     }
-    final String file = arg.toString();
     try
     {
+      final String file = arg.toString();
       final BaseScope scope = (BaseScope) thisObj;
-      final Reader systemLibraryScript = scope.scriptFactory.getSystemLibraryScript(file);
-      try
-      {
-        cx.evaluateReader(scope, systemLibraryScript, file, 1, null);
-      }
-      finally
-      {
-        systemLibraryScript.close();
-      }
+      return Context.toBoolean(scope.loadSystemScript(cx, file));
     }
     catch (Exception e)
     {
-      logger.warn("Failed to call 'lib'" , e);
+      logger.warn("Failed to call 'lib'", e);
       return Context.toBoolean(false);
     }
-    return Context.toBoolean(true);
   }
 
-  
-  //A res is an auxiliary script which is defined by a relative path from the original script.  
+  public boolean loadSystemScript (Context cx, String file) throws IOException, ScriptResourceNotFoundException
+  {
+    if (file == null)
+    {
+      return false;
+    }
+
+    String contextResourceURI = file;
+    org.mozilla.javascript.Script s = processed.get(contextResourceURI);
+    if (s == null)
+    {
+      Reader script = scriptFactory.getSystemLibraryScript(file);
+      try
+      {
+        logger.info("Compiled system reader for " + file);
+        s = cx.compileReader(script, file, 1, null);
+        processed.put(contextResourceURI, s);
+      }
+      finally
+      {
+        script.close();
+      }
+    }
+    if (s != null)
+    {
+      s.exec(cx, this);
+    }
+    return true;
+  }
+
+
+  //A res is an auxiliary script which is defined by a relative path from the original script.
   public static Object res(final Context cx, final Scriptable thisObj,
 		  final Object[] args, final Function funObj)
   {
-	  final Object arg = unwrapFirstArgument(args[0]);
-
-	  if (arg == null)
-	  {
-		  return Context.toBoolean(false);
-	  }
-	  final String file = arg.toString();
-	  try
-	  {
-		  final BaseScope scope = (BaseScope) thisObj;
-		  final Reader resourceScript = scope.scriptFactory.getContextLibraryScript(file);
-		  try
-		  {
-			  cx.evaluateReader(scope, resourceScript, file, 1, null);
-		  }
-		  finally
-		  {
-			  resourceScript.close();
-		  }
-	  }
-	  catch (Exception e)
-	  {
-		  logger.warn("Failed to call 'res'" , e);
-		  return Context.toBoolean(false);
-	  }
-	  return Context.toBoolean(true);
+    return load(cx, thisObj, args, funObj);
   }
-  
-  
-  
+
   public static Object _xmlToString(final Context cx, final Scriptable thisObj,
                                     final Object[] args, final Function funObj)
   {
@@ -253,11 +283,11 @@ public class BaseScope extends ImporterTopLevel
     }
     catch (TransformerConfigurationException e)
     {
-      logger.warn("Failed to call '_xmlToString'" , e);
+      logger.warn("Failed to call '_xmlToString'", e);
     }
     catch (TransformerException e)
     {
-      logger.warn("Failed to call '_xmlToString'" , e);
+      logger.warn("Failed to call '_xmlToString'", e);
     }
     return null;
   }
@@ -266,9 +296,9 @@ public class BaseScope extends ImporterTopLevel
   {
     this.scriptFactory = scriptFactory;
   }
-  
+
     public static Object getTextLenCGG(Context cx, Scriptable thisObj,
-    		Object[] args, Function funObj) 
+    		Object[] args, Function funObj)
     {
     	String text = Context.toString(args[0]);
         String fontFamily = Context.toString(args[1]);
@@ -278,25 +308,25 @@ public class BaseScope extends ImporterTopLevel
 
         if(args.length > 3){
             fontStyle = Context.toString(args[3]);
-            
+
             if(args.length > 4){
                 fontWeight = Context.toString(args[4]);
             }
         }
 
         Font ffont = getFont(fontFamily, fontSize, fontStyle, fontWeight);
-        
+
         JLabel label = new JLabel();
-        
+
         FontMetrics fMetric = label.getFontMetrics(ffont);
-        
+
         int width = fMetric.stringWidth(text);
-        
-        return Context.toNumber(width); 
+
+        return Context.toNumber(width);
     }
-    
+
     public static Object getTextHeightCGG(Context cx, Scriptable thisObj,
-    		Object[] args, Function funObj) 
+    		Object[] args, Function funObj)
     {
       // String text = Context.toString(args[0]);
       String fontFamily = Context.toString(args[1]);
@@ -313,16 +343,16 @@ public class BaseScope extends ImporterTopLevel
       }
 
       Font ffont = getFont(fontFamily, fontSize, fontStyle, fontWeight);
-      
+
       JLabel label = new JLabel();
-      
+
       FontMetrics fMetric = label.getFontMetrics(ffont);
-      
+
       int height = fMetric.getHeight();
-      
+
       return Context.toNumber(height);
     }
-    
+
     private static Font getFont(String fontFamily, String fontSize, String fontStyle, String fontWeight){
     	// Get size unit
         boolean convert = false;
@@ -332,18 +362,18 @@ public class BaseScope extends ImporterTopLevel
         } else if(fontSize.endsWith("pt")){
           fontSize = fontSize.substring(0, fontSize.length() -2);
         }
-        
+
         //parse size
         float size = 15;
         try
         {
           size = Integer.parseInt(fontSize);
         }
-        catch (NumberFormatException nfe) 
+        catch (NumberFormatException nfe)
         {
         }
-        
-        
+
+
         int isize = Math.round(size);
         //size conversion
         if(convert){//px->pt
@@ -351,15 +381,15 @@ public class BaseScope extends ImporterTopLevel
           // 3 / 4 = 72 /96
           // (see: http://static.zealous-studios.co.uk/projects/web_tests/PPI%20tests.html)
           size = 0.75f * size;
-          
-          
+
+
           // java on windows point size correction
           // (see: http://www.3rd-evolution.de/tkrammer/docs/java_font_size.html)
           int screenDpi = Toolkit.getDefaultToolkit().getScreenResolution();
-          isize = Math.round(size * screenDpi / 72.0f);                    
+          isize = Math.round(size * screenDpi / 72.0f);
         }
-        
-        
+
+
         int javaFontStyle = parseCssFontStyleAndWeight(fontStyle, fontWeight);
 
         return decodeFont(fontFamily, javaFontStyle, isize);
@@ -437,7 +467,4 @@ public class BaseScope extends ImporterTopLevel
 
         return ffont;
     }
-  
-  
-  
 }

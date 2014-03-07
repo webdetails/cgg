@@ -8,10 +8,6 @@
   <settings defaultResolver="pentaho-chained-resolver" />
   <include url="${ivy.default.settings.dir}/ivysettings-public.xml" />
   <include url="${ivy.default.settings.dir}/ivysettings-local.xml" />
-  
-  
-<caches lockStrategy="artifact-lock" resolutionCacheDir="${ivy.default.ivy.user.dir}/resol-cache${env.EXECUTOR_NUMBER}" />  
-  
   <resolvers>
     <chain name="pentaho-chained-resolver">
       <resolver ref="local" />
@@ -23,7 +19,6 @@
       </dual>
       <resolver ref="public" />
       <ibiblio name="java-net-maven2" root="http://download.java.net/maven/2/" m2compatible="true" />
-      <ibiblio name="analytical-labs" root="http://repo.analytical-labs.com/repo" m2compatible="true" />  
     </chain>
   </resolvers>
   <caches lockStrategy="artifact-lock" resolutionCacheDir="${ivy.default.ivy.user.dir}/resol-cache${env.EXECUTOR_NUMBER}" />

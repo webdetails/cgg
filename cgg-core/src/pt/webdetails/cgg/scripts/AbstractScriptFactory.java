@@ -1,100 +1,124 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
- * If a copy of the MPL was not distributed with this file, You can obtain one at
- * http://mozilla.org/MPL/2.0/.
- */
+/*!
+* Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
+* 
+* This software was developed by Webdetails and is provided under the terms
+* of the Mozilla Public License, Version 2.0, or any later version. You may not use
+* this file except in compliance with the license. If you need a copy of the license,
+* please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
+*
+* Software distributed under the Mozilla Public License is distributed on an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
+* the license for the specific language governing your rights and limitations.
+*/
 
 package pt.webdetails.cgg.scripts;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Locale;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.Scriptable;
-
-import pt.webdetails.cgg.ScriptCreationException;
+import pt.webdetails.cgg.ScriptExecuteException;
 
 public abstract class AbstractScriptFactory implements ScriptFactory
 {
   private static final Log logger = LogFactory.getLog(AbstractScriptFactory.class);
-
-  public enum ScriptType
-  {
-    SVG, J2D
-  }
+  private ContextFactory contextFactory;
+  private HashMap<ScriptType, BaseScope> contexts;
 
   protected AbstractScriptFactory()
   {
+    contextFactory = new ContextFactory();
+    contexts = new HashMap<ScriptType,BaseScope>();
   }
 
-  public Reader getContextLibraryScript(final String script) throws IOException
+  protected abstract ScriptResourceLoader getResourceLoader();
+
+  public Reader getSystemLibraryScript(final String script) throws IOException, ScriptResourceNotFoundException
   {
-    return new InputStreamReader(getContextResource(script));
+    return getResourceLoader().getSystemLibraryScript(script);
   }
 
-  public Reader getSystemLibraryScript(final String script) throws IOException
+  public Reader getContextLibraryScript(final String script) throws IOException, ScriptResourceNotFoundException
   {
-    final String resource = "pt/webdetails/cgg/resources/" + script;
-    final InputStream resourceAsStream = this.getClass().getClassLoader().getResourceAsStream(resource);
-    if (resourceAsStream == null)
-    {
-      throw new FileNotFoundException("Resource not found: " + resource);
-    }
-    return new BufferedReader(new InputStreamReader(new BufferedInputStream(resourceAsStream)));
+    return getResourceLoader().getContextLibraryScript(script);
+  }
+
+  public String getContextResourceURI(final String script) throws IOException, ScriptResourceNotFoundException
+  {
+    return getResourceLoader().getContextResourceURI(script);
+  }
+
+  public InputStream getContextResource(final String script) throws IOException, ScriptResourceNotFoundException
+  {
+    return getResourceLoader().getContextResource(script);
   }
 
   public Script createScript(final String path, final String scriptType)
-      throws FileNotFoundException, ScriptCreationException
+      throws ScriptResourceNotFoundException, ScriptExecuteException
   {
-    try
-    {
-      final ScriptType st = ScriptType.valueOf(scriptType.toUpperCase(Locale.US));
-      final Script script = createScript(path, st);
-      script.setScope(lookupScope(st));
-      return script;
-    }
-    catch (IllegalArgumentException ex)
-    {
-      throw new ScriptCreationException("No such script type: " + scriptType, ex);
-    }
+    ScriptType st = ScriptType.valueOf(scriptType.toUpperCase(Locale.ENGLISH));
+    return createScript(path, st);
   }
 
-  protected Script createScript(final String path, final ScriptType scriptType) throws FileNotFoundException
+  public Script createScript(final String path, final ScriptType scriptType)
+      throws ScriptResourceNotFoundException, ScriptExecuteException
   {
     final Script script;
-    switch (scriptType) {
-        case SVG:
-            script = new SvgScript(path);
-            break;
-        case J2D:
-            script = new Java2DScript(path);
-            break;
-        default:
-            throw new IllegalArgumentException();
+    switch (scriptType)
+    {
+      case SVG:
+        script = new SvgScript(path);
+        break;
+      case J2D:
+        script = new Java2DScript(path);
+        break;
+      default:
+        throw new IllegalArgumentException();
     }
+    script.setScope(getScope(scriptType));
     return script;
   }
 
-  protected Scriptable lookupScope(final ScriptType type)
+  public void enterContext()
   {
-    return createScope(type);
+    Context cx = contextFactory.enterContext();
+
+    cx.setGeneratingDebug(false);
+    cx.setOptimizationLevel(-1);
   }
 
-  protected Scriptable createScope(final ScriptType type)
+  public void exitContext()
+  {
+    Context.exit();
+  }
+
+  protected BaseScope getScope(final ScriptType type) throws ScriptExecuteException
+  {
+    BaseScope o = contexts.get(type);
+    if (o != null)
+    {
+      return o;
+    }
+
+    o = createScope(type);
+    contexts.put(type, o);
+    return o;
+  }
+
+  protected BaseScope createScope(final ScriptType type) throws ScriptExecuteException
   {
     final String[] dependencies = computeDependencies(type);
 
-    final Context cx = ContextFactory.getGlobal().enter();
+    final Context cx = contextFactory.enterContext();
+    cx.setGeneratingDebug(false);
+    cx.setOptimizationLevel(-1);
+
     final BaseScope scope = new BaseScope();
     scope.setScriptFactory(this);
     scope.init(cx);
@@ -102,11 +126,15 @@ public abstract class AbstractScriptFactory implements ScriptFactory
     {
       try
       {
-        cx.evaluateReader(scope, new FileReader(file), "<file>", 1, null);
+        scope.loadSystemScript(cx, file);
       }
-      catch (IOException ex)
+      catch (ScriptResourceNotFoundException ex)
       {
         logger.error("Failed to read " + file + ": " + ex.toString());
+      }
+      catch (IOException e)
+      {
+        throw new ScriptExecuteException(e);
       }
     }
     Context.exit();

@@ -1,26 +1,37 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
+/*!
+* Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
+*
+* This software was developed by Webdetails and is provided under the terms
+* of the Mozilla Public License, Version 2.0, or any later version. You may not use
+* this file except in compliance with the license. If you need a copy of the license,
+* please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
+*
+* Software distributed under the Mozilla Public License is distributed on an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
+* the license for the specific language governing your rights and limitations.
+*/
 
-lib("protovis-bundle.js");
+lib("cgg-env.js");
+
+cgg.init();
+
+var pv = require('ccc!protovis-standalone');
 
 cgg.utils.initDocument("dial.svg");
 
-var scale = params.get("scale"),
-    colors = params.get("colors"),
-    scale = (scale !== null && scale.length > 0 ? scale : [0,25,50,100]),
-    colors = (colors !== null && colors.length > 0 ? colors : ["red", "yellow", "green"]),
-    min = parseFloat(scale[0]),
-    max = parseFloat(scale[scale.length - 1]),
-    value = parseFloat(params.get("value"));
+var scale = params.get("scale");
+var colors = params.get("colors");
+scale = (scale !== undefined && scale.length > 0 ? scale : [0,25,50,100]);
+colors = (colors !== undefined && colors.length > 0 ? colors : ["red", "yellow", "green"]);
+var min = parseFloat(scale[0]);
+var max = parseFloat(scale[scale.length - 1]);
+var value = parseFloat(params.get("value"));
 
 /*
  * reset max to biggest of the original maximum or the actual value
  * so we handle values bigger than the declared maximum
  */
 
-print(typeof value);
-print(typeof max);
 min = (value < min ? value : min);
 max = (value > max ? value : max);
 scale[scale.length - 1] = max;

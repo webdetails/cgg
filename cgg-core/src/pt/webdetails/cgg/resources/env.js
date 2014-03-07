@@ -1,9 +1,9 @@
-/*
- * Envjs core-env.1.2.13
- * Pure JavaScript Browser Environment
- * By John Resig <http://ejohn.org/> and the Envjs Team
- * Copyright 2008-2010 John Resig, under the MIT License
- */
+/*!
+* Envjs core-env.1.2.13
+* Pure JavaScript Browser Environment
+* By John Resig <http://ejohn.org/> and the Envjs Team
+* Copyright 2008-2010 John Resig, under the MIT License
+*/
 
 var Envjs = function(){
     var i,
