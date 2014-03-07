@@ -1,3 +1,9 @@
+14.03.07
+    * Improved structure by Thomas Morgner
+    * Fix [REDMINE-1769] - 	CGG update breaks Analyzer exporting features
+    * Implemented [REDMINE-928] - Provide support for post execution function
+    * Fix [REDMINE-909] - 	Can't export custom protovis chart component to CGG.
+
 13.09.10
 
     * CGG now uses cpf-core and cpf-pentaho
