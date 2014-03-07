@@ -7,7 +7,7 @@
 
 
     <target name="build-core" >
-		<ant dir="cgg-core" antfile="build.xml" target="dist" inheritAll="true"/>
+		<ant dir="cgg-core" antfile="build.xml" target="publish-local" inheritAll="true"/>
     </target>
 
 
