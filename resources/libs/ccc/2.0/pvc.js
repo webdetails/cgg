@@ -1954,6 +1954,7 @@ define([ "./def", "./protovis", "jquery", "./tipsy" ], function(def, pv, $) {
         _getDomain: function() {
             var domain = this.keyArgs.colorDomain;
             if (null != domain) {
+                domain = domain.slice();
                 this.domainComparer && domain.sort(this.domainComparer);
                 domain.length > this.desiredDomainCount && (domain = domain.slice(0, this.desiredDomainCount));
             } else domain = [];
@@ -2975,17 +2976,23 @@ define([ "./def", "./protovis", "jquery", "./tipsy" ], function(def, pv, $) {
                     item[itemIndex++] = null != lineIndex ? line[lineIndex] : null;
                 }
             }
-            function expandLine(line) {
+            if (!this.metadata.length) return def.query();
+            var dimsReaders = this._getDimensionsReaders(), item = new Array(this.virtualItemSize()), itemCrossGroupIndex = this._itemCrossGroupIndex, me = this, q = def.query(this.source);
+            if (this._colGroups && this._colGroups.length) {
+                var expandLine = function(line) {
                 updateVItemCrossGroup("R", line);
                 return def.query(this._colGroups).select(function(colGroup, cg) {
                     updateVItemCrossGroup("C", colGroup);
                     updateVItemMeasure(line, cg);
                     return this._readItem(item, dimsReaders);
                 }, this);
+                };
+                return q.selectMany(expandLine, this);
             }
-            if (!this.metadata.length) return def.query();
-            var dimsReaders = this._getDimensionsReaders(), item = new Array(this.virtualItemSize()), itemCrossGroupIndex = this._itemCrossGroupIndex, me = this;
-            return def.query(this.source).selectMany(expandLine, this);
+            return q.select(function(line) {
+                updateVItemCrossGroup("R", line);
+                return this._readItem(item, dimsReaders);
+            }, this);
         },
         _processMetadata: function() {
             this.base();
@@ -8938,6 +8945,11 @@ define([ "./def", "./protovis", "jquery", "./tipsy" ], function(def, pv, $) {
             resolve: "_resolveFull",
             cast: String,
             value: ""
+        },
+        SubValuesVisible: {
+            resolve: "_resolveFull",
+            cast: Boolean,
+            value: !1
         }
     });
     def.type("pvc.Abstract").init(function() {
@@ -17690,8 +17702,11 @@ define([ "./def", "./protovis", "jquery", "./tipsy" ], function(def, pv, $) {
         this.sliceOrder = plot.option("SliceOrder");
         this.emptySlicesVisible = plot.option("EmptySlicesVisible");
         this.emptySlicesLabel = this.emptySlicesVisible ? plot.option("EmptySlicesLabel") : "";
+        this.subValuesVisible = plot.option("SubValuesVisible");
     }).add({
         _createCore: function(layoutInfo) {
+            var labelFont = this._getConstantExtension("label", "font");
+            def.string.is(labelFont) && (this.valuesFont = labelFont);
             var me = this;
             layoutInfo.clientSize;
             var rootScene = me._buildScene();
@@ -17718,12 +17733,14 @@ define([ "./def", "./protovis", "jquery", "./tipsy" ], function(def, pv, $) {
                 label && label.override("defaultText", function(scene) {
                     return scene.isRoot() ? "" : this.base(scene);
                 }).override("trimText", function(scene, text) {
-                    var maxWidth = scene.outerRadius - scene.innerRadius;
+                    var maxWidth = .7 * (scene.outerRadius - scene.innerRadius);
                     if (scene.angle < Math.PI) {
                         var L = maxWidth / 2 + scene.innerRadius, t2 = scene.angle / 2, h = 2 * L * Math.tan(t2);
-                        if (pv.Text.fontHeight(scene.vars.font) > .75 * h) return "";
+                        me.subValuesVisible && (h /= 2);
+                        if (pv.Text.fontHeight(this.valuesFont) > .75 * h) return "";
                     }
-                    return pvc.text.trimToWidthB(.7 * maxWidth, text, scene.vars.font, "..");
+                    var valueText = scene.vars.size.label;
+                    return me.subValuesVisible && pv.Text.measureWidth(valueText, this.valuesFont) > maxWidth ? "" : pvc.text.trimToWidthB(maxWidth, text, this.valuesFont, "..");
                 }).override("calcBackgroundColor", function() {
                     return slice.pvMark.scene[this.pvMark.index].fillStyle;
                 });
@@ -17774,9 +17791,12 @@ define([ "./def", "./protovis", "jquery", "./tipsy" ], function(def, pv, $) {
                 return scene;
             }, calculateColor = function(scene, index, siblingsSize) {
                 var baseColor = null, parent = scene.parent;
-                if (parent) if (parent.isRoot()) baseColor = colorScale(scene); else {
-                    baseColor = parent.color;
-                    index && colorBrightnessFactor && (baseColor = baseColor.brighter(colorBrightnessFactor * index / (siblingsSize - 1)));
+                if (parent) {
+                    baseColor = colorScale(scene);
+                    if (!parent.isRoot() && !baseColor.isFixedColor) {
+                        baseColor = parent.color;
+                        index && colorBrightnessFactor && (baseColor = baseColor.brighter(colorBrightnessFactor * index / (siblingsSize - 1)));
+                    }
                 }
                 scene.color = baseColor;
                 var children = scene.childNodes, childrenSize = children.length;
