@@ -250,7 +250,7 @@
           ====================================================================-->
   <target name="publish-nojar"
           depends="install-antcontrib,create-pom,ivy.deliver">
-    <ant antfile="build-res/subfloor.xml" target="publish-nojar"/>
+    <ant antfile="../build-res/subfloor.xml" target="publish-nojar"/>
 
     <ivy:makepom ivyfile="package-ivy.xml" pomfile="plugin-pom.xml"/>
     <ivy:makepom ivyfile="package-ivy.xml" pomfile="samples-pom.xml"/>
