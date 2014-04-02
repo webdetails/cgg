@@ -32,10 +32,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.batik.bridge.BridgeContext;
-import org.apache.batik.bridge.DocumentLoader;
-import org.apache.batik.bridge.UserAgent;
-import org.apache.batik.bridge.UserAgentAdapter;
+import org.apache.batik.bridge.*;
 import org.apache.batik.css.engine.CSSEngine;
 import org.apache.batik.dom.svg.SAXSVGDocumentFactory;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
@@ -186,6 +183,7 @@ public class BaseScope extends ImporterTopLevel
         final UserAgent userAgent = new UserAgentAdapter();
         final DocumentLoader loader = new DocumentLoader(userAgent);
         final BridgeContext ctx = new BridgeContext(userAgent, loader);
+        new GVTBuilder().build( ctx, doc );
         final CSSEngine eng = impl.createCSSEngine(doc, ctx);
         doc.setCSSEngine(eng);
         return Context.javaToJS(doc, scope);
