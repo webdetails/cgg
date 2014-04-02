@@ -25,9 +25,12 @@
 	<property name="common.build.file" value="../build-res/subfloor.xml"
 		description="This is the location of the standardized build-res/subfloor.xml file"/>
 
+
+
+
 	<!-- Import the build-res/subfloor.xml file which contains all the default tasks -->
 	<import file="${common.build.file}"/>
-
+  <import file="../build-res/subfloor-js.xml"/>
     <!--
       AS STATED ABOVE, THE ONLY TASKS THAT SHOULD EXIST IN THIS BUILD FILE ARE
       THE TASKS THAT NEED TO DIFFER FROM THE DEFAULT IMPLEMENTATION OF THE TASKS
@@ -35,11 +38,25 @@
     -->
 
 	<!-- Override default dist target to do a dist-full instead -->
-	<target name="dist" depends="resolve, dist-full"/>
+	<target name="dist" depends="resolve, copy-ccc-dependencies, dist-full"/>
 
     <target name="publish" depends="dist, dist-source, cobertura, publish-nojar">
     </target>
 
+
+  <target name="copy-ccc-dependencies" depends="subfloor-js.resolve-js">
+     <!-- copy ccc build -->
+
+    <copy todir="${src.dir}/pt/webdetails/cgg/resources/ccc/2.0" overwrite="true">
+
+      <fileset dir="${js.expanded.lib.dir}/ccc/amd">
+        <include name="def.js" />
+        <include name="pvc.js" />
+        <include name="protovis.js" />
+      </fileset>
+
+    </copy>
+  </target>
 
 
 </project>

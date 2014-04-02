@@ -8,11 +8,13 @@
 		<conf name="default" extends="default_internal, default_external"/>
 		<conf name="test" visibility="private"/>
 		<conf name="source"/>
+		<conf name="js"/>
 	</configurations>
 
 	<publications>
 		<artifact name="${ivy.artifact.id}" type="jar" conf="default"/>
 		<artifact name="${ivy.artifact.id}" m:classifier="sources" type="source" ext="jar" conf="source"/>
+		<artifact name="${ivy.artifact.id}" type="js"     conf="js"     m:classifier="js"      ext="zip"/>
 	</publications>
 
 	<dependencies defaultconf="default_internal->default">
@@ -55,6 +57,12 @@
             to us. So we can use the off-the-shelf batik 1.7 instead. -->
         <dependency org="rhino"                  name="js"               rev="1.7R1"        conf="default_external->default"/>
         <dependency org="com.google.code.gson"   name="gson"             rev="2.2.2"        conf='default_external->default' />
+
+
+				<!-- js dependencies -->
+				<dependency org="pentaho"                name="ccc"           rev="${dependency.pentaho-ccc-plugin.revision}" transitive="false" changing="true" conf="js->default">
+					<artifact name="ccc" type="zip" ext="zip"/>
+				</dependency>
 
 
 
