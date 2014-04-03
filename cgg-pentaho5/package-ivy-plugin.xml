@@ -9,7 +9,7 @@
   </configurations>
 
   <publications>
-    <artifact name="${ivy.artifact.id}" type="zip"/>
+    <artifact name="${plugin.artifact.id}" type="zip"/>
   </publications>
 
   <dependencies defaultconf="default->default"/>
