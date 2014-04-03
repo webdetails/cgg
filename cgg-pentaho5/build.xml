@@ -190,7 +190,7 @@
 
 		&lt;/version>	</echo>
 
-
+  <copy tofile="${dist.dir}/${ivy.artifact.id}-${project.revision}.zip" file="${dist.dir}/${plugin.zipfile}"/>
 
 
   </target>
@@ -255,7 +255,7 @@
           depends="install-antcontrib,create-pom,ivy.deliver">
     <ant antfile="../build-res/subfloor.xml" target="publish-nojar"/>
 
-    <ivy:makepom ivyfile="package-ivy.xml" pomfile="plugin-pom.xml"/>
+    <ivy:makepom ivyfile="package-ivy-plugin.xml" pomfile="plugin-pom.xml"/>
     <ivy:makepom ivyfile="package-ivy.xml" pomfile="samples-pom.xml"/>
     <ivy:makepom ivyfile="package-ivy.xml" pomfile="solution-pom.xml"/>
 
