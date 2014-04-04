@@ -134,11 +134,15 @@ public class CggService {
         params.put( CCC_VERSION_PARAM, cccLibVersion );
       }
 
+      //Ensure script begins with /
+      if ( !script.startsWith( "/" ) ) {
+        script = "/" + script;
+      }
       URL context = new File( StringUtils.replace( script, "\\", "/"  ) ).getParentFile().toURI().toURL();
 
 
       final WebCgg cgg = new WebCgg( context , servletResponse,
-        servletResponse.getOutputStream(), new SetResponseHeaderDelegate() {
+        servletResponse == null ? outputStream: servletResponse.getOutputStream(), new SetResponseHeaderDelegate() {
           @Override
           public void setResponseHeader( String mimeType ) {
             if ( !attachmentName.isEmpty() ) {
@@ -155,7 +159,7 @@ public class CggService {
 
 
     } catch ( Exception ex ) {
-      logger.fatal( ex );
+      logger.fatal( "Error while rendering script", ex );
     }
   }
 
