@@ -19,7 +19,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import pt.webdetails.cgg.datasources.WebDataSourceFactory;
 import pt.webdetails.cgg.output.OutputHandler;
-import pt.webdetails.cgg.scripts.DefaultScriptFactory;
 import pt.webdetails.cgg.scripts.JCRScriptFactory;
 
 public class WebCgg extends AbstractCgg {
@@ -41,8 +40,10 @@ public class WebCgg extends AbstractCgg {
   protected void produceOutput( final Chart chart,
                                 final String requestedOutputHandler ) throws IOException, ScriptExecuteException {
     OutputHandler cggOutputHandler = getOutputFactory().create( requestedOutputHandler );
-    servletResponse.setContentType( cggOutputHandler.getMimeType() );
-    servletResponse.setHeader( "Cache-Control", "max-age=0, no-store" );
+    if ( servletResponse != null ) {
+      servletResponse.setContentType(cggOutputHandler.getMimeType());
+      servletResponse.setHeader("Cache-Control", "max-age=0, no-store");
+    }
 
     delegate.setResponseHeader( cggOutputHandler.getMimeType() );
 
