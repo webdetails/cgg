@@ -1,38 +1,62 @@
 <!--===========================================================================
   This is the build file for the Pentaho BI Platform API project.
-  
+
   This build file will use the build-res/subfloor.xml file as the default build
   process and should only override the tasks that need to differ from
   the common build file.
-  
+
   See build-res/subfloor.xml for more details
 ============================================================================-->
 <project name="cgg-core" basedir="." default="default">
-	
+
 	<description>
 	  This build file is used to create the API project
 		and works with the build-res/subfloor.xml file.
 	</description>
 
+
+  <property file="../override.properties"
+            description="Top level Properties customized for your development environment belong in this file.  This file will never be checked into the SCM." />
+  <property file="../build.properties"
+            description="Top level Properties customized for your particular project belong in this file." />
+
+
 	<!-- Define the default location of the common build file -->
-	<property name="common.build.file" value="./build-res/subfloor.xml" 
+	<property name="common.build.file" value="../build-res/subfloor.xml"
 		description="This is the location of the standardized build-res/subfloor.xml file"/>
+
+
+
 
 	<!-- Import the build-res/subfloor.xml file which contains all the default tasks -->
 	<import file="${common.build.file}"/>
-
+  <import file="../build-res/subfloor-js.xml"/>
     <!--
       AS STATED ABOVE, THE ONLY TASKS THAT SHOULD EXIST IN THIS BUILD FILE ARE
       THE TASKS THAT NEED TO DIFFER FROM THE DEFAULT IMPLEMENTATION OF THE TASKS
       FOUND IN build-res/subfloor.xml.
-    --> 
+    -->
 
 	<!-- Override default dist target to do a dist-full instead -->
-	<target name="dist" depends="resolve, dist-full"/>
-	
+	<target name="dist" depends="resolve, copy-ccc-dependencies, dist-full"/>
+
     <target name="publish" depends="dist, dist-source, cobertura, publish-nojar">
     </target>
-	
-	
+
+
+  <target name="copy-ccc-dependencies" depends="subfloor-js.resolve-js">
+     <!-- copy ccc build -->
+
+    <copy todir="${src.dir}/pt/webdetails/cgg/resources/ccc/2.0" overwrite="true">
+
+      <fileset dir="${js.expanded.lib.dir}/ccc/amd">
+        <include name="def.js" />
+        <include name="pvc.js" />
+        <include name="protovis.js" />
+      </fileset>
+
+    </copy>
+  </target>
+
 
 </project>

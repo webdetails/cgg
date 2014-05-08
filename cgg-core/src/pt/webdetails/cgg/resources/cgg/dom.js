@@ -10,21 +10,18 @@
 * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
 * the license for the specific language governing your rights and limitations.
 */
+
+/*
+ * querySelector and querySelectorAll implementation taken from
+ * http://codereview.stackexchange.com/questions/12444/queryselectorall-shim-for-non-ie-browsers
+ */
+
 define([
     './util'
 ], function(util) {
 
     var SVG_IMPL = 'batik';
     var A_slice = Array.prototype.slice;
-
-    return {
-        document: createDocument,
-        element:  createElement,
-        style:    createStyle,
-        window:   createWindow,
-        console:  createConsole,
-        loadSvg:  loadSvg
-    };
 
     // DOM utils
     function unwrapNode(node) { return node._node || node; }
@@ -38,12 +35,13 @@ define([
     }
 
     // DOM shims
-    function createWindow(cgg, doc, console) {
+    function createWindow(cgg, doc, console, nodeSelector) {
         doc = toDocument(doc);
         var loc = '';
 
         var win = {
             navigate: loadPath,
+            userAgent: "",
             get window()   { return this;    }, // !
             get document() { return doc;     },
             get console()  { return console; }
@@ -67,6 +65,14 @@ define([
                 global._document = doc._node;
                 global.console   = win.console;
                 global.navigate  = loadPath;
+                global._nodeSelector = nodeSelector;
+                window.Element = Element;
+                window.CSSStyleDeclaration = CSSStyleDeclaration;
+                window.navigator = {
+                    userAgent: ""
+                }
+                window.clearTimeout = function(){}
+                window.setTimeout = function(){}
             }
         }
 
@@ -91,8 +97,8 @@ define([
             appendChild: function(e) {
                 var _e = e._node;
                 if(_e) {
-                  _doc.appendChild(_e);
-                  return e;
+                    _doc.appendChild(_e);
+                    return e;
                 }
 
                 _doc.appendChild(e);
@@ -100,6 +106,17 @@ define([
             },
             getElementById: function(id) {
                 return createElement(_doc.getElementById(id));
+            },
+            getElementsByTagName: function(tagName) {
+                var selectedNodes = _doc.getElementsByTagName(tagName);
+                var convertedNodes = [];
+
+                for(var i = 0; i < selectedNodes.length; i++){
+                    var elem = createElement(selectedNodes.item(i));
+                    if(elem) convertedNodes.push(elem);
+                }
+
+                return convertedNodes;
             },
             createElement: function(tagName) {
                 return createElement(_doc.createElement(tagName));
@@ -113,77 +130,186 @@ define([
             removeChild: function(node) {
                 _doc.removeChild(node._node || node);
                 return node.node ? node : createElement(node);
+            },
+            querySelector: function(s) {
+                return querySelector(s, this);
+            },
+            querySelectorAll: function(s){
+                return querySelectorAll(s, this);
             }
         };
     }
+
+    function Element(_el){
+        this._el = _el;
+    }
+
+    Element.prototype = {
+
+        get ownerDocument() {
+            return createDocument(this._el.getOwnerDocument());
+        },
+        get _node() { return this._el; },
+        get nodeName() {
+            if(this._el) {
+                return this._el.nodeName;
+            }
+        },
+
+        get tagName() {
+            return this._el.tagName;
+        },
+
+        get className() {
+            return (" " + (this._el.className || this._el.getAttribute("class")) + " ");
+        },
+
+        get childNodes() {
+            var selectedNodes = this._el.getChildNodes();
+            var convertedNodes = [];
+
+            for(var i = 0; i < selectedNodes.length; i++){
+                var elem = createElement(selectedNodes.item(i));
+                if(elem) convertedNodes.push(elem);
+            }
+
+            return convertedNodes;
+        },
+
+        get children(){
+            var selectedNodes = this._el.getChildNodes();
+            var convertedNodes = [];
+
+            for(var i = 0; i < selectedNodes.length; i++){
+                var elem = createElement(selectedNodes.item(i));
+                if(elem) convertedNodes.push(elem);
+            }
+
+            return convertedNodes;
+        },
+
+        get lastChild() { return this._el.getLastChild(); },
+        get style() {
+            return createStyle(this._el.getStyle());
+        },
+
+        get computedStyle() {
+            return createStyle(this._el.getComputedStyle());
+        },
+
+        get parentNode() {
+            if(this._el.getParentNode() == null) return null;
+            return createElement(this._el.getParentNode());
+        },
+
+        set textContent(value) {
+            this._el.textContent = value;
+        },
+
+        get textContent() {
+            return this._el.textContent;
+        },
+
+        get namespaceURI() {
+            return this._el.getNamespaceURI();
+        },
+
+        addEventListener: function() {},
+
+        /* We need to appendChild() the raw Java element,
+         * but also need to return the wrapped element.
+         * If the element wasn't wrapped to begin with, we must wrap it.
+         */
+        appendChild: function(e) {
+            var _e = e._node;
+            if(_e) {
+                this._el.appendChild(_e);
+                return e;
+            }
+
+            this._el.appendChild(e);
+            return createElement(e);
+        },
+        removeChild: function(node) {
+            this._el.removeChild(node._node || node);
+            return node.node ? node : createElement(node);
+        },
+
+        insertBefore: function(newNode, refNode){
+            var newNodeEl = refNodeEl = null;
+            if(newNode) newNodeEl = newNode._el;
+            if(refNode) refNodeEl = refNode._el;
+            return createElement(this._el.insertBefore(newNodeEl, refNodeEl));
+        },
+
+        getBBox: function() {
+            return this._el.getBBox();
+        },
+        getElementById: function(id) {
+            return createElement(this._el.getElementById(id));
+        },
+
+        getElementsByTagName: function(tagName) {
+            var selectedNodes = this._el.getElementsByTagName(tagName);
+            var convertedNodes = [];
+
+            for(var i = 0; i < selectedNodes.length; i++){
+                var elem = createElement(selectedNodes.item(i));
+                if(elem) convertedNodes.push(elem);
+            }
+
+            return convertedNodes;
+        },
+        getAttribute: function(attrName){
+            return this._el.getAttribute(attrName);
+        },
+        setAttribute: function(attrName, value) {
+            this._el.setAttribute(attrName, value);
+        },
+        setAttributeNS: function(ns, attrName, value) {
+            this._el.setAttributeNS(ns,attrName, value);
+        },
+        removeAttribute: function(attrName) {
+            this._el.removeAttribute(attrName);
+        },
+        querySelector: function(s) {
+            return querySelector(s, this);
+        },
+        querySelectorAll: function(s){
+            return querySelectorAll(s, this);
+        }
+    };
 
     function createElement(_el) {
-        return {
-            get _node() { return _el; },
-
-            get lastChild() { return _el.getLastChild(); },
-            get style()     { return createStyle(_el.getStyle()); },
-
-            get parentNode() {
-                if(_el.getParentNode() == null) return null;
-                return createElement(_el.getParentNode());
-            },
-
-            addEventListener: function() {},
-
-            /* We need to appendChild() the raw Java element,
-             * but also need to return the wrapped element.
-             * If the element wasn't wrapped to begin with, we must wrap it.
-             */
-            appendChild: function(e) {
-                var _e = e._node;
-                if(_e) {
-                    _el.appendChild(_e);
-                    return e;
-                }
-
-                _el.appendChild(e);
-                return createElement(e);
-            },
-            removeChild: function(node) {
-                _el.removeChild(node._node || node);
-                return node.node ? node : createElement(node);
-            },
-
-            getBBox: function() {
-                return _el.getBBox();
-            },
-            getElementsByTagName: function(tagName) {
-                return _el.getElementsByTagName(tagName);
-            },
-            setAttribute: function(attrName, value) {
-                _el.setAttribute(attrName, value);
-            },
-            setAttributeNS: function(ns, attrName, value) {
-                _el.setAttributeNS(ns,attrName, value);
-            },
-            removeAttribute: function(attrName) {
-                _el.removeAttribute(attrName);
-            }
-        };
+        if(_el){
+            return new Element(_el);
+        }
+        return null;
     }
 
+    function CSSStyleDeclaration(_style){
+        this._style = _style;
+    }
+
+    CSSStyleDeclaration.prototype = {
+        setProperty: function(name, value, prio) {
+            try {
+                this._style.setProperty(
+                    name,
+                    value,
+                    (typeof prio === "undefined" ? null : prio));
+            } catch(e) {
+                if(!(e.javaException.getClass().getName() == "org.w3c.dom.DOMException"))
+                    throw e;
+            }
+        },
+        removeProperty: function(name) { this._style.removeProperty(name); },
+        getProperty:    function(name) { return this._style.getPropertyValue(name); }
+    };
+
     function createStyle(_style) {
-        return {
-            setProperty: function(name, value, prio) {
-                try {
-                    _style.setProperty(
-                        name,
-                        value,
-                        (typeof prio === "undefined" ? null : prio));
-                } catch(e) {
-                    if(!(e.javaException.getClass().getName() == "org.w3c.dom.DOMException"))
-                        throw e;
-                }
-            },
-            removeProperty: function(name) { _style.removeProperty(name); },
-            getProperty:    function(name) { return _style.getPropertyValue(name); }
-        };
+        if(_style) return new CSSStyleDeclaration(_style);
+        return null;
     }
 
     function createConsole(printer) {
@@ -199,7 +325,7 @@ define([
 
         // Redirect console.XYZ to `doLog` (and, finally, to `printer.print`).
         ['log', 'debug', 'info', 'warn', 'group', 'groupCollapsed', 'groupEnd', 'error']
-        .forEach(function(p) { console[p] = doLog; });
+            .forEach(function(p) { console[p] = doLog; });
 
         return console;
 
@@ -223,4 +349,80 @@ define([
                 : console.stringify(s); // purposely virtual access
         }
     }
+
+    function querySelector(sel, node) {
+        var ret = querySelectorAll(sel, node);
+        if( ret.length > 0) return ret[0];
+        else return null;
+    }
+
+    function querySelectorAll(sel, node) {
+        var sels = sel.split(","),
+            run = function(node,selector) {
+                var sel = selector.split(/[ >]+/), com = selector.match(/[ >]+/g) || [], s, c, ret = [node], nodes, l, i, subs, m, j, check, x, w, ok,
+                    as;
+                com.unshift(" ");
+                while(s = sel.shift()) {
+                    c = com.shift();
+                    if( c) c = c.replace(/^ +| +$/g,"");
+                    nodes = ret.slice(0);
+                    ret = [];
+                    l = nodes.length;
+                    subs = s.match(/[#.[]?[a-z_-]+(?:='[^']+'|="[^"]+")?]?/gi);
+                    m = subs.length;
+                    for( i=0; i<l; i++) {
+                        if( subs[0].charAt(0) == "#") ret = [document.getElementById(subs[0].substr(1))];
+                        else {
+                            check = c == ">" ? nodes[i].children : nodes[i].getElementsByTagName("*");
+                            if( !check) continue;
+                            w = check.length;
+                            for( x=0; x<w; x++) {
+                                ok = true;
+                                for( j=0; j<m; j++) {
+                                    switch(subs[j].charAt(0)) {
+                                        case ".":
+                                            if( !check[x].className.match(new RegExp("\\b"+subs[j].substr(1)+"\\b"))) ok = false;
+                                            break;
+                                        case "[":
+                                            as = subs[j].substr(1,subs[j].length-2).split("=");
+                                            if( !check[x].getAttribute(as[0])) ok = false;
+                                            else if( as[1]) {
+                                                as[1] = as[1].replace(/^['"]|['"]$/g,"");
+                                                if( check[x].getAttribute(as[0]) != as[1]) ok = false;
+                                            }
+                                            break;
+                                        default:
+                                            if( check[x].tagName.toLowerCase() != subs[j].toLowerCase()) ok = false;
+                                            break;
+                                    }
+                                    if( !ok) break;
+                                }
+                                if( ok) ret.push(check[x]);
+                            }
+                        }
+                    }
+                }
+                return ret;
+            }, l = sels.length, i, ret = [], tmp, m, j;
+        for( i=0; i<l; i++) {
+            tmp = run(node,sels[i]);
+            m = tmp.length;
+            for( j=0; j<m; j++) {
+                ret.push(tmp[j]);
+            }
+        }
+        return ret;
+    }
+
+    return {
+        document: createDocument,
+        element:  createElement,
+        style:    createStyle,
+        window:   createWindow,
+        console:  createConsole,
+        loadSvg:  loadSvg,
+        Element: Element,
+        CSSStyleDeclaration: CSSStyleDeclaration
+    };
+
 });

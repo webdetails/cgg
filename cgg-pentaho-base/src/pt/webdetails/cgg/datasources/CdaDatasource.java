@@ -13,25 +13,20 @@
 
 package pt.webdetails.cgg.datasources;
 
-import java.util.HashMap;
-import java.util.Map;
 
-import pt.webdetails.cpf.InterPluginCall;
+import java.util.Date;
+import java.util.List;
 
-/**
- * @author pdpi
- */
 public class CdaDatasource implements DataSource {
 
-  private Map<String, Object> requestMap = new HashMap<String, Object>();
+  private pt.webdetails.cpf.datasources.CdaDatasource wrappedSource;
 
   public CdaDatasource() {
+    wrappedSource = new pt.webdetails.cpf.datasources.CdaDatasource();
   }
 
   private String getQueryData() {
-    InterPluginCall cdaCall = new InterPluginCall( InterPluginCall.CDA, "doQuery" );
-    cdaCall.setRequestParameters( requestMap );
-    return cdaCall.callInPluginClassLoader();
+    return wrappedSource.execute();
   }
 
   public String execute() {
@@ -39,14 +34,23 @@ public class CdaDatasource implements DataSource {
   }
 
   public void setParameter( String param, Object val ) {
-    requestMap.put( "param" + param, val );
+    if ( val instanceof String ) {
+      wrappedSource.setParameter( param, (String) val );
+    } else if ( val instanceof List ) {
+      wrappedSource.setParameter( param, (List<Object>) val );
+    } else if ( val instanceof Date ) {
+      wrappedSource.setParameter( param, (Date) val );
+    } else if ( val instanceof String[] ) {
+      wrappedSource.setParameter( param, (String[]) val );
+    }
+
   }
 
   public void setDataAccessId( String id ) {
-    requestMap.put( "dataAccessId", id );
+    wrappedSource.setDataAccessId( id );
   }
 
   public void setDefinitionFile( String file ) {
-    requestMap.put( "path", file );
+    wrappedSource.setDefinitionFile( file );
   }
 }

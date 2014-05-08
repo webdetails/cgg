@@ -1,3 +1,15 @@
+/*!
+* Copyright 2002 - 2014 Webdetails, a Pentaho company.  All rights reserved.
+*
+* This software was developed by Webdetails and is provided under the terms
+* of the Mozilla Public License, Version 2.0, or any later version. You may not use
+* this file except in compliance with the license. If you need a copy of the license,
+* please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
+*
+* Software distributed under the Mozilla Public License is distributed on an "AS IS"
+* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
+* the license for the specific language governing your rights and limitations.
+*/
 package pt.webdetails.cgg.scripts;
 
 import java.io.BufferedInputStream;
@@ -7,35 +19,28 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-public class SystemScriptResourceLoader implements ScriptResourceLoader
-{
-  public SystemScriptResourceLoader()
-  {
+public class SystemScriptResourceLoader implements ScriptResourceLoader {
+  public SystemScriptResourceLoader() {
   }
 
-  public String getContextResourceURI(final String script) throws IOException, ScriptResourceNotFoundException
-  {
+  public String getContextResourceURI( final String script ) throws IOException, ScriptResourceNotFoundException {
     throw new ScriptResourceNotFoundException();
   }
 
-  public InputStream getContextResource(final String script) throws IOException, ScriptResourceNotFoundException
-  {
+  public InputStream getContextResource( final String script ) throws IOException, ScriptResourceNotFoundException {
     throw new ScriptResourceNotFoundException();
   }
 
-  public Reader getSystemLibraryScript(final String script) throws IOException, ScriptResourceNotFoundException
-  {
+  public Reader getSystemLibraryScript( final String script ) throws IOException, ScriptResourceNotFoundException {
     final String resource = "/pt/webdetails/cgg/resources/" + script;
-    final InputStream resourceAsStream = getClass().getResourceAsStream(resource);
-    if (resourceAsStream == null)
-    {
-      throw new ScriptResourceNotFoundException("Resource not found: " + resource);
+    final InputStream resourceAsStream = getClass().getResourceAsStream( resource );
+    if ( resourceAsStream == null ) {
+      throw new ScriptResourceNotFoundException( "Resource not found: " + resource );
     }
-    return new BufferedReader(new InputStreamReader(new BufferedInputStream(resourceAsStream)));
+    return new BufferedReader( new InputStreamReader( new BufferedInputStream( resourceAsStream ), "UTF-8" ) );
   }
 
-  public Reader getContextLibraryScript(final String script) throws IOException, ScriptResourceNotFoundException
-  {
+  public Reader getContextLibraryScript( final String script ) throws IOException, ScriptResourceNotFoundException {
     throw new ScriptResourceNotFoundException();
   }
 }
