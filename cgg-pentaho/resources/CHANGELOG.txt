@@ -1,3 +1,6 @@
+14.05.06
+  * Another big structural improvement - Finished refactoring to support the core/pentaho/pentaho5 architecture
+
 14.03.07
     * Improved structure by Thomas Morgner
     * Fix [REDMINE-1769] - 	CGG update breaks Analyzer exporting features
@@ -9,11 +12,11 @@
     * CGG now uses cpf-core and cpf-pentaho
     * [FIX] (NPE No Data) When the chart has no data, a NPE would occur when trying to obtain the final chart size.
     * [FIX^2] (NPE setData) Fix the Fix of NPE occurring when an empty dataset is set using pvc.BaseChart#setData
-    * [REF] (protovis batik) protovis code no longer has the "batik" string... Method overrides are now being made to cope with different implementations. 
-    * [FIX] (CCC Render multiple animation) Problems when rendering and re-rendering, possibly with multiple charts to the same canvas, and animations.    
+    * [REF] (protovis batik) protovis code no longer has the "batik" string... Method overrides are now being made to cope with different implementations.
+    * [FIX] (CCC Render multiple animation) Problems when rendering and re-rendering, possibly with multiple charts to the same canvas, and animations.
     * [FIX] (Windows Paths) Building of script file url was missing an additional "/".
-    * [FIX] (MultiChart Cliping) Small-charts beyond the initial chart size would appear clipped. 
-    * [FEAT] (parammultiChartOverflow) This parameter can be specified in the url to override the chart's default setting. 
+    * [FIX] (MultiChart Cliping) Small-charts beyond the initial chart size would appear clipped.
+    * [FEAT] (parammultiChartOverflow) This parameter can be specified in the url to override the chart's default setting.
     * [FEAT] (CCC MultiChart Overflow) New option multiChartOverflow controls whether to 'grow' (the default value), 'fit' or 'clip' if small charts would otherwise not fit in the initially given chart size.
 
 
@@ -34,7 +37,7 @@
     * Updated platform dependency to 4.5 stable
     * Added missing copyright for jquery bits
     * Added missing output type declaration when no filename was specified
-    * Workaround for changes in detecting method name in draw 
+    * Workaround for changes in detecting method name in draw
 
 12.09.05
 
