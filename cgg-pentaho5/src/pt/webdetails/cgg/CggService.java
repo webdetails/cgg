@@ -138,11 +138,16 @@ public class CggService {
       if ( !script.startsWith( "/" ) ) {
         script = "/" + script;
       }
-      URL context = new File( StringUtils.replace( script, "\\", "/"  ) ).getParentFile().toURI().toURL();
+
+
+      String replacedScript = StringUtils.replace( script, "\\", "/"  );
+      File f = new File( replacedScript );
+
+      URL context = new URL( "file", "" , StringUtils.replace( replacedScript, f.getName(), "" ) );
 
 
       final WebCgg cgg = new WebCgg( context , servletResponse,
-        servletResponse == null ? outputStream: servletResponse.getOutputStream(), new SetResponseHeaderDelegate() {
+        servletResponse == null ? outputStream : servletResponse.getOutputStream(), new SetResponseHeaderDelegate() {
           @Override
           public void setResponseHeader( String mimeType ) {
             if ( !attachmentName.isEmpty() ) {
@@ -155,7 +160,7 @@ public class CggService {
         }
       );
 
-      cgg.draw( script, type, outputType, width.intValue(), height.intValue(), params );
+      cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), params );
 
 
     } catch ( Exception ex ) {
