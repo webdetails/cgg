@@ -36,7 +36,7 @@ public class SystemFolderScriptResourceLoader implements ScriptResourceLoader {
   @Override
   public InputStream getContextResource( String s ) throws IOException, ScriptResourceNotFoundException {
     if ( ( basePath != null && basePath.startsWith( "/system" ) )
-            || ( basePath == null && s.startsWith( "/system" ) ) ) {
+            || s.startsWith( "/system" ) )  {
       SystemPluginResourceAccess resourceAccess = new SystemPluginResourceAccess( "cgg", "" );
 
       String fullPath = s;

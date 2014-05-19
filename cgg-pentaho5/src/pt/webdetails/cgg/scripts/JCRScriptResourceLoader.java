@@ -37,7 +37,7 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
   @Override
   public InputStream getContextResource( String s ) throws IOException, ScriptResourceNotFoundException {
     if ( ( basePath != null && basePath.startsWith( "/system" ) )
-        || ( basePath == null && s.startsWith( "/system" ) ) ) {
+        || s.startsWith( "/system" )  ) {
       throw new ScriptResourceNotFoundException( s );
     }
     UserContentRepositoryAccess repositoryAccess = new UserContentRepositoryAccess( PentahoSessionHolder.getSession(),
