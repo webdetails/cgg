@@ -1,8 +1,0 @@
-14.05.06
-  * Another big structural improvement - Finished refactoring to support the core/pentaho/pentaho5 architecture
-
-14.03.07
-    * Improved structure by Thomas Morgner
-    * Fix [REDMINE-1769] - 	CGG update breaks Analyzer exporting features
-    * Implemented [REDMINE-928] - Provide support for post execution function
-    * Fix [REDMINE-909] - 	Can't export custom protovis chart component to CGG.

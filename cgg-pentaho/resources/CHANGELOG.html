@@ -1,0 +1,88 @@
+<html>
+
+<h1>
+       Release Notes - Community Graphics Generator - Version 14.06.18
+</h1>
+
+<h2>        Improvement
+</h2>
+<ul>
+<li>[<a href='http://jira.pentaho.com/browse/ENGOPS-557'>ENGOPS-557</a>] -         Create 5.1 CCC version, add it to CGG, and configure its use by Analyzer 
+</li>
+</ul>
+
+
+
+<h2>        Bug
+</h2>
+<ul>
+<li>[<a href='http://jira.pentaho.com/browse/BISERVER-11553'>BISERVER-11553</a>] -  Fixed CGG execution for Windows os
+</li>
+<li>[<a href='http://jira.pentaho.com/browse/CDF-272'>CDF-272</a>] -         Failure to load system resources (underscore.js) using path load('/system/pentaho-cdf/js/underscore.js') 
+</li>
+</ul>
+
+
+
+<h1>Older Versions</h1>
+<code>
+14.05.06<br>
+  * Another big structural improvement - Finished refactoring to support the core/pentaho/pentaho5 architecture<br>
+<br>
+14.03.07<br>
+    * Improved structure by Thomas Morgner<br>
+    * Fix [REDMINE-1769] - 	CGG update breaks Analyzer exporting features<br>
+    * Implemented [REDMINE-928] - Provide support for post execution function<br>
+    * Fix [REDMINE-909] - 	Can't export custom protovis chart component to CGG.<br>
+<br>
+13.09.10<br>
+<br>
+    * CGG now uses cpf-core and cpf-pentaho<br>
+    * [FIX] (NPE No Data) When the chart has no data, a NPE would occur when trying to obtain the final chart size.<br>
+    * [FIX^2] (NPE setData) Fix the Fix of NPE occurring when an empty dataset is set using pvc.BaseChart#setData<br>
+    * [REF] (protovis batik) protovis code no longer has the "batik" string... Method overrides are now being made to cope with different implementations.<br>
+    * [FIX] (CCC Render multiple animation) Problems when rendering and re-rendering, possibly with multiple charts to the same canvas, and animations.<br>
+    * [FIX] (Windows Paths) Building of script file url was missing an additional "/".<br>
+    * [FIX] (MultiChart Cliping) Small-charts beyond the initial chart size would appear clipped.<br>
+    * [FEAT] (parammultiChartOverflow) This parameter can be specified in the url to override the chart's default setting.<br>
+    * [FEAT] (CCC MultiChart Overflow) New option multiChartOverflow controls whether to 'grow' (the default value), 'fit' or 'clip' if small charts would otherwise not fit in the initially given chart size.<br>
+<br>
+
+13.06.05<br>
+<br>
+    * Sync CCC with that of the CDF branch<br>
+    * New logging capabilities<br>
+    * [FIX] (CCC protovis) The window.getComputedStyle shim installed by protovis-msie caused problems to other libraries (ace). Refactored some of the code so that the shim is no longer necessary<br>
+<br>
+13.03.25<br>
+<br>
+    * Support for CCC v2<br>
+    * Internal architectural changes - refactored cgg to cgg-core and cgg-pentaho.<br>
+<br>
+12.10.17<br>
+<br>
+    * Sync CCC with that of the CDF branch<br>
+    * Updated platform dependency to 4.5 stable<br>
+    * Added missing copyright for jquery bits<br>
+    * Added missing output type declaration when no filename was specified<br>
+    * Workaround for changes in detecting method name in draw<br>
+<br>
+12.09.05<br>
+<br>
+    * Integration with CPF<br>
+    * Updated pvc-d1.0.js file to keep in sync with CDF<br>
+<br>
+12.07.19<br>
+<br>
+    * Added a hook for plugging in a default chart colorscheme (CvK Feb. 2012)<br>
+    * Updated pvc-d1.0.js file to keep in sync with CDF<br>
+<br>
+12.05.15<br>
+<br>
+	*  Disabled CDW support due to security considerations. Was not in use anyway.<br>
+	* Updated pvc-d1.0.js file to keep in sync with CDF<br>
+	
+	</code>
+
+
+</html>
