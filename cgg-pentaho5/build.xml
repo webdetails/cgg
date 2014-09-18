@@ -179,6 +179,7 @@
          excludes="**/Thumbs.db"/>
 
 
+
   <echo file="${dist.dir}/marketplace.xml">&lt;version>
         &lt;branch>${project.stage}&lt;/branch>
 		&lt;version>${distribution.version}&lt;/version>
