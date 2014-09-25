@@ -14,7 +14,7 @@
 
   <!-- Repository for Pentaho-hosted artifacts -->  
 
-  <property name="pentaho.resolve.repo" value="http://repo.pentaho.org/artifactory/repo" override="false" />
+  <property name="pentaho.resolve.repo" value="http://ivy-nexus.pentaho.org/content/groups/omni" override="false" />
 
   <!-- Repository for External-hosted artifacts (Optional. Defaults to Pentaho-hosted.) -->
 
@@ -36,7 +36,7 @@
 
       <dual name="pentaho">
 
-        <url name="pentaho-ivy">
+        <url name="pentaho-ivy" checkmodified="true" changingPattern="*-SNAPSHOT">
 
           <ivy pattern="${pentaho.resolve.repo}/[organisation]/[module]/[revision]/[module]-[revision].ivy.xml" />
 
@@ -55,3 +55,4 @@
   <caches lockStrategy="artifact-lock" resolutionCacheDir="${ivy.default.ivy.user.dir}/resol-cache${env.EXECUTOR_NUMBER}" />
 
 </ivysettings>
+
