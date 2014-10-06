@@ -17,6 +17,7 @@
 
 	<dependencies defaultconf="default_internal->default">
     <!-- internal dependencies -->
+		<dependency org="pentaho" name="cgg-core" rev="TRUNK-SNAPSHOT"/>
 
 		<!--  external dependencies -->
 
