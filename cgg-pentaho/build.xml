@@ -183,9 +183,6 @@
         &lt;package_url&gt;
           ${marketplace.metadata.package_url}
         &lt;/package_url&gt;
-        &lt;samples_url&gt;
-          ${marketplace.metadata.samples_url}
-        &lt;/samples_url&gt;
         &lt;description&gt;
           ${marketplace.metadata.description}
         &lt;/description&gt;
