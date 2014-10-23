@@ -27,15 +27,19 @@ define([
 
             var ccc = this.ccc = require('ccc!');
             var pvc = ccc.pvc;
+            var def = ccc.def;
 
             if(cgg.useGlobal) {
                 var global = util.global;
                 global.pv  = ccc.pv;
-                global.def = ccc.def;
+                global.def = def;
+                global.cdo = ccc.cdo;
                 global.pvc = pvc;
             }
 
-            if(pvc.setDebug) pvc.setDebug(cgg.debug);
+            // Sync def/pvc log, taking older ccc versions into account.
+            if(def.setDebug) def.setDebug(cgg.debug);
+            else if(pvc.setDebug) pvc.setDebug(cgg.debug);
             else pvc.debug = cgg.debug;
 
             var cd = this.chartDefinition;
@@ -141,10 +145,10 @@ define([
         if((/^ccc/i).test(typeName)) return BaseCccComponent;
     });
 
-    // Not all versions of CCC have pvc.stringify.
-    // if(pvc.stringify)
+    // Not all versions of CCC have def.describe/pvc.stringify.
+    // if(def.describe)
     //     cgg.win.console.stringify = function(s) {
-    //         return pvc.stringify(s, {ownOnly: false});
+    //         return def.describe(s, {ownOnly: false});
     //     };
 
     return BaseCccComponent;
