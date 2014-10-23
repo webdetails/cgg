@@ -13,9 +13,10 @@
 define([
     './protovis',
     './def',
+    './cdo',
     './pvc',
     '../protovis-cgg'
-], function(pv, def, pvc, pvCgg) {
+], function(pv, def, cdo, pvc, pvCgg) {
 
     // Set the default compatibility version to CCC v1.
     pvc.defaultCompatVersion(1);
@@ -26,6 +27,7 @@ define([
     return {
         pv:  pv,
         def: def,
-        pvc: pvc
+        pvc: pvc,
+        cdo: cdo
     };
 });

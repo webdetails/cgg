@@ -119,6 +119,7 @@ require(['ccc!', 'jquery'], function(ccc, _$) {
     pv  = ccc.pv;
     pvc = ccc.pvc;
     def = ccc.def;
+    cdo = ccc.cdo;
 
     jQuery = $ = _$;
 });
