@@ -52,6 +52,7 @@
       <fileset dir="${js.expanded.lib.dir}/ccc/amd">
         <include name="def.js" />
         <include name="pvc.js" />
+        <include name="cdo.js" />
         <include name="protovis.js" />
       </fileset>
 
