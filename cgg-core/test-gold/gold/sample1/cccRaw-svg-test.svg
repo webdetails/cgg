@@ -11,7 +11,7 @@
         <defs/>
         <g>
             <g transform="translate(3,3)">
-                <g transform="translate(40,0)">
+                <g transform="translate(38,0)">
                     <g transform="translate(4,4)">
                         <text fill="rgb(0,0,0)" dy=".35em"
                               style="font-family: sans-serif;
@@ -19,7 +19,7 @@ font-style: normal;
 font-variant: normal;
 font-weight: normal;
 font-size: 14px;
-" pointer-events="none" transform="translate(103,16)" text-anchor="middle">
+" pointer-events="none" transform="translate(105,16)" text-anchor="middle">
                             line chart - standard with dots
                         </text>
                     </g>
@@ -32,7 +32,7 @@ font-size: 14px;
                     </clipPath>
                     <g transform="translate(0,40)">
                         <g transform="translate(5,5)">
-                            <g transform="translate(150,0)">
+                            <g transform="translate(152,0)">
                                 <g>
                                     <g>
                                         <g>
@@ -60,7 +60,7 @@ font-size: 14px;
                                         </text>
                                     </g>
                                 </g>
-                                <g transform="translate(53,0)">
+                                <g transform="translate(52,0)">
                                     <g>
                                         <g>
                                             <g>
@@ -87,7 +87,7 @@ font-size: 14px;
                                         </text>
                                     </g>
                                 </g>
-                                <g transform="translate(95,0)">
+                                <g transform="translate(93,0)">
                                     <g>
                                         <g>
                                             <g>
@@ -121,89 +121,57 @@ font-size: 14px;
             </g>
             <g transform="translate(3,3)">
                 <g transform="translate(0,65)">
-                    <g transform="translate(0,4)">
+                    <g transform="translate(0,4.4)">
                         <g transform="translate(30,0)"/>
                     </g>
-                    <g transform="translate(0,4)">
-                        <line x1="30" x2="30" y1="0" y2="95"
-                              stroke="rgb(240,240,240)" stroke-width="1"
+                    <g transform="translate(0,4.4)">
+                        <line x1="30" x2="30" y1="0" y2="94.6"
+                              stroke="rgb(240,240,240)" stroke-width="0"
                               pointer-events="none"/>
-                        <line x1="100.4" x2="100.4" y1="0" y2="95"
-                              stroke="rgb(240,240,240)" stroke-width="1"
+                        <line x1="100.4" x2="100.4" y1="0" y2="94.6"
+                              stroke="rgb(240,240,240)" stroke-width="0"
                               pointer-events="none"/>
-                        <line x1="170.8" x2="170.8" y1="0" y2="95"
-                              stroke="rgb(240,240,240)" stroke-width="1"
+                        <line x1="170.8" x2="170.8" y1="0" y2="94.6"
+                              stroke="rgb(240,240,240)" stroke-width="0"
                               pointer-events="none"/>
                         <line x1="241.20000000000002" x2="241.20000000000002"
-                              y1="0" y2="95" stroke="rgb(240,240,240)"
-                              stroke-width="1" pointer-events="none"/>
+                              y1="0" y2="94.6" stroke="rgb(240,240,240)"
+                              stroke-width="0" pointer-events="none"/>
                     </g>
-                    <g transform="translate(0,4)">
-                        <line x1="30" x2="294" y1="89.0625" y2="89.0625"
-                              stroke="rgb(240,240,240)" stroke-width="1"
+                    <g transform="translate(0,4.4)">
+                        <line x1="30" x2="294" y1="94.6" y2="94.6"
+                              stroke="rgb(240,240,240)" stroke-width="0"
                               pointer-events="none"/>
-                        <line x1="30" x2="294" y1="83.125" y2="83.125"
-                              stroke="rgb(240,240,240)" stroke-width="1"
+                        <line x1="30" x2="294" y1="70.94999999999999"
+                              y2="70.94999999999999" stroke="rgb(240,240,240)"
+                              stroke-width="0" pointer-events="none"/>
+                        <line x1="30" x2="294" y1="47.3" y2="47.3"
+                              stroke="rgb(240,240,240)" stroke-width="0"
                               pointer-events="none"/>
-                        <line x1="30" x2="294" y1="77.1875" y2="77.1875"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="71.25" y2="71.25"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="65.3125" y2="65.3125"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="59.375" y2="59.375"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="53.4375" y2="53.4375"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="47.5" y2="47.5"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="41.5625" y2="41.5625"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="35.625" y2="35.625"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="29.6875" y2="29.6875"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="23.75" y2="23.75"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="17.8125" y2="17.8125"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="11.875" y2="11.875"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
-                        <line x1="30" x2="294" y1="5.9375" y2="5.9375"
-                              stroke="rgb(240,240,240)" stroke-width="1"
-                              pointer-events="none"/>
+                        <line x1="30" x2="294" y1="23.650000000000006"
+                              y2="23.650000000000006" stroke="rgb(240,240,240)"
+                              stroke-width="0" pointer-events="none"/>
                         <line x1="30" x2="294" y1="0" y2="0"
-                              stroke="rgb(240,240,240)" stroke-width="1"
+                              stroke="rgb(240,240,240)" stroke-width="0"
                               pointer-events="none"/>
                     </g>
-                    <g transform="translate(0,4)">
+                    <g transform="translate(0,4.4)">
                         <g>
                             <g>
-                                <line x1="24" x2="30" y1="89.0625" y2="89.0625"
+                                <line x1="24" x2="30" y1="94.6" y2="94.6"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <line x1="27" x2="30" y1="86.09375"
-                                      y2="86.09375" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                <line x1="27" x2="30" y1="82.77499999999999"
+                                      y2="82.77499999999999"
+                                      shape-rendering="crispEdges"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <text x="-3" transform="translate(24,89.0625)"
+                                <text x="-3" transform="translate(24,94.6)"
                                       fill="rgb(102,102,102)" text-anchor="end"
                                       style="font-family: sans-serif;
 font-style: normal;
@@ -211,23 +179,26 @@ font-variant: normal;
 font-weight: normal;
 font-size: 9px;
 " dy=".35em" pointer-events="none">
-                                    06:00 AM
+                                    01/01
                                 </text>
                             </g>
                             <g>
-                                <line x1="24" x2="30" y1="83.125" y2="83.125"
+                                <line x1="24" x2="30" y1="70.94999999999999"
+                                      y2="70.94999999999999"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <line x1="27" x2="30" y1="80.15625"
-                                      y2="80.15625" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                <line x1="27" x2="30" y1="59.124999999999986"
+                                      y2="59.124999999999986"
+                                      shape-rendering="crispEdges"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <text x="-3" transform="translate(24,83.125)"
+                                <text x="-3"
+                                      transform="translate(24,70.94999999999999)"
                                       fill="rgb(102,102,102)" text-anchor="end"
                                       style="font-family: sans-serif;
 font-style: normal;
@@ -235,23 +206,24 @@ font-variant: normal;
 font-weight: normal;
 font-size: 9px;
 " dy=".35em" pointer-events="none">
-                                    12:00 PM
+                                    01/02
                                 </text>
                             </g>
                             <g>
-                                <line x1="24" x2="30" y1="77.1875" y2="77.1875"
+                                <line x1="24" x2="30" y1="47.3" y2="47.3"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <line x1="27" x2="30" y1="74.21875"
-                                      y2="74.21875" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                <line x1="27" x2="30" y1="35.474999999999994"
+                                      y2="35.474999999999994"
+                                      shape-rendering="crispEdges"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <text x="-3" transform="translate(24,77.1875)"
+                                <text x="-3" transform="translate(24,47.3)"
                                       fill="rgb(102,102,102)" text-anchor="end"
                                       style="font-family: sans-serif;
 font-style: normal;
@@ -259,23 +231,26 @@ font-variant: normal;
 font-weight: normal;
 font-size: 9px;
 " dy=".35em" pointer-events="none">
-                                    06:00 PM
+                                    01/03
                                 </text>
                             </g>
                             <g>
-                                <line x1="24" x2="30" y1="71.25" y2="71.25"
+                                <line x1="24" x2="30" y1="23.650000000000006"
+                                      y2="23.650000000000006"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <line x1="27" x2="30" y1="68.28125"
-                                      y2="68.28125" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                <line x1="27" x2="30" y1="11.825000000000006"
+                                      y2="11.825000000000006"
+                                      shape-rendering="crispEdges"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g>
-                                <text x="-3" transform="translate(24,71.25)"
+                                <text x="-3"
+                                      transform="translate(24,23.650000000000006)"
                                       fill="rgb(102,102,102)" text-anchor="end"
                                       style="font-family: sans-serif;
 font-style: normal;
@@ -283,277 +258,13 @@ font-variant: normal;
 font-weight: normal;
 font-size: 9px;
 " dy=".35em" pointer-events="none">
-                                    12:00 AM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="65.3125" y2="65.3125"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="62.34375"
-                                      y2="62.34375" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,65.3125)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    06:00 AM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="59.375" y2="59.375"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="56.40625"
-                                      y2="56.40625" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,59.375)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    12:00 PM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="53.4375" y2="53.4375"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="50.46875"
-                                      y2="50.46875" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,53.4375)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    06:00 PM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="47.5" y2="47.5"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="44.53125"
-                                      y2="44.53125" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,47.5)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    12:00 AM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="41.5625" y2="41.5625"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="38.59375"
-                                      y2="38.59375" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,41.5625)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    06:00 AM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="35.625" y2="35.625"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="32.65625"
-                                      y2="32.65625" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,35.625)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    12:00 PM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="29.6875" y2="29.6875"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="26.71875"
-                                      y2="26.71875" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,29.6875)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    06:00 PM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="23.75" y2="23.75"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="20.78125"
-                                      y2="20.78125" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,23.75)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    12:00 AM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="17.8125" y2="17.8125"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="14.84375"
-                                      y2="14.84375" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,17.8125)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    06:00 AM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="11.875" y2="11.875"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="8.90625" y2="8.90625"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,11.875)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    12:00 PM
-                                </text>
-                            </g>
-                            <g>
-                                <line x1="24" x2="30" y1="5.9375" y2="5.9375"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <line x1="27" x2="30" y1="2.96875" y2="2.96875"
-                                      shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
-                                      pointer-events="none"/>
-                            </g>
-                            <g>
-                                <text x="-3" transform="translate(24,5.9375)"
-                                      fill="rgb(102,102,102)" text-anchor="end"
-                                      style="font-family: sans-serif;
-font-style: normal;
-font-variant: normal;
-font-weight: normal;
-font-size: 9px;
-" dy=".35em" pointer-events="none">
-                                    06:00 PM
+                                    01/04
                                 </text>
                             </g>
                             <g>
                                 <line x1="24" x2="30" y1="0" y2="0"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                             <g/>
@@ -566,31 +277,31 @@ font-variant: normal;
 font-weight: normal;
 font-size: 9px;
 " dy=".35em" pointer-events="none">
-                                    12:00 AM
+                                    01/05
                                 </text>
                             </g>
                         </g>
                         <g>
                             <line stroke-linecap="square" x1="30" x2="30" y1="0"
-                                  y2="95" shape-rendering="crispEdges"
-                                  stroke="rgb(102,102,102)" stroke-width="1"
+                                  y2="94.6" shape-rendering="crispEdges"
+                                  stroke="rgb(102,102,102)" stroke-width="0"
                                   pointer-events="none"/>
                         </g>
                     </g>
-                    <g transform="translate(0,4)">
-                        <g transform="translate(30,95)">
+                    <g transform="translate(0,4.4)">
+                        <g transform="translate(30,94.6)">
                             <g>
                                 <g>
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="1" pointer-events="none"/>
+                                          stroke-width="0" pointer-events="none"/>
                                 </g>
                                 <g>
                                     <line x1="35.2" x2="35.2" y1="0" y2="3"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="1" pointer-events="none"/>
+                                          stroke-width="0" pointer-events="none"/>
                                 </g>
                                 <g>
                                     <text y="3" transform="translate(0,6)"
@@ -609,13 +320,13 @@ font-size: 9px;
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="1" pointer-events="none"/>
+                                          stroke-width="0" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(70.4,0)">
                                     <line x1="35.2" x2="35.2" y1="0" y2="3"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="1" pointer-events="none"/>
+                                          stroke-width="0" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(70.4,0)">
                                     <text y="3" transform="translate(0,6)"
@@ -634,13 +345,13 @@ font-size: 9px;
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="1" pointer-events="none"/>
+                                          stroke-width="0" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(140.8,0)">
                                     <line x1="35.2" x2="35.2" y1="0" y2="3"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="1" pointer-events="none"/>
+                                          stroke-width="0" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(140.8,0)">
                                     <text y="3" transform="translate(0,6)"
@@ -659,7 +370,7 @@ font-size: 9px;
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="1" pointer-events="none"/>
+                                          stroke-width="0" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(211.20000000000002,0)"/>
                                 <g transform="translate(211.20000000000002,0)">
@@ -679,92 +390,86 @@ font-size: 9px;
                             <g>
                                 <line stroke-linecap="square" x1="0" x2="264"
                                       y1="0" y2="0" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="1"
+                                      stroke="rgb(102,102,102)" stroke-width="0"
                                       pointer-events="none"/>
                             </g>
                         </g>
                     </g>
-                    <g transform="translate(0,4)">
+                    <g transform="translate(0,4.4)">
                         <g transform="translate(30,0)">
                             <g>
                                 <g/>
                                 <g>
-                                    <path d="M253.44,71.25L214.72,59.375L176,47.5L123.2,35.625L70.4,23.75L75.67999999999999,11.875L80.96,0"
+                                    <path d="M253.44,70.94999999999999L214.72,59.125L176,47.3L123.2,35.475L70.4,23.650000000000006L75.67999999999999,11.825000000000003L80.96,0"
                                           pointer-events="none"
                                           stroke="rgb(31,119,180)"/>
                                 </g>
                                 <g>
-                                    <circle fill="rgb(31,119,180)"
-                                            r="3.4641016151377544"
+                                    <circle fill="rgb(31,119,180)" r="4.5"
                                             pointer-events="none" cx="253.44"
-                                            cy="71.25" stroke="rgb(31,119,180)"/>
-                                    <circle fill="rgb(31,119,180)"
-                                            r="3.4641016151377544"
+                                            cy="70.94999999999999"
+                                            stroke="rgb(31,119,180)"/>
+                                    <circle fill="rgb(31,119,180)" r="4.5"
                                             pointer-events="none" cx="176"
-                                            cy="47.5" stroke="rgb(31,119,180)"/>
-                                    <circle fill="rgb(31,119,180)"
-                                            r="3.4641016151377544"
+                                            cy="47.3" stroke="rgb(31,119,180)"/>
+                                    <circle fill="rgb(31,119,180)" r="4.5"
                                             pointer-events="none" cx="70.4"
-                                            cy="23.75" stroke="rgb(31,119,180)"/>
-                                    <circle fill="rgb(31,119,180)"
-                                            r="3.4641016151377544"
+                                            cy="23.650000000000006"
+                                            stroke="rgb(31,119,180)"/>
+                                    <circle fill="rgb(31,119,180)" r="4.5"
                                             pointer-events="none" cx="80.96"
                                             cy="0" stroke="rgb(31,119,180)"/>
                                 </g>
                                 <g/>
                                 <g>
-                                    <path d="M63.36,95L52.800000000000004,83.125L42.239999999999995,71.25"
+                                    <path d="M63.36,94.6L52.800000000000004,82.77499999999999L42.239999999999995,70.94999999999999"
                                           pointer-events="none"
                                           stroke="rgb(255,127,14)"/>
-                                    <path d="M21.119999999999997,23.75L33.44,11.875L45.76,0"
+                                    <path d="M21.119999999999997,23.650000000000006L33.44,11.825000000000003L45.76,0"
                                           pointer-events="none"
                                           stroke="rgb(255,127,14)"/>
                                 </g>
                                 <g>
-                                    <circle fill="rgb(255,127,14)"
-                                            r="3.4641016151377544"
+                                    <circle fill="rgb(255,127,14)" r="4.5"
                                             pointer-events="none" cx="63.36"
-                                            cy="95" stroke="rgb(255,127,14)"/>
-                                    <circle fill="rgb(255,127,14)"
-                                            r="3.4641016151377544"
+                                            cy="94.6" stroke="rgb(255,127,14)"/>
+                                    <circle fill="rgb(255,127,14)" r="4.5"
                                             pointer-events="none"
-                                            cx="42.239999999999995" cy="71.25"
+                                            cx="42.239999999999995"
+                                            cy="70.94999999999999"
                                             stroke="rgb(255,127,14)"/>
-                                    <circle fill="rgb(255,127,14)"
-                                            r="3.4641016151377544"
+                                    <circle fill="rgb(255,127,14)" r="4.5"
                                             pointer-events="none"
-                                            cx="21.119999999999997" cy="23.75"
+                                            cx="21.119999999999997"
+                                            cy="23.650000000000006"
                                             stroke="rgb(255,127,14)"/>
-                                    <circle fill="rgb(255,127,14)"
-                                            r="3.4641016151377544"
+                                    <circle fill="rgb(255,127,14)" r="4.5"
                                             pointer-events="none" cx="45.76"
                                             cy="0" stroke="rgb(255,127,14)"/>
                                 </g>
                                 <g/>
                                 <g>
-                                    <path d="M17.6,95L12.32,83.125L7.039999999999999,71.25L5.279999999999999,59.375L3.5199999999999996,47.5L1.7599999999999998,35.625L0,23.75"
+                                    <path d="M17.6,94.6L12.32,82.77499999999999L7.039999999999999,70.94999999999999L5.279999999999999,59.125L3.5199999999999996,47.3L1.7599999999999998,35.475L0,23.650000000000006"
                                           pointer-events="none"
                                           stroke="rgb(44,160,44)"/>
                                 </g>
                                 <g>
-                                    <circle fill="rgb(44,160,44)"
-                                            r="3.4641016151377544"
+                                    <circle fill="rgb(44,160,44)" r="4.5"
                                             pointer-events="none" cx="17.6"
-                                            cy="95" stroke="rgb(44,160,44)"/>
-                                    <circle fill="rgb(44,160,44)"
-                                            r="3.4641016151377544"
+                                            cy="94.6" stroke="rgb(44,160,44)"/>
+                                    <circle fill="rgb(44,160,44)" r="4.5"
                                             pointer-events="none"
-                                            cx="7.039999999999999" cy="71.25"
+                                            cx="7.039999999999999"
+                                            cy="70.94999999999999"
                                             stroke="rgb(44,160,44)"/>
-                                    <circle fill="rgb(44,160,44)"
-                                            r="3.4641016151377544"
+                                    <circle fill="rgb(44,160,44)" r="4.5"
                                             pointer-events="none"
-                                            cx="3.5199999999999996" cy="47.5"
+                                            cx="3.5199999999999996" cy="47.3"
                                             stroke="rgb(44,160,44)"/>
-                                    <circle fill="rgb(44,160,44)"
-                                            r="3.4641016151377544"
+                                    <circle fill="rgb(44,160,44)" r="4.5"
                                             pointer-events="none" cx="0"
-                                            cy="23.75" stroke="rgb(44,160,44)"/>
+                                            cy="23.650000000000006"
+                                            stroke="rgb(44,160,44)"/>
                                 </g>
                             </g>
                         </g>
