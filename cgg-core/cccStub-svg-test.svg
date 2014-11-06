@@ -26,31 +26,30 @@ font-size: 14px;
                 </g>
             </g>
             <g transform="translate(3,3)">
-                <g clip-path="url(#h9)">
-                    <clipPath id="h9">
+                <g clip-path="url(#ha)">
+                    <clipPath id="ha">
                         <rect x="0" width="294" height="25" y="40"/>
                     </clipPath>
                     <g transform="translate(0,40)">
                         <g transform="translate(5,5)">
                             <g transform="translate(152,0)">
-                                <rect width="47" fill="rgb(200,200,200)"
-                                      height="15" fill-opacity="0.0001"
-                                      pointer-events="none"/>
                                 <g>
                                     <g>
                                         <g>
-                                            <line x1="0" x2="15" y1="7.5"
-                                                  y2="7.5"
-                                                  shape-rendering="crispEdges"
-                                                  stroke="rgb(31,119,180)"
-                                                  pointer-events="none"/>
-                                        </g>
-                                        <g>
-                                            <circle fill="rgb(31,119,180)"
-                                                    r="3.4641016151377544"
-                                                    pointer-events="none"
-                                                    cx="7.5" cy="7.5"
-                                                    stroke="rgb(31,119,180)"/>
+                                            <g>
+                                                <line x1="0" x2="15" y1="7.5"
+                                                      y2="7.5"
+                                                      shape-rendering="crispEdges"
+                                                      stroke="rgb(31,119,180)"
+                                                      pointer-events="none"/>
+                                            </g>
+                                            <g>
+                                                <circle fill="rgb(31,119,180)"
+                                                        r="3.4641016151377544"
+                                                        pointer-events="none"
+                                                        cx="7.5" cy="7.5"
+                                                        stroke="rgb(31,119,180)"/>
+                                            </g>
                                         </g>
                                     </g>
                                     <g>
@@ -61,24 +60,23 @@ font-size: 14px;
                                         </text>
                                     </g>
                                 </g>
-                                <rect width="36" fill="rgb(200,200,200)" x="52"
-                                      fill-opacity="0.0001" height="15"
-                                      pointer-events="none"/>
                                 <g transform="translate(52,0)">
                                     <g>
                                         <g>
-                                            <line x1="0" x2="15" y1="7.5"
-                                                  y2="7.5"
-                                                  shape-rendering="crispEdges"
-                                                  stroke="rgb(255,127,14)"
-                                                  pointer-events="none"/>
-                                        </g>
-                                        <g>
-                                            <circle fill="rgb(255,127,14)"
-                                                    r="3.4641016151377544"
-                                                    pointer-events="none"
-                                                    cx="7.5" cy="7.5"
-                                                    stroke="rgb(255,127,14)"/>
+                                            <g>
+                                                <line x1="0" x2="15" y1="7.5"
+                                                      y2="7.5"
+                                                      shape-rendering="crispEdges"
+                                                      stroke="rgb(255,127,14)"
+                                                      pointer-events="none"/>
+                                            </g>
+                                            <g>
+                                                <circle fill="rgb(255,127,14)"
+                                                        r="3.4641016151377544"
+                                                        pointer-events="none"
+                                                        cx="7.5" cy="7.5"
+                                                        stroke="rgb(255,127,14)"/>
+                                            </g>
                                         </g>
                                     </g>
                                     <g>
@@ -89,24 +87,23 @@ font-size: 14px;
                                         </text>
                                     </g>
                                 </g>
-                                <rect width="39" fill="rgb(200,200,200)" x="93"
-                                      fill-opacity="0.0001" height="15"
-                                      pointer-events="none"/>
                                 <g transform="translate(93,0)">
                                     <g>
                                         <g>
-                                            <line x1="0" x2="15" y1="7.5"
-                                                  y2="7.5"
-                                                  shape-rendering="crispEdges"
-                                                  stroke="rgb(44,160,44)"
-                                                  pointer-events="none"/>
-                                        </g>
-                                        <g>
-                                            <circle fill="rgb(44,160,44)"
-                                                    r="3.4641016151377544"
-                                                    pointer-events="none"
-                                                    cx="7.5" cy="7.5"
-                                                    stroke="rgb(44,160,44)"/>
+                                            <g>
+                                                <line x1="0" x2="15" y1="7.5"
+                                                      y2="7.5"
+                                                      shape-rendering="crispEdges"
+                                                      stroke="rgb(44,160,44)"
+                                                      pointer-events="none"/>
+                                            </g>
+                                            <g>
+                                                <circle fill="rgb(44,160,44)"
+                                                        r="3.4641016151377544"
+                                                        pointer-events="none"
+                                                        cx="7.5" cy="7.5"
+                                                        stroke="rgb(44,160,44)"/>
+                                            </g>
                                         </g>
                                     </g>
                                     <g>
