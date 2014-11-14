@@ -53,6 +53,14 @@
         }
     });
 
+    // A dummy css plugin.
+    // Supports dummy loading of tipsy.css, by jquery.tipsy.js.
+    define('css', [], {
+        load: function(cssId, req, load) {
+            load(null);
+        }
+    });
+
     var _load = load;
     var _lib  = lib;
 
