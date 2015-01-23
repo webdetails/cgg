@@ -91,7 +91,7 @@
 
 
   <!-- Build the project.revision property -->
-  <property name="distribution.version" value="${project.stage}-${project.version}"/>
+  <property name="distribution.version" value="${project.version}"/>
 
   <echo>distribution.version = ${distribution.version}</echo>
 
