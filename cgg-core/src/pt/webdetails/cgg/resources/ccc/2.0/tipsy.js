@@ -18,4 +18,5 @@ define([
     if(!$.tipsy) $.tipsy = function() {};
 
     pv.Behavior.tipsy = function() {};
+    pv.Behavior.tipsy.setDebug = function() {};
 });
