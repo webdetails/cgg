@@ -90,18 +90,15 @@
   <tstamp/>
 
 
-  <!-- Build the project.revision property -->
-  <property name="distribution.version" value="${project.stage}-${project.version}"/>
-
-  <echo>distribution.version = ${distribution.version}</echo>
+  <echo>project.revision = ${project.revision}</echo>
 
   <target name="dist" depends="clean,resolve,jar,dist-plugin"/>
   <target name="dist-compile" depends="jar,dist-plugin"/>
 
   <property name="plugin.artifact.id" value="${plugin.name}"/>
-  <property name="plugin.zipfile" value="${plugin.artifact.id}-${distribution.version}.zip"/>
-  <property name="plugin.samples.zipfile" value="${plugin.artifact.id}-samples-${distribution.version}.zip"/>
-  <property name="plugin.solution.zipfile" value="${plugin.artifact.id}-solution-${distribution.version}.zip"/>
+  <property name="plugin.zipfile" value="${plugin.artifact.id}-${project.revision}.zip"/>
+  <property name="plugin.samples.zipfile" value="${plugin.artifact.id}-samples-${project.revision}.zip"/>
+  <property name="plugin.solution.zipfile" value="${plugin.artifact.id}-solution-${project.revision}.zip"/>
 
 
   <target name="compile.compile" depends="init">
@@ -169,7 +166,7 @@
 	<property name="sequential.build.id" value="manual-${DSTAMP}"/>
 
 
-	<echo file="${stage.dir}/${plugin.name}/version.xml" message="&lt;version branch='${project.stage}' buildId='${sequential.build.id}'>${distribution.version}&lt;/version>"/>
+	<echo file="${stage.dir}/${plugin.name}/version.xml" message="&lt;version branch='${project.stage}' buildId='${sequential.build.id}'>${project.revision}&lt;/version>"/>
 
 
     <!-- create a zip file -->
@@ -181,7 +178,7 @@
 
     <echo file="${dist.dir}/marketplace.xml">      &lt;version&gt;
         &lt;branch&gt;${project.stage}&lt;/branch&gt;
-        &lt;version&gt;${distribution.version}&lt;/version&gt;
+        &lt;version&gt;${project.revision}&lt;/version&gt;
         &lt;name&gt;${marketplace.metadata.name}&lt;/name&gt;
         &lt;package_url&gt;
           ${marketplace.metadata.package_url}
