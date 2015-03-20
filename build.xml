@@ -2,7 +2,7 @@
          xmlns:ivy="antlib:org.apache.ivy.ant">
 
   <description>
-    CDA convenience build
+    CGG convenience build
   </description>
 
 
