@@ -54,6 +54,7 @@
         <include name="pvc.js" />
         <include name="cdo.js" />
         <include name="protovis.js" />
+        <include name="protovis-compat.js" />
       </fileset>
 
     </copy>
