@@ -26,8 +26,8 @@ font-size: 14px;
                 </g>
             </g>
             <g transform="translate(3,3)">
-                <g clip-path="url(#ha)">
-                    <clipPath id="ha">
+                <g clip-path="url(#hd)">
+                    <clipPath id="hd">
                         <rect x="0" width="294" height="25" y="40"/>
                     </clipPath>
                     <g transform="translate(0,40)">
@@ -37,25 +37,27 @@ font-size: 14px;
                                     <g>
                                         <g>
                                             <g>
-                                                <line x1="0" x2="15" y1="7.5"
-                                                      y2="7.5"
+                                                <line cursor="pointer" x1="0"
+                                                      x2="15" y1="7.5" y2="7.5"
                                                       shape-rendering="crispEdges"
                                                       stroke="rgb(31,119,180)"
                                                       pointer-events="none"/>
                                             </g>
                                             <g>
-                                                <circle fill="rgb(31,119,180)"
+                                                <circle cursor="pointer"
+                                                        fill="rgb(31,119,180)"
                                                         r="3.4641016151377544"
-                                                        pointer-events="none"
                                                         cx="7.5" cy="7.5"
-                                                        stroke="rgb(31,119,180)"/>
+                                                        stroke="rgb(31,119,180)"
+                                                        pointer-events="none"/>
                                             </g>
                                         </g>
                                     </g>
                                     <g>
-                                        <text fill="rgb(0,0,0)" x="3" dy=".35em"
+                                        <text x="3" fill="rgb(0,0,0)" dy=".35em"
                                               pointer-events="none"
-                                              transform="translate(15,7.5)">
+                                              transform="translate(15,7.5)"
+                                              cursor="pointer">
                                             Green
                                         </text>
                                     </g>
@@ -64,25 +66,27 @@ font-size: 14px;
                                     <g>
                                         <g>
                                             <g>
-                                                <line x1="0" x2="15" y1="7.5"
-                                                      y2="7.5"
+                                                <line cursor="pointer" x1="0"
+                                                      x2="15" y1="7.5" y2="7.5"
                                                       shape-rendering="crispEdges"
                                                       stroke="rgb(255,127,14)"
                                                       pointer-events="none"/>
                                             </g>
                                             <g>
-                                                <circle fill="rgb(255,127,14)"
+                                                <circle cursor="pointer"
+                                                        fill="rgb(255,127,14)"
                                                         r="3.4641016151377544"
-                                                        pointer-events="none"
                                                         cx="7.5" cy="7.5"
-                                                        stroke="rgb(255,127,14)"/>
+                                                        stroke="rgb(255,127,14)"
+                                                        pointer-events="none"/>
                                             </g>
                                         </g>
                                     </g>
                                     <g>
-                                        <text fill="rgb(0,0,0)" x="3" dy=".35em"
+                                        <text x="3" fill="rgb(0,0,0)" dy=".35em"
                                               pointer-events="none"
-                                              transform="translate(15,7.5)">
+                                              transform="translate(15,7.5)"
+                                              cursor="pointer">
                                             Red
                                         </text>
                                     </g>
@@ -91,25 +95,27 @@ font-size: 14px;
                                     <g>
                                         <g>
                                             <g>
-                                                <line x1="0" x2="15" y1="7.5"
-                                                      y2="7.5"
+                                                <line cursor="pointer" x1="0"
+                                                      x2="15" y1="7.5" y2="7.5"
                                                       shape-rendering="crispEdges"
                                                       stroke="rgb(44,160,44)"
                                                       pointer-events="none"/>
                                             </g>
                                             <g>
-                                                <circle fill="rgb(44,160,44)"
+                                                <circle cursor="pointer"
+                                                        fill="rgb(44,160,44)"
                                                         r="3.4641016151377544"
-                                                        pointer-events="none"
                                                         cx="7.5" cy="7.5"
-                                                        stroke="rgb(44,160,44)"/>
+                                                        stroke="rgb(44,160,44)"
+                                                        pointer-events="none"/>
                                             </g>
                                         </g>
                                     </g>
                                     <g>
-                                        <text fill="rgb(0,0,0)" x="3" dy=".35em"
+                                        <text x="3" fill="rgb(0,0,0)" dy=".35em"
                                               pointer-events="none"
-                                              transform="translate(15,7.5)">
+                                              transform="translate(15,7.5)"
+                                              cursor="pointer">
                                             Blue
                                         </text>
                                     </g>

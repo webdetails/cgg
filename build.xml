@@ -2,7 +2,7 @@
          xmlns:ivy="antlib:org.apache.ivy.ant">
 
   <description>
-    CDA convenience build
+    CGG convenience build
   </description>
 
 
@@ -99,6 +99,13 @@
       </sequential>
     </for>
 
+  </target>
+
+  <target name="dist-javadoc">
+      <antcall target="call">
+	      <param name="target" value="dist-javadoc"/>
+	      <param name="projects" value="${projects.list}"/>
+	  </antcall>
   </target>
 
   <target name="build-core" >
