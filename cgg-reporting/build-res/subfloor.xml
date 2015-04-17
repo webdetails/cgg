@@ -146,10 +146,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             description="Directory that hosts Jar files required to compile project source.  (IVY will populate this directory with required jars)"/>
   <property name="devlib.dir"
             value="${basedir}/dev-lib"
+<<<<<<< HEAD
             description="Directory for developer to place development Jar files (not affected by clean targets)" />
   <property name="runtimelib.dir"
             value="${basedir}/runtime-lib"
             description="Directory that hosts Jar files required to for the project to run.  (IVY will populate this directory with required jars)" />
+=======
+            description="Directory for developer to place development Jar files (not affected by clean targets)"/>
+>>>>>>> 2b6d3f2... [ENGOPS-886] Sonar jacoco config to allow for a separate integration test exec file
 
   <!-- Compiler properties (passed directly to javac ant target) -->
   <property name="javac.debug"
@@ -423,9 +427,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </fileset>
     <fileset dir="${lib.dir}">
       <include name="**/*.jar"/>
+<<<<<<< HEAD
     </fileset>
     <fileset dir="${runtimelib.dir}">
       <include name="**/*.jar" />
+=======
+>>>>>>> 2b6d3f2... [ENGOPS-886] Sonar jacoco config to allow for a separate integration test exec file
     </fileset>
   </path>
 
@@ -628,12 +635,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       a build.
       ====================================================================-->
   <target name="init">
-    <mkdir dir="${classes.dir}" />
-    <mkdir dir="${dist.dir}" />
-    <mkdir dir="${lib.dir}" />
-    <mkdir dir="${devlib.dir}" />
-    <mkdir dir="${testlib.dir}" />
-    <mkdir dir="${runtimelib.dir}" />
+    <mkdir dir="${classes.dir}"/>
+    <mkdir dir="${dist.dir}"/>
+    <mkdir dir="${lib.dir}"/>
+    <mkdir dir="${devlib.dir}"/>
+    <mkdir dir="${testlib.dir}"/>
   </target>
 
 
@@ -1217,9 +1223,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       using the ivy dependencies.
       ====================================================================-->
   <target name="clean-jars">
+<<<<<<< HEAD
     <delete dir="${lib.dir}" />
     <delete dir="${runtimelib.dir}" />
     <delete dir="${testlib.dir}" />
+=======
+    <delete dir="${lib.dir}"/>
+    <delete dir="${testlib.dir}"/>
+>>>>>>> 2b6d3f2... [ENGOPS-886] Sonar jacoco config to allow for a separate integration test exec file
   </target>
 
 
