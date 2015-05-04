@@ -65,6 +65,12 @@ define([
         function syncGlobal() {
             if(cgg.useGlobal) {
                 var global = util.global;
+                
+                // Rhino binds "global" to some apparently unnecessary native function.
+                // This messes up scripts that expect the global "global" property to
+                // be, actually, the JS global object.
+                global.global    = global;
+                
                 global.window    = global;
                 global.document  = doc;
                 global._document = doc._node;
