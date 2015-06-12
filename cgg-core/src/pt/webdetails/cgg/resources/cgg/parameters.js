@@ -118,7 +118,6 @@ define([
                     params.put(name, v);
                 }
 
-                // TODO: could apply JSON.stringify here...
                 out && out.push(
                     "  " + name + " = " +
                     cgg.win.console.stringify(v) +

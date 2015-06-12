@@ -554,7 +554,7 @@
     Module.prototype.require = function() {
         DEBUG && print("BEG require on '" + this.id + "'");
         try {
-            var depId, depIds, fun;
+            var depId, depIds, callback, errback;
 
             var i = -1;
             var args = arguments;
@@ -562,14 +562,17 @@
             while(++i < L) {
                 var a = args[i];
                 switch(typeof a) {
-                    case 'function': fun   = a; break;
+                    case 'function':
+                        // Guard against errback.
+                        if(!callback) callback = a;
+                        break;
                     case 'string':   depId = a; break;
                     case 'object':   if(a instanceof Array) depIds = a; break;
                 }
             }
 
-            if(fun) {
-                this.apply(depIds, fun);
+            if(callback) {
+                this.apply(depIds, callback);
             } else {
                 // Synchronous only syntax
                 if(depId ) return this.requireOne(depId);
