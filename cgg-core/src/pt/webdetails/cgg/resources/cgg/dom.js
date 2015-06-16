@@ -17,8 +17,9 @@
  */
 
 define([
-    './util'
-], function(util) {
+    './util',
+    './timer'
+], function(util, timer) {
 
     var SVG_IMPL = 'batik';
     var A_slice = Array.prototype.slice;
@@ -35,13 +36,17 @@ define([
     }
 
     // DOM shims
-    function createWindow(cgg, doc, console, nodeSelector) {
+    function createWindow(cgg, doc, console) {
         doc = toDocument(doc);
         var loc = '';
 
         var win = {
-            navigate: loadPath,
-            userAgent: "",
+            navigate:     loadPath,
+            navigator:    {userAgent: ""},
+            setTimeout:   timer.setTimeout,
+            clearTimeout: timer.clearTimeout,
+            Element:      Element,
+            CSSStyleDeclaration: CSSStyleDeclaration,
             get window()   { return this;    }, // !
             get document() { return doc;     },
             get console()  { return console; }
@@ -60,19 +65,22 @@ define([
         function syncGlobal() {
             if(cgg.useGlobal) {
                 var global = util.global;
+                
+                // Rhino binds "global" to some apparently unnecessary native function.
+                // This messes up scripts that expect the global "global" property to
+                // be, actually, the JS global object.
+                global.global    = global;
+                
                 global.window    = global;
                 global.document  = doc;
                 global._document = doc._node;
                 global.console   = win.console;
                 global.navigate  = loadPath;
-                global._nodeSelector = nodeSelector;
-                window.Element = Element;
-                window.CSSStyleDeclaration = CSSStyleDeclaration;
-                window.navigator = {
-                    userAgent: ""
-                }
-                window.clearTimeout = function(){}
-                window.setTimeout = function(){}
+                global.navigator = {userAgent: ""};
+                global.Element   = Element;
+                global.CSSStyleDeclaration = CSSStyleDeclaration;
+                global.clearTimeout = win.clearTimeout;
+                global.setTimeout   = win.setTimeout;
             }
         }
 
@@ -111,7 +119,7 @@ define([
                 var selectedNodes = _doc.getElementsByTagName(tagName);
                 var convertedNodes = [];
 
-                for(var i = 0; i < selectedNodes.length; i++){
+                for(var i = 0; i < selectedNodes.length; i++) {
                     var elem = createElement(selectedNodes.item(i));
                     if(elem) convertedNodes.push(elem);
                 }
@@ -134,13 +142,13 @@ define([
             querySelector: function(s) {
                 return querySelector(s, this);
             },
-            querySelectorAll: function(s){
+            querySelectorAll: function(s) {
                 return querySelectorAll(s, this);
             }
         };
     }
 
-    function Element(_el){
+    function Element(_el) {
         this._el = _el;
     }
 
@@ -168,7 +176,7 @@ define([
             var selectedNodes = this._el.getChildNodes();
             var convertedNodes = [];
 
-            for(var i = 0; i < selectedNodes.length; i++){
+            for(var i = 0; i < selectedNodes.length; i++) {
                 var elem = createElement(selectedNodes.item(i));
                 if(elem) convertedNodes.push(elem);
             }
@@ -176,11 +184,11 @@ define([
             return convertedNodes;
         },
 
-        get children(){
+        get children() {
             var selectedNodes = this._el.getChildNodes();
             var convertedNodes = [];
 
-            for(var i = 0; i < selectedNodes.length; i++){
+            for(var i = 0; i < selectedNodes.length; i++) {
                 var elem = createElement(selectedNodes.item(i));
                 if(elem) convertedNodes.push(elem);
             }
@@ -235,7 +243,7 @@ define([
             return node.node ? node : createElement(node);
         },
 
-        insertBefore: function(newNode, refNode){
+        insertBefore: function(newNode, refNode) {
             var newNodeEl = refNodeEl = null;
             if(newNode) newNodeEl = newNode._el;
             if(refNode) refNodeEl = refNode._el;
@@ -253,14 +261,14 @@ define([
             var selectedNodes = this._el.getElementsByTagName(tagName);
             var convertedNodes = [];
 
-            for(var i = 0; i < selectedNodes.length; i++){
+            for(var i = 0; i < selectedNodes.length; i++) {
                 var elem = createElement(selectedNodes.item(i));
                 if(elem) convertedNodes.push(elem);
             }
 
             return convertedNodes;
         },
-        getAttribute: function(attrName){
+        getAttribute: function(attrName) {
             return this._el.getAttribute(attrName);
         },
         setAttribute: function(attrName, value) {
@@ -275,19 +283,19 @@ define([
         querySelector: function(s) {
             return querySelector(s, this);
         },
-        querySelectorAll: function(s){
+        querySelectorAll: function(s) {
             return querySelectorAll(s, this);
         }
     };
 
     function createElement(_el) {
-        if(_el){
+        if(_el) {
             return new Element(_el);
         }
         return null;
     }
 
-    function CSSStyleDeclaration(_style){
+    function CSSStyleDeclaration(_style) {
         this._style = _style;
     }
 
@@ -421,8 +429,6 @@ define([
         window:   createWindow,
         console:  createConsole,
         loadSvg:  loadSvg,
-        Element: Element,
-        CSSStyleDeclaration: CSSStyleDeclaration
+        run:      timer.run
     };
-
 });

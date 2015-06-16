@@ -19,11 +19,16 @@ define(function() {
         global: global,
         hasOwn: O_hasOwn,
         getOwn: O_getOwn,
+        slice:  Array.prototype.slice,
+        compare: compare,
         makeInstance: makeInstance
     };
 
     // LIB
-
+    function compare(a, b) {
+        return a === b ? 0 : a > b ? 1 : -1;
+    }
+    
     function O_getOwn(p, dv) {
         return O_hasOwn.call(this, p) ? this[p] : dv;
     }

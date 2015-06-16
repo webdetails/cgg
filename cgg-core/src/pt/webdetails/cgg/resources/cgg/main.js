@@ -30,17 +30,15 @@ define([
     var _win, _renderer;
 
     var cgg = {
-        print:   util.global.print,
-        trigger: _trigger,
-        on:      _trigger.on,
+        print:    util.global.print,
+        trigger:  _trigger,
+        on:       _trigger.on,
         dataSource: dataSource,
-        init:    init,
-        render:  render,
-
+        init:     init,
+        run:      dom.run,
+        render:   render,
         document: dom.document,
         element:  dom.element,
-        Element: dom.Element,
-        CSSStyleDeclaration: dom.CSSStyleDeclaration,
         style:    dom.style,
         registerRenderer: function(v) { _renderer = v; },
         get win()       { return _useGlobal ? util.global : _win; },
@@ -52,8 +50,7 @@ define([
     _win = dom.window(
         cgg,
         util.global._document,
-        dom.console(/*printer*/cgg),
-        util.global._nodeSelector
+        dom.console(/*printer*/cgg)
     );
 
     // Create parameters
