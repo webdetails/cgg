@@ -29,6 +29,13 @@ define([
             var pvc = ccc.pvc;
             var def = ccc.def;
 
+            // Not all versions of CCC have def.describe/pvc.stringify.
+            var describe = def.describe || pvc.describe;
+            if(def.describe)
+                cgg.win.console.stringify = function(s) {
+                    return describe(s, {ownOnly: false});
+                };
+
             if(cgg.useGlobal) {
                 var global = util.global;
                 global.pv  = ccc.pv;
@@ -144,12 +151,6 @@ define([
     dash.registerControlClassHandler(function(typeName) {
         if((/^ccc/i).test(typeName)) return BaseCccComponent;
     });
-
-    // Not all versions of CCC have def.describe/pvc.stringify.
-    // if(def.describe)
-    //     cgg.win.console.stringify = function(s) {
-    //         return def.describe(s, {ownOnly: false});
-    //     };
 
     return BaseCccComponent;
 });
