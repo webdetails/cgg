@@ -47,6 +47,24 @@
   <target name="copy-ccc-dependencies" depends="subfloor-js.resolve-js">
      <!-- copy ccc build -->
 
+    <if>
+     <available file="${js.lib.dir}"/>
+     <then>
+       <unzip dest="${js.expanded.lib.dir}" overwrite="true">
+         <fileset file="${js.lib.dir}/*.zip"/>
+         <patternset>
+           <exclude name="**/*.jar"/>
+           <exclude name="**/plugin*.xml"/>
+           <exclude name="**/settings.xml"/>
+           <exclude name="**/themes.xml"/>
+         </patternset>
+       </unzip>
+     </then>
+     <else>
+       <echo>No js libraries need expanding. ${js.lib.dir} does not exist.</echo>
+     </else>
+   </if>
+
     <copy todir="${src.dir}/pt/webdetails/cgg/resources/ccc/2.0" overwrite="true">
 
       <fileset dir="${js.expanded.lib.dir}/ccc/amd">
@@ -58,7 +76,7 @@
       </fileset>
 
     </copy>
-  </target>
 
+  </target>
 
 </project>
