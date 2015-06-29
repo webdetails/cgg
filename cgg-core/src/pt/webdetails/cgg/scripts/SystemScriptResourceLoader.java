@@ -12,6 +12,8 @@
 */
 package pt.webdetails.cgg.scripts;
 
+import pt.webdetails.cpf.utils.CharsetHelper;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,7 +39,8 @@ public class SystemScriptResourceLoader implements ScriptResourceLoader {
     if ( resourceAsStream == null ) {
       throw new ScriptResourceNotFoundException( "Resource not found: " + resource );
     }
-    return new BufferedReader( new InputStreamReader( new BufferedInputStream( resourceAsStream ), "UTF-8" ) );
+    return new BufferedReader(
+      new InputStreamReader( new BufferedInputStream( resourceAsStream ), CharsetHelper.getEncoding() ) );
   }
 
   public Reader getContextLibraryScript( final String script ) throws IOException, ScriptResourceNotFoundException {

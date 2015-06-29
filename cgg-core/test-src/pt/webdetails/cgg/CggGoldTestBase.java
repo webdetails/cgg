@@ -28,6 +28,7 @@ import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.XMLAssert;
 import org.junit.Assert;
 import org.junit.Before;
+import pt.webdetails.cpf.utils.CharsetHelper;
 
 
 public class CggGoldTestBase
@@ -260,9 +261,9 @@ public class CggGoldTestBase
     
     if ("svg".equals(outputType))
     {
-      final Reader reader = new InputStreamReader(new FileInputStream(goldSample), "UTF-8");
+      final Reader reader = new InputStreamReader(new FileInputStream(goldSample), CharsetHelper.getEncoding());
       final ByteArrayInputStream inputStream = new ByteArrayInputStream(cggChartOutput);
-      final Reader cggChart = new InputStreamReader(inputStream, "UTF-8");
+      final Reader cggChart = new InputStreamReader(inputStream, CharsetHelper.getEncoding());
       try
       {
         XMLAssert.assertXMLEqual("File " + goldSample + " failed", new Diff(reader, cggChart), true);

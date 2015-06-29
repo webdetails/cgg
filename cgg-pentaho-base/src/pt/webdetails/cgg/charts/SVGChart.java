@@ -16,6 +16,8 @@ package pt.webdetails.cgg.charts;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
@@ -24,6 +26,7 @@ import org.apache.batik.transcoder.svg2svg.SVGTranscoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Document;
+import pt.webdetails.cpf.utils.CharsetHelper;
 
 /**
  *
@@ -60,7 +63,8 @@ public class SVGChart implements Chart {
     public void toSVG(OutputStream out) {
         SVGTranscoder t = new SVGTranscoder();
         TranscoderInput input = new TranscoderInput(svg);
-        TranscoderOutput output = new TranscoderOutput(new OutputStreamWriter(out));
+        TranscoderOutput output = new TranscoderOutput(
+            new OutputStreamWriter( out, Charset.forName( CharsetHelper.getEncoding() ) ) );
 
         try {
             t.transcode(input, output);
