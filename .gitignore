@@ -7,8 +7,11 @@ lib/
 js-lib
 runtime-lib/
 .idea
+.iml
 override.properties
-/cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/def.js
-/cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/protovis.js
-/cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/pvc.js
+cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/def.js
+cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/protovis.js
+cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/pvc.js
+cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/cdo.js
+cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/protovis-compat.js
 !/cgg-core/src/pt/webdetails/cgg/resources/lib/
