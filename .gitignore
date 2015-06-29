@@ -15,3 +15,7 @@ cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/pvc.js
 cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/cdo.js
 cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/protovis-compat.js
 !/cgg-core/src/pt/webdetails/cgg/resources/lib/
+cgg-core/cccStub-svg-test.svg
+cgg-core/cccRaw-svg-test.svg
+cgg-core/dial-svg-test.svg
+cgg-core/tags-j2d-test.png
