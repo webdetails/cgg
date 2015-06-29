@@ -3,6 +3,7 @@ package pt.webdetails.cgg.scripts;
 
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import pt.webdetails.cpf.repository.pentaho.unified.UserContentRepositoryAccess;
+import pt.webdetails.cpf.utils.CharsetHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,7 +27,7 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
 
   @Override
   public Reader getContextLibraryScript( String s ) throws IOException, ScriptResourceNotFoundException {
-    return new InputStreamReader( getContextResource( s ) );
+    return new InputStreamReader( getContextResource( s ), CharsetHelper.getEncoding() );
   }
 
   @Override
@@ -41,7 +42,7 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
       throw new ScriptResourceNotFoundException( s );
     }
     UserContentRepositoryAccess repositoryAccess = new UserContentRepositoryAccess( PentahoSessionHolder.getSession(),
-      s.startsWith( "/" ) ? null : basePath );
+        s.startsWith( "/" ) ? null : basePath );
     return repositoryAccess.getFileInputStream( s );
   }
 }

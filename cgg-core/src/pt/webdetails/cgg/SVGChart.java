@@ -23,6 +23,7 @@ import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.batik.transcoder.svg2svg.SVGTranscoder;
 import org.w3c.dom.Document;
+import pt.webdetails.cpf.utils.CharsetHelper;
 
 /**
  * @author pdpi
@@ -65,7 +66,7 @@ public class SVGChart implements Chart
   {
     final SVGTranscoder t = new SVGTranscoder();
     final TranscoderInput input = new TranscoderInput(svg);
-    final TranscoderOutput output = new TranscoderOutput(new OutputStreamWriter(out));
+    final TranscoderOutput output = new TranscoderOutput( new OutputStreamWriter( out, CharsetHelper.getEncoding() ) );
 
     try
     {

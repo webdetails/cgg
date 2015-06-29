@@ -1,5 +1,7 @@
 package pt.webdetails.cgg.scripts;
 
+import pt.webdetails.cpf.utils.CharsetHelper;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,7 +74,7 @@ public class DefaultScriptResourceLoader implements ScriptResourceLoader
 
   public Reader getContextLibraryScript(final String script) throws IOException, ScriptResourceNotFoundException
   {
-    return new InputStreamReader(getContextResource(script));
+    return new InputStreamReader(getContextResource(script), CharsetHelper.getEncoding() );
   }
 
   public Reader getSystemLibraryScript(final String script) throws IOException, ScriptResourceNotFoundException

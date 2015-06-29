@@ -34,6 +34,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import pt.webdetails.cpf.utils.CharsetHelper;
 import pt.webdetails.cpf.utils.MimeTypes;
 
 
@@ -145,6 +146,7 @@ public class CggService {
 
       URL context = new URL( "file", "" , StringUtils.replace( replacedScript, f.getName(), "" ) );
 
+      if ( servletResponse != null ) { servletResponse.setCharacterEncoding( CharsetHelper.getEncoding() ); }
 
       final WebCgg cgg = new WebCgg( context , servletResponse,
         servletResponse == null ? outputStream : servletResponse.getOutputStream(), new SetResponseHeaderDelegate() {

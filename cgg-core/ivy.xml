@@ -71,5 +71,8 @@
         <dependency org="xmlunit"    name="xmlunit"    rev="1.3"  conf="test->default"/>
         <dependency org="commons-io" name="commons-io" rev="2.4"  conf="test->default"/>
 
+        <!-- other plugin dependencies -->
+        <dependency org="pentaho"    name="cpf-core"   rev="${dependency.pentaho-cpf-plugin.revision}" conf="default_internal->default" transitive="false" changing="true" /> 
+
 	</dependencies>
 </ivy-module>
