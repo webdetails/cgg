@@ -123,6 +123,13 @@
     </antcall>
   </target>
 
+  <target name="build-sonar">
+    <antcall target="call">
+      <param name="target" value="build-sonar"/>
+      <param name="projects" value="${all.projects}"/>
+    </antcall>
+  </target>
+
   <target name="full-dist" depends="build-and-test-core,dist"/>
 
   <target name="install-plugin" depends="publish-local-core, resolve-projects">
