@@ -19,11 +19,11 @@ import java.io.OutputStream;
 import pt.webdetails.cgg.Chart;
 
 /**
- * Allows to potentially post-process the raw SVG and PNG output. With the help of the reporting engine,
- * you could implement a PDF output handler that handles all font-encodings properly.
+ * Allows to potentially post-process the raw SVG and PNG output. With the help of the reporting engine, you could
+ * implement a PDF output handler that handles all font-encodings properly.
  */
-public interface OutputHandler
-{
-  public void render (OutputStream out, Chart chart) throws IOException;
+public interface OutputHandler {
+  public void render( OutputStream out, Chart chart ) throws IOException;
+
   public String getMimeType();
 }

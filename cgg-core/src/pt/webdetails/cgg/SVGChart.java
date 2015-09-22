@@ -28,54 +28,36 @@ import pt.webdetails.cpf.utils.CharsetHelper;
 /**
  * @author pdpi
  */
-public class SVGChart implements Chart
-{
+public class SVGChart implements Chart {
   private Document svg;
 
-  public SVGChart(final Document doc)
-  {
-    if (doc == null)
-    {
+  public SVGChart( final Document doc ) {
+    if ( doc == null ) {
       throw new NullPointerException();
-    }
-    this.svg = doc;
+    } this.svg = doc;
   }
 
-  public Document getRawObject()
-  {
+  public Document getRawObject() {
     return svg;
   }
 
-  public void renderAsPng(final OutputStream out) throws IOException
-  {
-    final PNGTranscoder t = new PNGTranscoder();
-    final TranscoderInput input = new TranscoderInput(svg);
-    final TranscoderOutput output = new TranscoderOutput(out);
-    try
-    {
-      t.transcode(input, output);
-      out.flush();
-    }
-    catch (TranscoderException ex)
-    {
-      throw new IOException("Failed to transcode image", ex);
+  public void renderAsPng( final OutputStream out ) throws IOException {
+    final PNGTranscoder t = new PNGTranscoder(); final TranscoderInput input = new TranscoderInput( svg );
+    final TranscoderOutput output = new TranscoderOutput( out ); try {
+      t.transcode( input, output ); out.flush();
+    } catch ( TranscoderException ex ) {
+      throw new IOException( "Failed to transcode image", ex );
     }
   }
 
-  public void renderAsSVG(final OutputStream out) throws IOException
-  {
-    final SVGTranscoder t = new SVGTranscoder();
-    final TranscoderInput input = new TranscoderInput(svg);
+  public void renderAsSVG( final OutputStream out ) throws IOException {
+    final SVGTranscoder t = new SVGTranscoder(); final TranscoderInput input = new TranscoderInput( svg );
     final TranscoderOutput output = new TranscoderOutput( new OutputStreamWriter( out, CharsetHelper.getEncoding() ) );
 
-    try
-    {
-      t.transcode(input, output);
-      out.flush();
-    }
-    catch (TranscoderException ex)
-    {
-      throw new IOException("Failed to transcode image", ex);
+    try {
+      t.transcode( input, output ); out.flush();
+    } catch ( TranscoderException ex ) {
+      throw new IOException( "Failed to transcode image", ex );
     }
   }
 }

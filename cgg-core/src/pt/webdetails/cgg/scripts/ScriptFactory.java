@@ -21,13 +21,12 @@ import pt.webdetails.cgg.ScriptExecuteException;
 /**
  * @author pdpi
  */
-public interface ScriptFactory extends ScriptResourceLoader
-{
+public interface ScriptFactory extends ScriptResourceLoader {
   public void enterContext();
 
   public void exitContext();
 
-  public Script createScript(String path, String scriptType)
+  public Script createScript( String path, String scriptType )
       throws ScriptResourceNotFoundException, IOException, ScriptCreationException, ScriptExecuteException;
 
   public void clearCachedScopes();

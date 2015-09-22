@@ -12,23 +12,20 @@
 */
 package pt.webdetails.cgg.scripts;
 
-
-
 public class JCRScriptFactory extends AbstractScriptFactory {
 
   private ScriptResourceLoader resourceLoader;
 
-
   public JCRScriptFactory( String context ) {
-    resourceLoader = new CompoundScriptResourceLoader
-            ( new JCRScriptResourceLoader( context ), new SystemFolderScriptResourceLoader( context ), new SystemScriptResourceLoader() );
+    resourceLoader =
+        new CompoundScriptResourceLoader( new JCRScriptResourceLoader( context ),
+            new SystemFolderScriptResourceLoader( context ), new SystemScriptResourceLoader() );
   }
 
   public void setResourceLoader( final ScriptResourceLoader resourceLoader ) {
     if ( resourceLoader == null ) {
       throw new NullPointerException();
-    }
-    this.resourceLoader = resourceLoader;
+    } this.resourceLoader = resourceLoader;
   }
 
   @Override

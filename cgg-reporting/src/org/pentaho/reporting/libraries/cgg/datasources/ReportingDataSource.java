@@ -16,22 +16,18 @@ package org.pentaho.reporting.libraries.cgg.datasources;
 import java.io.IOException;
 
 import javax.swing.table.TableModel;
+
 import pt.webdetails.cgg.datasources.AbstractDataSource;
 
-
-
-
-public abstract class ReportingDataSource extends AbstractDataSource
-{
+public abstract class ReportingDataSource extends AbstractDataSource {
 
   @Override
-  protected String export(TableModel model) throws IOException
-  {
-    if (outputType.equals("xml")) {
-      final XmlExporter exporter = new XmlExporter();
-      return exporter.export(model);
-    } else 
-        return super.export(model);
+  protected String export( TableModel model ) throws IOException {
+    if ( outputType.equals( "xml" ) ) {
+      final XmlExporter exporter = new XmlExporter(); return exporter.export( model );
+    } else {
+      return super.export( model );
+    }
   }
 
 }

@@ -15,10 +15,9 @@ package pt.webdetails.cgg.datasources;
 
 import java.io.IOException;
 
-public interface DataSource
-{
+public interface DataSource {
 
-    public String execute() throws IOException;
+  public String execute() throws IOException;
 
-    public void setParameter(String param, Object val);
+  public void setParameter( String param, Object val );
 }

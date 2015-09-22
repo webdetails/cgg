@@ -16,10 +16,9 @@ package pt.webdetails.cgg.charts;
 import java.io.OutputStream;
 
 /**
- *
  * @author pdpi
  */
 public interface Chart {
 
-    public void toPNG(OutputStream out);
+  public void toPNG( OutputStream out );
 }

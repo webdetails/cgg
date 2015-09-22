@@ -13,7 +13,6 @@
 
 package pt.webdetails.cgg.datasources;
 
-public interface DataSourceFactory
-{
-  public DataSource createDatasource (String type);
+public interface DataSourceFactory {
+  public DataSource createDatasource( String type );
 }

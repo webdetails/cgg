@@ -24,26 +24,26 @@ import pt.webdetails.cgg.output.SVGOutputHandler;
 
 public class CggLifeCycleListener implements IPluginLifecycleListener {
 
-	static Log logger = LogFactory.getLog(CggLifeCycleListener.class);
+  static Log logger = LogFactory.getLog( CggLifeCycleListener.class );
 
-	@Override
-	public void init() throws PluginLifecycleException {
-		logger.debug("Init for CGG");
-    
-    DefaultOutputFactory.getInstance().register("svg", SVGOutputHandler.class);
-    DefaultOutputFactory.getInstance().register("png", PngOutputHandler.class);
+  @Override
+  public void init() throws PluginLifecycleException {
+    logger.debug( "Init for CGG" );
 
-	}
+    DefaultOutputFactory.getInstance().register( "svg", SVGOutputHandler.class );
+    DefaultOutputFactory.getInstance().register( "png", PngOutputHandler.class );
 
-	@Override
-	public void loaded() throws PluginLifecycleException {
-		logger.debug("Load for CGG");
-	}
+  }
 
-	@Override
-	public void unLoaded() throws PluginLifecycleException {
-		logger.debug("Unload for CGG");
-	}
+  @Override
+  public void loaded() throws PluginLifecycleException {
+    logger.debug( "Load for CGG" );
+  }
+
+  @Override
+  public void unLoaded() throws PluginLifecycleException {
+    logger.debug( "Unload for CGG" );
+  }
 
 }
 

@@ -13,7 +13,6 @@
 
 package pt.webdetails.cgg.output;
 
-public interface OutputFactory
-{
-  public OutputHandler create(String type);
+public interface OutputFactory {
+  public OutputHandler create( String type );
 }

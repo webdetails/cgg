@@ -16,9 +16,7 @@ package pt.webdetails.cgg.scripts;
 /**
  * @author pdpi
  */
-public class Java2DScope extends BaseScope
-{
-  public Java2DScope()
-  {
+public class Java2DScope extends BaseScope {
+  public Java2DScope() {
   }
 }

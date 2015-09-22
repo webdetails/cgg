@@ -15,9 +15,10 @@ package org.pentaho.reporting.libraries.cgg;
 
 import org.pentaho.reporting.libraries.base.versioning.ProjectInformation;
 
-public class LibCggInfo extends ProjectInformation
-{
-  /** A singleton variable for the info-class. */
+public class LibCggInfo extends ProjectInformation {
+  /**
+   * A singleton variable for the info-class.
+   */
   private static LibCggInfo info;
 
   /**
@@ -25,33 +26,26 @@ public class LibCggInfo extends ProjectInformation
    *
    * @return the LibBase project information.
    */
-  public static synchronized ProjectInformation getInstance()
-  {
-    if (info == null)
-    {
-      info = new LibCggInfo();
-      info.initialize();
-    }
-    return info;
+  public static synchronized ProjectInformation getInstance() {
+    if ( info == null ) {
+      info = new LibCggInfo(); info.initialize();
+    } return info;
   }
 
   /**
    * Private constructor to prevent object creation.
    */
-  private LibCggInfo()
-  {
-    super("libcgg", "LibCgg");
+  private LibCggInfo() {
+    super( "libcgg", "LibCgg" );
   }
 
   /**
    * Initializes the project info.
    */
-  private void initialize()
-  {
-    setBootClass(LibCggBoot.class.getName());
-    setLicenseName("LGPL");
-    setInfo("http://reporting.pentaho.org/libcgg/");
-    setCopyright("(C)opyright 2012, by Pentaho Corporation and Contributors");
+  private void initialize() {
+    setBootClass( LibCggBoot.class.getName() ); setLicenseName( "LGPL" );
+    setInfo( "http://reporting.pentaho.org/libcgg/" );
+    setCopyright( "(C)opyright 2012, by Pentaho Corporation and Contributors" );
   }
 
   /**
@@ -59,8 +53,7 @@ public class LibCggInfo extends ProjectInformation
    *
    * @param args not used.
    */
-  public static void main(final String[] args)
-  {
-    System.out.println(getInstance().getVersion());
+  public static void main( final String[] args ) {
+    System.out.println( getInstance().getVersion() );
   }
 }

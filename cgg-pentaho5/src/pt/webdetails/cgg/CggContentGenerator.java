@@ -17,8 +17,6 @@ import java.io.OutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IParameterProvider;
@@ -26,7 +24,6 @@ import org.pentaho.platform.api.engine.IParameterProvider;
 import pt.webdetails.cpf.SimpleContentGenerator;
 import pt.webdetails.cpf.annotations.AccessLevel;
 import pt.webdetails.cpf.annotations.Exposed;
-
 
 /**
  * @author pdpi
@@ -40,8 +37,6 @@ public class CggContentGenerator extends SimpleContentGenerator {
   private static final String CCC_VERSION_PARAM = "cccVersion";
   private static final String CCC_VERSION_ANALYZER_4_8 = "2.0-analyzer";
 
-
-
   @Override
   public String getPluginName() {
     return "cgg";
@@ -51,7 +46,6 @@ public class CggContentGenerator extends SimpleContentGenerator {
   public void Draw( final OutputStream out ) {
     draw( out );
   }
-
 
   @Exposed( accessLevel = AccessLevel.PUBLIC )
   public void draw( final OutputStream out ) {
@@ -64,39 +58,31 @@ public class CggContentGenerator extends SimpleContentGenerator {
     String attachmentName = requestParams.getStringParameter( "attachmentName", "" );
     String multiChartOverflow = requestParams.getStringParameter( "multiChartOverflow", "" );
 
-    String widthAsStr = requestParams.getStringParameter( "width", "0" );
-    Long width = 0L;
-    try {
+    String widthAsStr = requestParams.getStringParameter( "width", "0" ); Long width = 0L; try {
       width = Long.parseLong( widthAsStr );
     } catch ( NumberFormatException nfe ) {
     }
 
-    String heightAsStr = requestParams.getStringParameter( "height", "0" );
-    Long height = 0L;
-    try {
+    String heightAsStr = requestParams.getStringParameter( "height", "0" ); Long height = 0L; try {
       height = Long.parseLong( heightAsStr );
     } catch ( NumberFormatException nfe ) {
     }
 
     String cccLibVersion = requestParams.getStringParameter( CCC_VERSION_PARAM, "" );
 
-    HttpServletRequest request = getRequest();
-    HttpServletResponse response = getResponse();
+    HttpServletRequest request = getRequest(); HttpServletResponse response = getResponse();
 
     CggService service = new CggService();
 
     if ( response == null ) {
       service.setOutputStream( out );
-    }
-    service.draw( script, type, outputType, attachmentName, multiChartOverflow, cccLibVersion,
-      height, width, response, request );
+    } service
+        .draw( script, type, outputType, attachmentName, multiChartOverflow, cccLibVersion, height, width, response,
+            request );
   }
-
-
 
   @Exposed( accessLevel = AccessLevel.PUBLIC )
   public void refresh( OutputStream out ) {
   }
-
 
 }

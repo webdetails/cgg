@@ -36,7 +36,6 @@ import pt.webdetails.cpf.SimpleContentGenerator;
 import pt.webdetails.cpf.annotations.AccessLevel;
 import pt.webdetails.cpf.annotations.Exposed;
 
-
 /**
  * @author pdpi
  */
@@ -53,26 +52,21 @@ public class CggContentGenerator extends SimpleContentGenerator {
     private String attachmentName;
     private String outputTypeParam;
 
-    private InternalSetResponseHeaderDelegate( final String attachmentName,
-                                              final String outputTypeParam ) {
-      this.attachmentName = attachmentName;
-      this.outputTypeParam = outputTypeParam;
+    private InternalSetResponseHeaderDelegate( final String attachmentName, final String outputTypeParam ) {
+      this.attachmentName = attachmentName; this.outputTypeParam = outputTypeParam;
     }
 
     public void setResponseHeader( final String mimeType ) {
       if ( attachmentName != null ) {
-        String fileName = attachmentName;
-        if ( attachmentName.indexOf( "." ) <= 0 ) {
+        String fileName = attachmentName; if ( attachmentName.indexOf( "." ) <= 0 ) {
           fileName = fileName + "." + outputTypeParam;
-        }
-        setResponseHeaders( getMimeType( fileName ), fileName );
+        } setResponseHeaders( getMimeType( fileName ), fileName );
       } else {
         // Just set mime types
         setResponseHeaders( mimeType );
       }
     }
   }
-
 
   @Override
   public String getPluginName() {
@@ -84,12 +78,10 @@ public class CggContentGenerator extends SimpleContentGenerator {
     draw( out );
   }
 
-
   @Exposed( accessLevel = AccessLevel.PUBLIC )
   public void draw( final OutputStream out ) {
 
-    final HttpServletResponse response = this.getHttpResponse();
-    try {
+    final HttpServletResponse response = this.getHttpResponse(); try {
       IParameterProvider requestParams = getRequestParameters();
       String scriptName = requestParams.getStringParameter( "script", "" );
       String scriptTypeParam = requestParams.getStringParameter( "type", "svg" );
@@ -98,15 +90,16 @@ public class CggContentGenerator extends SimpleContentGenerator {
       scriptName = scriptName.startsWith( "/" ) ? scriptName.substring( 1 ) : scriptName;
 
       final String attachmentName = requestParams.getStringParameter( "attachmentName", null );
-      InternalSetResponseHeaderDelegate delegate =
-              new InternalSetResponseHeaderDelegate( attachmentName, outputTypeParam );
+      InternalSetResponseHeaderDelegate
+          delegate =
+          new InternalSetResponseHeaderDelegate( attachmentName, outputTypeParam );
 
       Long width = requestParams.getLongParameter( "width", 0L );
       Long height = requestParams.getLongParameter( "height", 0L );
 
-      String filePath = StringUtils.replace(
-              PentahoSystem.getApplicationContext().getSolutionPath( scriptName ),
-              "\\", "/" );
+      String
+          filePath =
+          StringUtils.replace( PentahoSystem.getApplicationContext().getSolutionPath( scriptName ), "\\", "/" );
 
       final URL context = new File( filePath ).getParentFile().toURI().toURL();
       final WebCgg cgg = new WebCgg( context, response, out, delegate );
@@ -119,20 +112,17 @@ public class CggContentGenerator extends SimpleContentGenerator {
 
       cgg.draw( filePath, scriptTypeParam, outputTypeParam, width.intValue(), height.intValue(), paramMap );
     } catch ( FileNotFoundException fe ) {
-      logger.error( fe );
-      response.setStatus( HttpServletResponse.SC_NOT_FOUND );
+      logger.error( fe ); response.setStatus( HttpServletResponse.SC_NOT_FOUND );
     } catch ( Exception e ) {
-      logger.error( e );
-      response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR );
+      logger.error( e ); response.setStatus( HttpServletResponse.SC_INTERNAL_SERVER_ERROR );
     }
   }
 
   private HttpServletResponse getHttpResponse() {
-    HttpServletResponse response = (HttpServletResponse) parameterProviders.get( "path" )
-            .getParameter( "httpresponse" );
-    if ( response == null ) {
-      logger.debug( "No response passed, adding mock response." );
-      response = new MockHttpServletResponse();
+    HttpServletResponse
+        response =
+        (HttpServletResponse) parameterProviders.get( "path" ).getParameter( "httpresponse" ); if ( response == null ) {
+      logger.debug( "No response passed, adding mock response." ); response = new MockHttpServletResponse();
     }
 
     return response;
@@ -140,20 +130,16 @@ public class CggContentGenerator extends SimpleContentGenerator {
 
   private Map<String, Object> buildParameterMap( final IParameterProvider requestParams ) {
     HashMap<String, Object> params = new HashMap<String, Object>();
-    Iterator inputParams = requestParams.getParameterNames();
-    while ( inputParams.hasNext() ) {
-      String paramName = inputParams.next().toString();
-      if ( paramName.startsWith( "param" ) ) {
-        String pName = paramName.substring( 5 );
-        Object[] p = requestParams.getArrayParameter( paramName, null );
+    Iterator inputParams = requestParams.getParameterNames(); while ( inputParams.hasNext() ) {
+      String paramName = inputParams.next().toString(); if ( paramName.startsWith( "param" ) ) {
+        String pName = paramName.substring( 5 ); Object[] p = requestParams.getArrayParameter( paramName, null );
         if ( p.length == 1 ) { // not *really* an array, is it?
           params.put( pName, p[0] );
         } else {
           params.put( pName, p );
         }
       }
-    }
-    return params;
+    } return params;
   }
 
   private void defaultCccLibVersion( Map<String, Object> paramMap, String scriptName ) {
@@ -161,12 +147,8 @@ public class CggContentGenerator extends SimpleContentGenerator {
 
       // If this is an analyzer call in 4.8, use "2.0-analyzer"
       VersionInfo versionInfo = VersionHelper.getVersionInfo( PentahoSystem.class );
-      String v = versionInfo.getVersionNumber();
-      if ( v.startsWith( "4.8" ) ) {
-        String normalizedScriptName = scriptName
-                .toLowerCase()
-                .replaceAll( "\\\\+", "/" )
-                .replaceAll( "/+", "/" );
+      String v = versionInfo.getVersionNumber(); if ( v.startsWith( "4.8" ) ) {
+        String normalizedScriptName = scriptName.toLowerCase().replaceAll( "\\\\+", "/" ).replaceAll( "/+", "/" );
 
         if ( normalizedScriptName.contains( "system/analyzer" ) ) {
           paramMap.put( CCC_VERSION_PARAM, CCC_VERSION_ANALYZER_4_8 );
@@ -179,6 +161,5 @@ public class CggContentGenerator extends SimpleContentGenerator {
   @Exposed( accessLevel = AccessLevel.PUBLIC )
   public void refresh( OutputStream out ) {
   }
-
 
 }

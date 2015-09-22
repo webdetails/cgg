@@ -26,30 +26,24 @@ public class WebCgg extends AbstractCgg {
   private OutputStream out;
   private SetResponseHeaderDelegate delegate;
 
-  public WebCgg( final URL context,
-                final HttpServletResponse servletResponse,
-                final OutputStream out,
-                final SetResponseHeaderDelegate delegate ) {
-    this.servletResponse = servletResponse;
-    this.out = out;
-    this.delegate = delegate;
-    setDataSourceFactory( new WebDataSourceFactory() );
-    setScriptFactory( new JCRScriptFactory( context.getPath() ) );
+  public WebCgg( final URL context, final HttpServletResponse servletResponse, final OutputStream out,
+      final SetResponseHeaderDelegate delegate ) {
+    this.servletResponse = servletResponse; this.out = out; this.delegate = delegate;
+    setDataSourceFactory( new WebDataSourceFactory() ); setScriptFactory( new JCRScriptFactory( context.getPath() ) );
   }
 
-  protected void produceOutput( final Chart chart,
-                                final String requestedOutputHandler ) throws IOException, ScriptExecuteException {
+  protected void produceOutput( final Chart chart, final String requestedOutputHandler )
+      throws IOException, ScriptExecuteException {
     OutputHandler cggOutputHandler = getOutputFactory().create( requestedOutputHandler );
     if ( servletResponse != null ) {
-      servletResponse.setContentType(cggOutputHandler.getMimeType());
-      servletResponse.setHeader("Cache-Control", "max-age=0, no-store");
+      servletResponse.setContentType( cggOutputHandler.getMimeType() );
+      servletResponse.setHeader( "Cache-Control", "max-age=0, no-store" );
     }
 
     delegate.setResponseHeader( cggOutputHandler.getMimeType() );
 
     cggOutputHandler.render( out, chart );
   }
-
 
   public void refresh() {
     getScriptFactory().clearCachedScopes();

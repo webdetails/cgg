@@ -13,7 +13,6 @@
 
 package pt.webdetails.cgg.datasources;
 
-
 import java.util.Date;
 import java.util.List;
 

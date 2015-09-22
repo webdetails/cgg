@@ -15,32 +15,25 @@ package pt.webdetails.cgg.scripts;
 
 import java.net.URL;
 
-public class DefaultScriptFactory extends AbstractScriptFactory
-{
+public class DefaultScriptFactory extends AbstractScriptFactory {
   private ScriptResourceLoader resourceLoader;
 
-  public DefaultScriptFactory()
-  {
+  public DefaultScriptFactory() {
     resourceLoader = new SystemScriptResourceLoader();
   }
 
-  public void setResourceLoader(final ScriptResourceLoader resourceLoader)
-  {
-    if (resourceLoader == null)
-    {
+  public void setResourceLoader( final ScriptResourceLoader resourceLoader ) {
+    if ( resourceLoader == null ) {
       throw new NullPointerException();
-    }
-    this.resourceLoader = resourceLoader;
+    } this.resourceLoader = resourceLoader;
   }
 
-  public DefaultScriptFactory(URL url)
-  {
-    resourceLoader = new CompoundScriptResourceLoader
-        (new DefaultScriptResourceLoader(url), new SystemScriptResourceLoader());
+  public DefaultScriptFactory( URL url ) {
+    resourceLoader =
+        new CompoundScriptResourceLoader( new DefaultScriptResourceLoader( url ), new SystemScriptResourceLoader() );
   }
 
-  public ScriptResourceLoader getResourceLoader()
-  {
+  public ScriptResourceLoader getResourceLoader() {
     return resourceLoader;
   }
 }

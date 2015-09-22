@@ -19,10 +19,9 @@ import pt.webdetails.cgg.output.SVGOutputHandler;
 
 public class CggBoot {
 
-  
   public static void init() {
-    DefaultOutputFactory.getInstance().register("svg", SVGOutputHandler.class);
-    DefaultOutputFactory.getInstance().register("png", PngOutputHandler.class);
+    DefaultOutputFactory.getInstance().register( "svg", SVGOutputHandler.class );
+    DefaultOutputFactory.getInstance().register( "png", PngOutputHandler.class );
 
   }
 }
