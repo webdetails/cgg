@@ -27,57 +27,39 @@ import pt.webdetails.cgg.datasources.DataSourceFactory;
 /**
  * @author pdpi
  */
-public class Java2DScript extends BaseScript
-{
+public class Java2DScript extends BaseScript {
   private BufferedImage imageBuffer;
   private long width;
   private long height;
 
-  public Java2DScript(final String source)
-  {
-    super(source);
+  public Java2DScript( final String source ) {
+    super( source );
   }
 
-  public void configure(final int width,
-                        final int height,
-                        final DataSourceFactory dataSourceFactory,
-                        final ScriptFactory scriptFactory) throws ScriptExecuteException
-  {
-    super.configure(width, height, dataSourceFactory, scriptFactory);
-    this.width = width;
-    this.height = height;
+  public void configure( final int width, final int height, final DataSourceFactory dataSourceFactory,
+      final ScriptFactory scriptFactory ) throws ScriptExecuteException {
+    super.configure( width, height, dataSourceFactory, scriptFactory ); this.width = width; this.height = height;
   }
 
   @Override
-  public Chart execute(final Map<String, Object> params) throws ScriptExecuteException
-  {
-    if (Context.getCurrentContext() == null)
-    {
+  public Chart execute( final Map<String, Object> params ) throws ScriptExecuteException {
+    if ( Context.getCurrentContext() == null ) {
       throw new ScriptExecuteException();
     }
 
-    Context.getCurrentContext().getFactory().enterContext();
-    try
-    {
-      addGraphicsToScope();
-      executeScript(params);
-      return new Java2DChart(imageBuffer);
-    }
-    catch (Exception e)
-    {
-      throw new ScriptExecuteException(e);
-    }
-    finally
-    {
+    Context.getCurrentContext().getFactory().enterContext(); try {
+      addGraphicsToScope(); executeScript( params ); return new Java2DChart( imageBuffer );
+    } catch ( Exception e ) {
+      throw new ScriptExecuteException( e );
+    } finally {
       Context.exit();
     }
   }
 
-  private void addGraphicsToScope()
-  {
+  private void addGraphicsToScope() {
     final Scriptable scope = getScope();
-    imageBuffer = new BufferedImage((int) width, (int) height, BufferedImage.TYPE_4BYTE_ABGR);
-    final Object wrappedGraphics = Context.javaToJS(imageBuffer.createGraphics(), scope);
-    ScriptableObject.putProperty(scope, "graphics", wrappedGraphics);
+    imageBuffer = new BufferedImage( (int) width, (int) height, BufferedImage.TYPE_4BYTE_ABGR );
+    final Object wrappedGraphics = Context.javaToJS( imageBuffer.createGraphics(), scope );
+    ScriptableObject.putProperty( scope, "graphics", wrappedGraphics );
   }
 }

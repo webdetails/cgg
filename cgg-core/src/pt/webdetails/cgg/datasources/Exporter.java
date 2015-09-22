@@ -16,7 +16,6 @@ package pt.webdetails.cgg.datasources;
 import java.io.IOException;
 import javax.swing.table.TableModel;
 
-public interface Exporter
-{
-  public String export(final TableModel tableModel) throws IOException;
+public interface Exporter {
+  public String export( final TableModel tableModel ) throws IOException;
 }

@@ -15,7 +15,6 @@ package pt.webdetails.cgg.scripts;
 
 import java.util.Map;
 
-
 import org.apache.batik.bridge.BridgeContext;
 import org.apache.batik.bridge.DocumentLoader;
 import org.apache.batik.bridge.UserAgent;
@@ -35,7 +34,6 @@ import pt.webdetails.cgg.Chart;
 import pt.webdetails.cgg.SVGChart;
 import pt.webdetails.cgg.ScriptExecuteException;
 
-
 public class SvgScript extends BaseScript {
   private static final Log logger = LogFactory.getLog( SvgScript.class );
 
@@ -49,13 +47,10 @@ public class SvgScript extends BaseScript {
       throw new ScriptExecuteException();
     }
 
-    Context.getCurrentContext().getFactory().enterContext();
-    try {
-      addSVGDocumentToScope();
-      executeScript( params );
+    Context.getCurrentContext().getFactory().enterContext(); try {
+      addSVGDocumentToScope(); executeScript( params );
       final NativeJavaObject nativeDoc = (NativeJavaObject) ScriptableObject.getProperty( getScope(), "_document" );
-      final Document unwrappedDoc = (Document) nativeDoc.unwrap();
-      return new SVGChart( unwrappedDoc );
+      final Document unwrappedDoc = (Document) nativeDoc.unwrap(); return new SVGChart( unwrappedDoc );
     } catch ( Exception e ) {
       throw new ScriptExecuteException( e );
     } finally {
@@ -73,12 +68,9 @@ public class SvgScript extends BaseScript {
     final SVGOMDocument document = (SVGOMDocument) impl.createDocument( svgNS, "svg", null );
 
     // Initialize the CSS Engine for the document
-    final UserAgent userAgent = new UserAgentAdapter();
-    final DocumentLoader loader = new DocumentLoader( userAgent );
-    final BridgeContext ctx = new BridgeContext( userAgent, loader );
-    new GVTBuilder().build( ctx, document );
-    final CSSEngine eng = impl.createCSSEngine( document, ctx );
-    document.setCSSEngine( eng );
+    final UserAgent userAgent = new UserAgentAdapter(); final DocumentLoader loader = new DocumentLoader( userAgent );
+    final BridgeContext ctx = new BridgeContext( userAgent, loader ); new GVTBuilder().build( ctx, document );
+    final CSSEngine eng = impl.createCSSEngine( document, ctx ); document.setCSSEngine( eng );
 
     final Scriptable scope = getScope();
     // Expose the document to the javascript runtime

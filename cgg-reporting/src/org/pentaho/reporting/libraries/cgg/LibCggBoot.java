@@ -21,9 +21,10 @@ import org.pentaho.reporting.libraries.base.versioning.ProjectInformation;
 //import org.pentaho.reporting.libraries.cgg.output.PngOutputHandler;
 //import org.pentaho.reporting.libraries.cgg.output.SVGOutputHandler;
 
-public class LibCggBoot extends AbstractBoot
-{
-  /** A singleton variable for the booter. */
+public class LibCggBoot extends AbstractBoot {
+  /**
+   * A singleton variable for the booter.
+   */
   private static LibCggBoot instance;
 
   /**
@@ -31,33 +32,25 @@ public class LibCggBoot extends AbstractBoot
    *
    * @return the boot class for Libbase.
    */
-  public static synchronized LibCggBoot getInstance()
-  {
-    if (instance == null)
-    {
+  public static synchronized LibCggBoot getInstance() {
+    if ( instance == null ) {
       instance = new LibCggBoot();
-    }
-    return instance;
+    } return instance;
   }
 
-  private LibCggBoot()
-  {
+  private LibCggBoot() {
   }
 
-  protected Configuration loadConfiguration()
-  {
-    return createDefaultHierarchicalConfiguration
-        ("/org/pentaho/reporting/libraries/cgg/libcgg.properties",
-            "/libcgg.properties", true, LibCggBoot.class);
+  protected Configuration loadConfiguration() {
+    return createDefaultHierarchicalConfiguration( "/org/pentaho/reporting/libraries/cgg/libcgg.properties",
+        "/libcgg.properties", true, LibCggBoot.class );
   }
 
-  protected void performBoot()
-  {
+  protected void performBoot() {
     CggBoot.init();
   }
 
-  protected ProjectInformation getProjectInfo()
-  {
+  protected ProjectInformation getProjectInfo() {
     return LibCggInfo.getInstance();
   }
 }

@@ -17,7 +17,6 @@
 
 package pt.webdetails.cgg;
 
-public interface SetResponseHeaderDelegate
-{
-  public void setResponseHeader (String mimeType);
+public interface SetResponseHeaderDelegate {
+  public void setResponseHeader( String mimeType );
 }

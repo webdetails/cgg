@@ -12,11 +12,9 @@ public class SystemFolderScriptResourceLoader implements ScriptResourceLoader {
 
   private String basePath;
 
-
   public SystemFolderScriptResourceLoader( String basePath ) {
     this.basePath = basePath;
   }
-
 
   @Override
   public Reader getSystemLibraryScript( String s ) throws IOException, ScriptResourceNotFoundException {
@@ -35,15 +33,12 @@ public class SystemFolderScriptResourceLoader implements ScriptResourceLoader {
 
   @Override
   public InputStream getContextResource( String s ) throws IOException, ScriptResourceNotFoundException {
-    if ( ( basePath != null && basePath.startsWith( "/system" ) )
-            || s.startsWith( "/system" ) )  {
+    if ( ( basePath != null && basePath.startsWith( "/system" ) ) || s.startsWith( "/system" ) ) {
       SystemPluginResourceAccess resourceAccess = new SystemPluginResourceAccess( "cgg", "" );
 
-      String fullPath = s;
-      if ( basePath != null && !s.startsWith( "/system" ) ) {
+      String fullPath = s; if ( basePath != null && !s.startsWith( "/system" ) ) {
         fullPath = basePath + "/" + s;
-      }
-      return resourceAccess.getFileInputStream( fullPath );
+      } return resourceAccess.getFileInputStream( fullPath );
     } else {
       throw new ScriptResourceNotFoundException( s );
     }

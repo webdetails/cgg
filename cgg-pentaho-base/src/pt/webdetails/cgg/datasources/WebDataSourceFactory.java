@@ -17,19 +17,13 @@
 
 package pt.webdetails.cgg.datasources;
 
-
-public class WebDataSourceFactory implements DataSourceFactory
-{
-  public WebDataSourceFactory()
-  {
+public class WebDataSourceFactory implements DataSourceFactory {
+  public WebDataSourceFactory() {
   }
 
-  public DataSource createDatasource( final String type )
-  {
-    if ( "CDA".equalsIgnoreCase(type) )
-    {
+  public DataSource createDatasource( final String type ) {
+    if ( "CDA".equalsIgnoreCase( type ) ) {
       return new CdaDatasource();
-    }
-    return null;
+    } return null;
   }
 }

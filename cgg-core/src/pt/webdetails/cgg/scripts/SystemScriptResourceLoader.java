@@ -10,6 +10,7 @@
 * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
 * the license for the specific language governing your rights and limitations.
 */
+
 package pt.webdetails.cgg.scripts;
 
 import pt.webdetails.cpf.utils.CharsetHelper;
@@ -35,12 +36,10 @@ public class SystemScriptResourceLoader implements ScriptResourceLoader {
 
   public Reader getSystemLibraryScript( final String script ) throws IOException, ScriptResourceNotFoundException {
     final String resource = "/pt/webdetails/cgg/resources/" + script;
-    final InputStream resourceAsStream = getClass().getResourceAsStream( resource );
-    if ( resourceAsStream == null ) {
+    final InputStream resourceAsStream = getClass().getResourceAsStream( resource ); if ( resourceAsStream == null ) {
       throw new ScriptResourceNotFoundException( "Resource not found: " + resource );
-    }
-    return new BufferedReader(
-      new InputStreamReader( new BufferedInputStream( resourceAsStream ), CharsetHelper.getEncoding() ) );
+    } return new BufferedReader(
+        new InputStreamReader( new BufferedInputStream( resourceAsStream ), CharsetHelper.getEncoding() ) );
   }
 
   public Reader getContextLibraryScript( final String script ) throws IOException, ScriptResourceNotFoundException {

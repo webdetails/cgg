@@ -22,14 +22,11 @@ import pt.webdetails.cgg.datasources.DataSourceFactory;
 /**
  * @author pdpi
  */
-public interface Script
-{
-  public void configure(final int width,
-                        final int height,
-                        final DataSourceFactory dataSourceFactory,
-                        final ScriptFactory scriptFactory) throws ScriptExecuteException;
+public interface Script {
+  public void configure( final int width, final int height, final DataSourceFactory dataSourceFactory,
+      final ScriptFactory scriptFactory ) throws ScriptExecuteException;
 
-  public void setScope(BaseScope scope) throws ScriptExecuteException;
+  public void setScope( BaseScope scope ) throws ScriptExecuteException;
 
-  public Chart execute(Map<String, Object> params) throws ScriptExecuteException;
+  public Chart execute( Map<String, Object> params ) throws ScriptExecuteException;
 }

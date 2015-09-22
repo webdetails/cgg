@@ -12,7 +12,6 @@
 */
 package pt.webdetails.cgg;
 
-
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 import java.io.File;
@@ -37,7 +36,6 @@ import org.apache.commons.logging.LogFactory;
 import pt.webdetails.cpf.utils.CharsetHelper;
 import pt.webdetails.cpf.utils.MimeTypes;
 
-
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 
@@ -51,7 +49,6 @@ public class CggService {
   private OutputStream outputStream;
   private static final String MIME_SVG = "image/svg+xml";
 
-
   public void setOutputStream( final OutputStream stream ) {
     outputStream = stream;
   }
@@ -61,60 +58,36 @@ public class CggService {
   @Produces( "text/plain" )
   @Consumes( { APPLICATION_XML, APPLICATION_JSON } )
   public Response refresh() {
-    WebCgg cgg = new WebCgg( null, null, null, null );
-    cgg.refresh();
-    return Response.ok().build();
+    WebCgg cgg = new WebCgg( null, null, null, null ); cgg.refresh(); return Response.ok().build();
   }
 
   @GET
   @Path( "/draw" )
   @Consumes( { APPLICATION_XML, APPLICATION_JSON } )
-  public void draw(
-    @QueryParam( "script" ) String script,
-    @DefaultValue( "svg" ) @QueryParam( "type" ) String type,
-    @DefaultValue( "png" ) @QueryParam( "outputType" ) String outputType,
-    @DefaultValue( "" ) @QueryParam( "attachmentName" ) String attachmentName,
-    @DefaultValue( "0" ) @QueryParam( "width" ) Long width,
-    @DefaultValue( "0" ) @QueryParam( "height" ) Long height,
-    @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest ) {
+  public void draw( @QueryParam( "script" ) String script, @DefaultValue( "svg" ) @QueryParam( "type" ) String type,
+      @DefaultValue( "png" ) @QueryParam( "outputType" ) String outputType,
+      @DefaultValue( "" ) @QueryParam( "attachmentName" ) String attachmentName,
+      @DefaultValue( "0" ) @QueryParam( "width" ) Long width, @DefaultValue( "0" ) @QueryParam( "height" ) Long height,
+      @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest ) {
     this.draw( script, type, outputType, attachmentName, null, null, width, height, servletResponse, servletRequest );
   }
 
-  public void draw( String script,
-    String type,
-    String outputType,
-    String attachmentName,
-    String multiChartOverflow,
-    Long width,
-    Long height,
-    HttpServletResponse servletResponse,
-    HttpServletRequest servletRequest ) {
-    this.draw( script, type, outputType, attachmentName, multiChartOverflow, null, width, height,
-            servletResponse, servletRequest );
+  public void draw( String script, String type, String outputType, String attachmentName, String multiChartOverflow,
+      Long width, Long height, HttpServletResponse servletResponse, HttpServletRequest servletRequest ) {
+    this.draw( script, type, outputType, attachmentName, multiChartOverflow, null, width, height, servletResponse,
+        servletRequest );
   }
 
-  public void draw( String script,
-    String type,
-    final String outputType,
-    final String attachmentName,
-    String multiChartOverflow,
-    String cccLibVersion,
-    Long width,
-    Long height,
-    final HttpServletResponse servletResponse,
-    HttpServletRequest servletRequest ) {
+  public void draw( String script, String type, final String outputType, final String attachmentName,
+      String multiChartOverflow, String cccLibVersion, Long width, Long height,
+      final HttpServletResponse servletResponse, HttpServletRequest servletRequest ) {
     try {
 
-      HashMap<String, Object> params = new HashMap<String, Object>();
-      @SuppressWarnings( "unchecked" )
+      HashMap<String, Object> params = new HashMap<String, Object>(); @SuppressWarnings( "unchecked" )
 
-
-      Enumeration<String> inputParams;
-      if ( servletRequest != null ) {
-        inputParams = servletRequest.getParameterNames();
-        while ( inputParams.hasMoreElements() ) {
-          String paramName = inputParams.nextElement();
-          if ( paramName.startsWith( "param" ) ) {
+      Enumeration<String> inputParams; if ( servletRequest != null ) {
+        inputParams = servletRequest.getParameterNames(); while ( inputParams.hasMoreElements() ) {
+          String paramName = inputParams.nextElement(); if ( paramName.startsWith( "param" ) ) {
             String pName = paramName.substring( 5 );
 
             String[] p = servletRequest.getParameterValues( paramName );
@@ -140,56 +113,53 @@ public class CggService {
         script = "/" + script;
       }
 
+      String replacedScript = StringUtils.replace( script, "\\", "/" ); File f = new File( replacedScript );
 
-      String replacedScript = StringUtils.replace( script, "\\", "/"  );
-      File f = new File( replacedScript );
+      URL context = new URL( "file", "", StringUtils.replace( replacedScript, f.getName(), "" ) );
 
-      URL context = new URL( "file", "" , StringUtils.replace( replacedScript, f.getName(), "" ) );
+      if ( servletResponse != null ) {
+        servletResponse.setCharacterEncoding( CharsetHelper.getEncoding() );
+      }
 
-      if ( servletResponse != null ) { servletResponse.setCharacterEncoding( CharsetHelper.getEncoding() ); }
-
-      final WebCgg cgg = new WebCgg( context , servletResponse,
-        servletResponse == null ? outputStream : servletResponse.getOutputStream(), new SetResponseHeaderDelegate() {
-          @Override
-          public void setResponseHeader( String mimeType ) {
-            if ( !attachmentName.isEmpty() ) {
-              String fileName = attachmentName.indexOf( "." ) > 0 ? attachmentName : attachmentName + "." + outputType;
-              setResponseHeaders( MimeTypes.getMimeType( fileName ), fileName, servletResponse );
-            } else {
-              setResponseHeaders( mimeType, servletResponse );
-            }
-          }
-        }
-      );
+      final WebCgg
+          cgg =
+          new WebCgg( context, servletResponse,
+              servletResponse == null ? outputStream : servletResponse.getOutputStream(),
+              new SetResponseHeaderDelegate() {
+                @Override public void setResponseHeader( String mimeType ) {
+                  if ( !attachmentName.isEmpty() ) {
+                    String
+                        fileName =
+                        attachmentName.indexOf( "." ) > 0 ? attachmentName : attachmentName + "." + outputType;
+                    setResponseHeaders( MimeTypes.getMimeType( fileName ), fileName, servletResponse );
+                  } else {
+                    setResponseHeaders( mimeType, servletResponse );
+                  }
+                }
+              } );
 
       cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), params );
-
 
     } catch ( Exception ex ) {
       logger.fatal( "Error while rendering script", ex );
     }
   }
 
-
-
-
   protected void setResponseHeaders( final String mimeType, final HttpServletResponse response ) {
     setResponseHeaders( mimeType, 0, null, response );
   }
 
   protected void setResponseHeaders( final String mimeType, final String attachmentName,
-    final HttpServletResponse response ) {
+      final HttpServletResponse response ) {
     setResponseHeaders( mimeType, 0, attachmentName, response );
   }
 
   protected void setResponseHeaders( final String mimeType, final int cacheDuration, final String attachmentName,
-    final HttpServletResponse response ) {
+      final HttpServletResponse response ) {
     // Make sure we have the correct mime type
 
-
     if ( response == null ) {
-      logger.warn( "Parameter 'httpresponse' not found!" );
-      return;
+      logger.warn( "Parameter 'httpresponse' not found!" ); return;
     }
 
     response.setHeader( "Content-Type", mimeType );

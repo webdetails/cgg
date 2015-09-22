@@ -16,24 +16,19 @@ package pt.webdetails.cgg;
 import pt.webdetails.cgg.CggBoot;
 import junit.framework.TestCase;
 
-public class DefaultScriptFactoryTest extends TestCase
-{
-  public DefaultScriptFactoryTest()
-  {
+public class DefaultScriptFactoryTest extends TestCase {
+  public DefaultScriptFactoryTest() {
   }
 
-  public DefaultScriptFactoryTest(final String name)
-  {
-    super(name);
+  public DefaultScriptFactoryTest( final String name ) {
+    super( name );
   }
 
-  protected void setUp() throws Exception
-  {
+  protected void setUp() throws Exception {
     CggBoot.init();
   }
 
-  public void testBasic()
-  {
-    
+  public void testBasic() {
+
   }
 }

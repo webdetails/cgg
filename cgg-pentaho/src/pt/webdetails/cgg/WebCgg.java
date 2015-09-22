@@ -26,33 +26,25 @@ import pt.webdetails.cgg.datasources.WebDataSourceFactory;
 import pt.webdetails.cgg.output.OutputHandler;
 import pt.webdetails.cgg.scripts.DefaultScriptFactory;
 
-public class WebCgg extends AbstractCgg
-{
+public class WebCgg extends AbstractCgg {
   private HttpServletResponse servletResponse;
   private OutputStream out;
   private SetResponseHeaderDelegate delegate;
 
-  public WebCgg(final URL context,
-                final HttpServletResponse servletResponse,
-                final OutputStream out,
-                final SetResponseHeaderDelegate delegate)
-  {
-    this.servletResponse = servletResponse;
-    this.out = out;
-    this.delegate = delegate;
-    setDataSourceFactory(new WebDataSourceFactory());
-    setScriptFactory(new DefaultScriptFactory(context));
+  public WebCgg( final URL context, final HttpServletResponse servletResponse, final OutputStream out,
+      final SetResponseHeaderDelegate delegate ) {
+    this.servletResponse = servletResponse; this.out = out; this.delegate = delegate;
+    setDataSourceFactory( new WebDataSourceFactory() ); setScriptFactory( new DefaultScriptFactory( context ) );
   }
 
-  protected void produceOutput(final Chart chart,
-                               final String requestedOutputHandler) throws IOException, ScriptExecuteException
-  {
-    OutputHandler cggOutputHandler = getOutputFactory().create(requestedOutputHandler);
-    servletResponse.setContentType(cggOutputHandler.getMimeType());
-    servletResponse.setHeader("Cache-Control", "max-age=0, no-store");
+  protected void produceOutput( final Chart chart, final String requestedOutputHandler )
+      throws IOException, ScriptExecuteException {
+    OutputHandler cggOutputHandler = getOutputFactory().create( requestedOutputHandler );
+    servletResponse.setContentType( cggOutputHandler.getMimeType() );
+    servletResponse.setHeader( "Cache-Control", "max-age=0, no-store" );
 
-    delegate.setResponseHeader(cggOutputHandler.getMimeType());
+    delegate.setResponseHeader( cggOutputHandler.getMimeType() );
 
-    cggOutputHandler.render(out, chart);
+    cggOutputHandler.render( out, chart );
   }
 }
