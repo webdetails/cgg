@@ -55,7 +55,7 @@
         <!-- Not using batik-js, as this is a patched rhino-1.6R5. the patch concerns swing-filechoosers
              (see https://bugzilla.mozilla.org/show_bug.cgi?id=367627 ) and therefore is of no concern
             to us. So we can use the off-the-shelf batik 1.7 instead. -->
-        <dependency org="rhino"                  name="js"               rev="1.7R1"        conf="default_external->default"/>
+        <dependency org="rhino"                  name="js"               rev="1.7R3"        conf="default_external->default"/>
         <dependency org="com.google.code.gson"   name="gson"             rev="2.2.2"        conf='default_external->default' />
 
 
@@ -72,7 +72,7 @@
         <dependency org="commons-io" name="commons-io" rev="2.4"  conf="test->default"/>
 
         <!-- other plugin dependencies -->
-        <dependency org="pentaho"    name="cpf-core"   rev="${dependency.pentaho-cpf-plugin.revision}" conf="default_internal->default" transitive="false" changing="true" /> 
+        <dependency org="pentaho"    name="cpf-core"   rev="${dependency.pentaho-cpf-plugin.revision}" conf="default_internal->default" transitive="false" changing="true" />
 
 	</dependencies>
 </ivy-module>

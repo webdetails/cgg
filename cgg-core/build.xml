@@ -40,6 +40,7 @@
 	<!-- Override default dist target to do a dist-full instead -->
 	<target name="dist" depends="resolve, copy-ccc-dependencies, dist-full"/>
 
+  <target name="clean-all" depends="subfloor.clean-all, subfloor-js.clean-js"/>
 
   <target name="copy-ccc-dependencies" depends="subfloor-js.resolve-js">
      <!-- copy ccc build -->

@@ -14,18 +14,13 @@
 package pt.webdetails.cgg;
 
 import org.junit.Test;
-import org.junit.Ignore;
 
-public class CggGoldSampleTest extends CggGoldTestBase
-{
-  public CggGoldSampleTest()
-  {
+public class CggGoldSampleTest extends CggGoldTestBase {
+  public CggGoldSampleTest() {
   }
 
   @Test
-  @Ignore
-  public void testExecuteReports() throws Exception
-  {
+  public void testExecuteReports() throws Exception {
     runAllGoldCharts();
   }
 }
