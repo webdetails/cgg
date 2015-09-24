@@ -132,34 +132,34 @@ font-size: 14px;
                     </g>
                     <g transform="translate(0,4.7999)">
                         <line x1="30" x2="30" y1="0" y2="94.2001"
-                              stroke="rgb(240,240,240)" stroke-width="0"
+                              stroke="rgb(240,240,240)" stroke-width="1"
                               pointer-events="none"/>
                         <line x1="100.4" x2="100.4" y1="0" y2="94.2001"
-                              stroke="rgb(240,240,240)" stroke-width="0"
+                              stroke="rgb(240,240,240)" stroke-width="1"
                               pointer-events="none"/>
                         <line x1="170.8" x2="170.8" y1="0" y2="94.2001"
-                              stroke="rgb(240,240,240)" stroke-width="0"
+                              stroke="rgb(240,240,240)" stroke-width="1"
                               pointer-events="none"/>
                         <line x1="241.20000000000002" x2="241.20000000000002"
                               y1="0" y2="94.2001" stroke="rgb(240,240,240)"
-                              stroke-width="0" pointer-events="none"/>
+                              stroke-width="1" pointer-events="none"/>
                     </g>
                     <g transform="translate(0,4.7999)">
                         <line x1="30" x2="294" y1="94.20009999999999"
                               y2="94.20009999999999" stroke="rgb(240,240,240)"
-                              stroke-width="0" pointer-events="none"/>
+                              stroke-width="1" pointer-events="none"/>
                         <line x1="30" x2="294" y1="70.650075" y2="70.650075"
-                              stroke="rgb(240,240,240)" stroke-width="0"
+                              stroke="rgb(240,240,240)" stroke-width="1"
                               pointer-events="none"/>
                         <line x1="30" x2="294" y1="47.100049999999996"
                               y2="47.100049999999996" stroke="rgb(240,240,240)"
-                              stroke-width="0" pointer-events="none"/>
+                              stroke-width="1" pointer-events="none"/>
                         <line x1="30" x2="294" y1="23.55002499999999"
                               y2="23.55002499999999" stroke="rgb(240,240,240)"
-                              stroke-width="0" pointer-events="none"/>
+                              stroke-width="1" pointer-events="none"/>
                         <line x1="30" x2="294" y1="-1.4210854715202004e-14"
                               y2="-1.4210854715202004e-14"
-                              stroke="rgb(240,240,240)" stroke-width="0"
+                              stroke="rgb(240,240,240)" stroke-width="1"
                               pointer-events="none"/>
                     </g>
                     <g transform="translate(0,4.7999)">
@@ -167,14 +167,14 @@ font-size: 14px;
                             <g>
                                 <line x1="24" x2="30" y1="94.2001" y2="94.2001"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
                                 <line x1="27" x2="30" y1="82.4250875"
                                       y2="82.4250875"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
@@ -193,14 +193,14 @@ font-size: 9px;
                                 <line x1="24" x2="30" y1="70.650075"
                                       y2="70.650075"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
                                 <line x1="27" x2="30" y1="58.8750625"
                                       y2="58.8750625"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
@@ -218,14 +218,14 @@ font-size: 9px;
                             <g>
                                 <line x1="24" x2="30" y1="47.10005"
                                       y2="47.10005" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
                                 <line x1="27" x2="30" y1="35.3250375"
                                       y2="35.3250375"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
@@ -244,14 +244,14 @@ font-size: 9px;
                                 <line x1="24" x2="30" y1="23.550025000000005"
                                       y2="23.550025000000005"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
                                 <line x1="27" x2="30" y1="11.775012500000004"
                                       y2="11.775012500000004"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g>
@@ -270,7 +270,7 @@ font-size: 9px;
                             <g>
                                 <line x1="24" x2="30" y1="0" y2="0"
                                       shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                             <g/>
@@ -290,7 +290,7 @@ font-size: 9px;
                         <g transform="translate(0,-7.105427357601002e-15)">
                             <line stroke-linecap="square" x1="30" x2="30" y1="0"
                                   y2="94.2001" shape-rendering="crispEdges"
-                                  stroke="rgb(102,102,102)" stroke-width="0"
+                                  stroke="rgb(102,102,102)" stroke-width="1"
                                   pointer-events="none"/>
                         </g>
                     </g>
@@ -301,13 +301,13 @@ font-size: 9px;
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="0" pointer-events="none"/>
+                                          stroke-width="1" pointer-events="none"/>
                                 </g>
                                 <g>
                                     <line x1="35.2" x2="35.2" y1="0" y2="3"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="0" pointer-events="none"/>
+                                          stroke-width="1" pointer-events="none"/>
                                 </g>
                                 <g>
                                     <text y="3" transform="translate(0,6)"
@@ -326,13 +326,13 @@ font-size: 9px;
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="0" pointer-events="none"/>
+                                          stroke-width="1" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(70.4,0)">
                                     <line x1="35.2" x2="35.2" y1="0" y2="3"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="0" pointer-events="none"/>
+                                          stroke-width="1" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(70.4,0)">
                                     <text y="3" transform="translate(0,6)"
@@ -351,13 +351,13 @@ font-size: 9px;
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="0" pointer-events="none"/>
+                                          stroke-width="1" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(140.8,0)">
                                     <line x1="35.2" x2="35.2" y1="0" y2="3"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="0" pointer-events="none"/>
+                                          stroke-width="1" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(140.8,0)">
                                     <text y="3" transform="translate(0,6)"
@@ -376,7 +376,7 @@ font-size: 9px;
                                     <line x1="0" x2="0" y1="0" y2="6"
                                           shape-rendering="crispEdges"
                                           stroke="rgb(102,102,102)"
-                                          stroke-width="0" pointer-events="none"/>
+                                          stroke-width="1" pointer-events="none"/>
                                 </g>
                                 <g transform="translate(211.20000000000002,0)"/>
                                 <g transform="translate(211.20000000000002,0)">
@@ -396,7 +396,7 @@ font-size: 9px;
                             <g>
                                 <line stroke-linecap="square" x1="0" x2="264"
                                       y1="0" y2="0" shape-rendering="crispEdges"
-                                      stroke="rgb(102,102,102)" stroke-width="0"
+                                      stroke="rgb(102,102,102)" stroke-width="1"
                                       pointer-events="none"/>
                             </g>
                         </g>
