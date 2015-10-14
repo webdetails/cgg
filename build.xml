@@ -38,6 +38,13 @@
     </for>
   </target>
 
+  <target name="build-sonar-all-tests">
+    <antcall target="call">
+      <param name="target" value="build-sonar-all-tests"/>
+      <param name="projects" value="${all.projects}"/>
+    </antcall>
+  </target>
+
   <target name="clean-all">
     <antcall target="call">
       <param name="target" value="clean-all"/>
