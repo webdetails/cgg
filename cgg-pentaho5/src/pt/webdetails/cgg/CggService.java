@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2014 Webdetails, a Pentaho company.  All rights reserved.
+* Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -11,9 +11,6 @@
 * the license for the specific language governing your rights and limitations.
 */
 package pt.webdetails.cgg;
-
-
-import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 import java.io.File;
 import java.io.OutputStream;
@@ -34,9 +31,12 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+
 import pt.webdetails.cpf.utils.CharsetHelper;
 import pt.webdetails.cpf.utils.MimeTypes;
-
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
@@ -77,7 +77,8 @@ public class CggService {
     @DefaultValue( "0" ) @QueryParam( "width" ) Long width,
     @DefaultValue( "0" ) @QueryParam( "height" ) Long height,
     @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest ) {
-    this.draw( script, type, outputType, attachmentName, null, null, width, height, servletResponse, servletRequest );
+    this.draw( script, type, outputType, attachmentName, null, null,
+            width, height, servletResponse, servletRequest, null );
   }
 
   public void draw( String script,
@@ -90,7 +91,7 @@ public class CggService {
     HttpServletResponse servletResponse,
     HttpServletRequest servletRequest ) {
     this.draw( script, type, outputType, attachmentName, multiChartOverflow, null, width, height,
-            servletResponse, servletRequest );
+            servletResponse, servletRequest, null );
   }
 
   public void draw( String script,
@@ -102,7 +103,8 @@ public class CggService {
     Long width,
     Long height,
     final HttpServletResponse servletResponse,
-    HttpServletRequest servletRequest ) {
+    HttpServletRequest servletRequest,
+    IPentahoSession userSession) {
     try {
 
       HashMap<String, Object> params = new HashMap<String, Object>();
@@ -148,8 +150,16 @@ public class CggService {
 
       if ( servletResponse != null ) { servletResponse.setCharacterEncoding( CharsetHelper.getEncoding() ); }
 
-      final WebCgg cgg = new WebCgg( context , servletResponse,
-        servletResponse == null ? outputStream : servletResponse.getOutputStream(), new SetResponseHeaderDelegate() {
+      if( userSession == null ) {
+        userSession = PentahoSessionHolder.getSession();
+      }
+
+      final WebCgg cgg = new WebCgg(
+              context,
+              servletResponse,
+              userSession,
+              servletResponse == null ? outputStream : servletResponse.getOutputStream(),
+        new SetResponseHeaderDelegate() {
           @Override
           public void setResponseHeader( String mimeType ) {
             if ( !attachmentName.isEmpty() ) {
@@ -163,7 +173,6 @@ public class CggService {
       );
 
       cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), params );
-
 
     } catch ( Exception ex ) {
       logger.fatal( "Error while rendering script", ex );

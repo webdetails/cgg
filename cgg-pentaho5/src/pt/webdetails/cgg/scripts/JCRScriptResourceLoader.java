@@ -45,4 +45,8 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
         s.startsWith( "/" ) ? null : basePath );
     return repositoryAccess.getFileInputStream( s );
   }
+
+  public InputStream getResource( String script ) throws IOException, ScriptResourceNotFoundException {
+    throw new ScriptResourceNotFoundException(script);
+  }
 }

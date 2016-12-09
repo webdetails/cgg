@@ -1,6 +1,6 @@
 /*!
-* Copyright 2002 - 2016 Webdetails, a Pentaho company.  All rights reserved.
-* 
+* Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import javax.swing.JLabel;
 import javax.xml.transform.OutputKeys;
@@ -76,7 +78,9 @@ public class BaseScope extends ImporterTopLevel {
       // Define some global functions particular to the shell. Note
       // that these functions are not part of ECMA.
       initStandardObjects( cx, sealedStdLib );
-      final String[] names = {"print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG", "res"};
+      final String[] names = {
+        "print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG", "res", "readResource"
+      };
       defineFunctionProperties( names, BaseScope.class, ScriptableObject.DONTENUM );
       initialized = true;
     }
@@ -216,6 +220,44 @@ public class BaseScope extends ImporterTopLevel {
     return true;
   }
 
+  public static Object readResource( final Context cx, final Scriptable thisObj,
+                                     final Object[] args, final Function funObj ) {
+    final Object arg = unwrapFirstArgument(args[0]);
+
+    if (arg == null) {
+      return Context.toString("");
+    }
+
+    try {
+      final String url = arg.toString();
+      final BaseScope scope = (BaseScope) thisObj;
+
+      return Context.toString( scope.readResourceAsText( cx, url ) );
+
+    } catch ( Exception e ) {
+      logger.warn("Failed to call 'load'", e);
+      return Context.toBoolean(false);
+    }
+  }
+
+  public String readResourceAsText( Context cx, String file ) {
+    try {
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(scriptFactory.getResource(file)));
+
+      StringBuilder textBuilder = new StringBuilder();
+      String line;
+      while ( (line = bufferedReader.readLine()) != null ) {
+        textBuilder.append( line );
+      }
+
+      bufferedReader.close();
+
+      return textBuilder.toString();
+    } catch ( Exception e ) {
+      logger.warn("Failed to call 'readResourceAsText'", e);
+      return null;
+    }
+  }
 
   //A res is an auxiliary script which is defined by a relative path from the original script.
   public static Object res( final Context cx, final Scriptable thisObj,

@@ -14,4 +14,5 @@ public interface ScriptResourceLoader
 
   public InputStream getContextResource(String script) throws IOException, ScriptResourceNotFoundException;
 
+  public InputStream getResource(String script) throws IOException, ScriptResourceNotFoundException;
 }

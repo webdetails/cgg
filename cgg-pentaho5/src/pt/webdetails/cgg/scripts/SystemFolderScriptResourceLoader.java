@@ -48,4 +48,8 @@ public class SystemFolderScriptResourceLoader implements ScriptResourceLoader {
       throw new ScriptResourceNotFoundException( s );
     }
   }
+
+  public InputStream getResource(String script) throws IOException, ScriptResourceNotFoundException {
+    throw new ScriptResourceNotFoundException(script);
+  }
 }

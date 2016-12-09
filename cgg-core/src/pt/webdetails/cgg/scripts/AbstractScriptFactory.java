@@ -1,6 +1,6 @@
 /*!
-* Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
-* 
+* Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -57,6 +57,11 @@ public abstract class AbstractScriptFactory implements ScriptFactory
   public InputStream getContextResource(final String script) throws IOException, ScriptResourceNotFoundException
   {
     return getResourceLoader().getContextResource(script);
+  }
+
+  public InputStream getResource(final String script) throws IOException, ScriptResourceNotFoundException
+  {
+    return getResourceLoader().getResource(script);
   }
 
   public Script createScript(final String path, final String scriptType)

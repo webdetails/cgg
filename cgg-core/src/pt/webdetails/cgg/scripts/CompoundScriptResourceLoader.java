@@ -114,4 +114,20 @@ public class CompoundScriptResourceLoader implements ScriptResourceLoader
     }
     throw new ScriptResourceNotFoundException(script);
   }
+
+  @Override
+  public InputStream getResource(String script) throws IOException, ScriptResourceNotFoundException {
+    for (ScriptResourceLoader loader : loaders)
+    {
+      try
+      {
+        return loader.getResource(script);
+      }
+      catch (ScriptResourceNotFoundException srnfe)
+      {
+        // ignored
+      }
+    }
+    throw new ScriptResourceNotFoundException(script);
+  }
 }

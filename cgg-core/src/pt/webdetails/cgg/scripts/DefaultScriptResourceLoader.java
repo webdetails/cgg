@@ -81,4 +81,9 @@ public class DefaultScriptResourceLoader implements ScriptResourceLoader
   {
     throw new ScriptResourceNotFoundException(script);
   }
+
+  @Override
+  public InputStream getResource(String script) throws IOException, ScriptResourceNotFoundException {
+    throw new ScriptResourceNotFoundException(script);
+  }
 }

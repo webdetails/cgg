@@ -70,4 +70,9 @@ public class VirtualScriptResourceLoader implements ScriptResourceLoader
   {
     throw new ScriptResourceNotFoundException();
   }
+
+  @Override
+  public InputStream getResource(String script) throws IOException, ScriptResourceNotFoundException {
+    throw new ScriptResourceNotFoundException(script);
+  }
 }
