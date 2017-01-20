@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin title="cgg" loader="DEFAULT">
+<plugin title="cgg" loader="overriding">
 
 
   <lifecycle-listener class="pt.webdetails.cgg.CggLifeCycleListener"/>
@@ -9,12 +9,12 @@
   </static-paths>
   <content-types>
   </content-types>
-  
+
   <content-generator scope="local" id="cgg" type="graphicsGenerator" url="">
     <classname>pt.webdetails.cgg.CggContentGenerator</classname>
     <title>CGG</title>
   </content-generator>
-  
+
   <!-- Menu entry -->
   <menu-items/>
 </plugin>
