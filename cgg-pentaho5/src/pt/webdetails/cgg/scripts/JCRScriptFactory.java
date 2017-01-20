@@ -22,10 +22,10 @@ public class JCRScriptFactory extends AbstractScriptFactory {
 
   public JCRScriptFactory( String context, final String userName ) {
     resourceLoader = new CompoundScriptResourceLoader(
-            new JCRScriptResourceLoader( context ),
-            new SystemFolderScriptResourceLoader( context ),
-            new SystemScriptResourceLoader(),
-            new WebResourceLoader( context, userName ));
+      new JCRScriptResourceLoader( context ),
+      new SystemFolderScriptResourceLoader( context ),
+      new SystemScriptResourceLoader(),
+      new WebResourceLoader( context, userName ) );
   }
 
   public void setResourceLoader( final ScriptResourceLoader resourceLoader ) {

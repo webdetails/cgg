@@ -48,7 +48,7 @@ public class SystemScriptResourceLoader implements ScriptResourceLoader {
   }
 
   @Override
-  public InputStream getResource(String script) throws IOException, ScriptResourceNotFoundException {
-    throw new ScriptResourceNotFoundException(script);
+  public InputStream getWebResource( String script ) throws IOException, ScriptResourceNotFoundException {
+    throw new ScriptResourceNotFoundException( script );
   }
 }

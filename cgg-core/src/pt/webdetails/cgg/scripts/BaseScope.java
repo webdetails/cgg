@@ -98,7 +98,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object load( final Context cx, final Scriptable thisObj,
                              final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -147,7 +147,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object _loadSvg( final Context cx, final Scriptable thisObj,
                                  final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -182,7 +182,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object lib( final Context cx, final Scriptable thisObj,
                             final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -222,10 +222,10 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object readResource( final Context cx, final Scriptable thisObj,
                                      final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument(args[0]);
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
 
-    if (arg == null) {
-      return Context.toString("");
+    if ( arg == null ) {
+      return Context.toString( "" );
     }
 
     try {
@@ -235,18 +235,18 @@ public class BaseScope extends ImporterTopLevel {
       return Context.toString( scope.readResourceAsText( cx, url ) );
 
     } catch ( Exception e ) {
-      logger.warn("Failed to call 'load'", e);
-      return Context.toBoolean(false);
+      logger.warn( "Failed to call 'load'", e );
+      return Context.toBoolean( false );
     }
   }
 
   public String readResourceAsText( Context cx, String file ) {
     try {
-      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(scriptFactory.getResource(file)));
+      BufferedReader bufferedReader = new BufferedReader( new InputStreamReader( scriptFactory.getWebResource( file ) ) );
 
       StringBuilder textBuilder = new StringBuilder();
       String line;
-      while ( (line = bufferedReader.readLine()) != null ) {
+      while ( ( line = bufferedReader.readLine() ) != null ) {
         textBuilder.append( line );
       }
 
@@ -254,7 +254,7 @@ public class BaseScope extends ImporterTopLevel {
 
       return textBuilder.toString();
     } catch ( Exception e ) {
-      logger.warn("Failed to call 'readResourceAsText'", e);
+      logger.warn( "Failed to call 'readResourceAsText'", e );
       return null;
     }
   }
@@ -267,7 +267,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object _xmlToString( final Context cx, final Scriptable thisObj,
                                      final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
     final Node node = (Node) arg;
     try {
       final Source source = new DOMSource( node );
@@ -295,17 +295,17 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object getTextLenCGG( Context cx, Scriptable thisObj,
                                       Object[] args, Function funObj ) {
-    String text = Context.toString( args[0] );
-    String fontFamily = Context.toString( args[1] );
-    String fontSize = Context.toString( args[2] ).trim();
+    String text = Context.toString( args[ 0 ] );
+    String fontFamily = Context.toString( args[ 1 ] );
+    String fontSize = Context.toString( args[ 2 ] ).trim();
     String fontStyle = "normal";
     String fontWeight = "normal";
 
     if ( args.length > 3 ) {
-      fontStyle = Context.toString( args[3] );
+      fontStyle = Context.toString( args[ 3 ] );
 
       if ( args.length > 4 ) {
-        fontWeight = Context.toString( args[4] );
+        fontWeight = Context.toString( args[ 4 ] );
       }
     }
 
@@ -323,16 +323,16 @@ public class BaseScope extends ImporterTopLevel {
   public static Object getTextHeightCGG( Context cx, Scriptable thisObj,
                                          Object[] args, Function funObj ) {
     // String text = Context.toString(args[0]);
-    String fontFamily = Context.toString( args[1] );
-    String fontSize = Context.toString( args[2] ).trim();
+    String fontFamily = Context.toString( args[ 1 ] );
+    String fontSize = Context.toString( args[ 2 ] ).trim();
     String fontStyle = "normal";
     String fontWeight = "normal";
 
     if ( args.length > 3 ) {
-      fontStyle = Context.toString( args[3] );
+      fontStyle = Context.toString( args[ 3 ] );
 
       if ( args.length > 4 ) {
-        fontWeight = Context.toString( args[4] );
+        fontWeight = Context.toString( args[ 4 ] );
       }
     }
 
@@ -351,7 +351,7 @@ public class BaseScope extends ImporterTopLevel {
     // Get size unit
     boolean convert = false;
     if ( fontSize.endsWith( "px" ) ) {
-//          convert = true;
+      //          convert = true;
       fontSize = fontSize.substring( 0, fontSize.length() - 2 );
     } else if ( fontSize.endsWith( "pt" ) ) {
       fontSize = fontSize.substring( 0, fontSize.length() - 2 );
@@ -362,6 +362,7 @@ public class BaseScope extends ImporterTopLevel {
     try {
       size = Integer.parseInt( fontSize );
     } catch ( NumberFormatException nfe ) {
+      // NOOP
     }
 
 
@@ -405,10 +406,10 @@ public class BaseScope extends ImporterTopLevel {
       fontWeight = fontWeight.toLowerCase();
 
       if ( fontWeight.equals( "bold" )
-              || fontWeight.equals( "bolder" )
-              || fontWeight.equals( "700" )
-              || fontWeight.equals( "800" )
-              || fontWeight.equals( "900" ) ) {
+        || fontWeight.equals( "bolder" )
+        || fontWeight.equals( "700" )
+        || fontWeight.equals( "800" )
+        || fontWeight.equals( "900" ) ) {
         isBold = true;
       }
     }

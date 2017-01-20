@@ -78,33 +78,33 @@ public class CggService {
     @DefaultValue( "0" ) @QueryParam( "height" ) Long height,
     @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest ) {
     this.draw( script, type, outputType, attachmentName, null, null,
-            width, height, servletResponse, servletRequest, null );
+      width, height, servletResponse, servletRequest, null );
   }
 
   public void draw( String script,
-    String type,
-    String outputType,
-    String attachmentName,
-    String multiChartOverflow,
-    Long width,
-    Long height,
-    HttpServletResponse servletResponse,
-    HttpServletRequest servletRequest ) {
+                    String type,
+                    String outputType,
+                    String attachmentName,
+                    String multiChartOverflow,
+                    Long width,
+                    Long height,
+                    HttpServletResponse servletResponse,
+                    HttpServletRequest servletRequest ) {
     this.draw( script, type, outputType, attachmentName, multiChartOverflow, null, width, height,
-            servletResponse, servletRequest, null );
+      servletResponse, servletRequest, null );
   }
 
   public void draw( String script,
-    String type,
-    final String outputType,
-    final String attachmentName,
-    String multiChartOverflow,
-    String cccLibVersion,
-    Long width,
-    Long height,
-    final HttpServletResponse servletResponse,
-    HttpServletRequest servletRequest,
-    IPentahoSession userSession) {
+                    String type,
+                    final String outputType,
+                    final String attachmentName,
+                    String multiChartOverflow,
+                    String cccLibVersion,
+                    Long width,
+                    Long height,
+                    final HttpServletResponse servletResponse,
+                    HttpServletRequest servletRequest,
+                    IPentahoSession userSession ) {
     try {
 
       HashMap<String, Object> params = new HashMap<String, Object>();
@@ -121,7 +121,7 @@ public class CggService {
 
             String[] p = servletRequest.getParameterValues( paramName );
             if ( p.length == 1 ) { // not *really* an array, is it?
-              params.put( pName, p[0] );
+              params.put( pName, p[ 0 ] );
             } else {
               params.put( pName, p );
             }
@@ -143,22 +143,24 @@ public class CggService {
       }
 
 
-      String replacedScript = StringUtils.replace( script, "\\", "/"  );
+      String replacedScript = StringUtils.replace( script, "\\", "/" );
       File f = new File( replacedScript );
 
-      URL context = new URL( "file", "" , StringUtils.replace( replacedScript, f.getName(), "" ) );
+      URL context = new URL( "file", "", StringUtils.replace( replacedScript, f.getName(), "" ) );
 
-      if ( servletResponse != null ) { servletResponse.setCharacterEncoding( CharsetHelper.getEncoding() ); }
+      if ( servletResponse != null ) {
+        servletResponse.setCharacterEncoding( CharsetHelper.getEncoding() );
+      }
 
-      if( userSession == null ) {
+      if ( userSession == null ) {
         userSession = PentahoSessionHolder.getSession();
       }
 
       final WebCgg cgg = new WebCgg(
-              context,
-              servletResponse,
-              userSession,
-              servletResponse == null ? outputStream : servletResponse.getOutputStream(),
+        context,
+        servletResponse,
+        userSession,
+        servletResponse == null ? outputStream : servletResponse.getOutputStream(),
         new SetResponseHeaderDelegate() {
           @Override
           public void setResponseHeader( String mimeType ) {
@@ -180,19 +182,17 @@ public class CggService {
   }
 
 
-
-
   protected void setResponseHeaders( final String mimeType, final HttpServletResponse response ) {
     setResponseHeaders( mimeType, 0, null, response );
   }
 
   protected void setResponseHeaders( final String mimeType, final String attachmentName,
-    final HttpServletResponse response ) {
+                                     final HttpServletResponse response ) {
     setResponseHeaders( mimeType, 0, attachmentName, response );
   }
 
   protected void setResponseHeaders( final String mimeType, final int cacheDuration, final String attachmentName,
-    final HttpServletResponse response ) {
+                                     final HttpServletResponse response ) {
     // Make sure we have the correct mime type
 
 
