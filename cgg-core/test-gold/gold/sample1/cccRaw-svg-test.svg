@@ -4,7 +4,7 @@
      contentStyleType="text/css" viewBox="0 0 300 200" height="200"
      preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"
      version="1.0">
-    <g id="canvas"/>
+    <g xmlns="" id="canvas"/>
     <g font-size="10px" fill="none" width="300"
        style="-webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;"
        font-family="sans-serif" height="200" stroke="none" stroke-width="1.5">
