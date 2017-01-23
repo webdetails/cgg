@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
+* Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -16,17 +16,14 @@ package pt.webdetails.cgg;
 import java.io.OutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.pentaho.platform.api.engine.IParameterProvider;
 
 import pt.webdetails.cpf.SimpleContentGenerator;
 import pt.webdetails.cpf.annotations.AccessLevel;
 import pt.webdetails.cpf.annotations.Exposed;
-
 
 /**
  * @author pdpi
@@ -38,9 +35,6 @@ public class CggContentGenerator extends SimpleContentGenerator {
   private static final Log logger = LogFactory.getLog( CggContentGenerator.class );
 
   private static final String CCC_VERSION_PARAM = "cccVersion";
-  private static final String CCC_VERSION_ANALYZER_4_8 = "2.0-analyzer";
-
-
 
   @Override
   public String getPluginName() {
@@ -89,14 +83,10 @@ public class CggContentGenerator extends SimpleContentGenerator {
       service.setOutputStream( out );
     }
     service.draw( script, type, outputType, attachmentName, multiChartOverflow, cccLibVersion,
-      height, width, response, request );
+      height, width, response, request, this.userSession );
   }
-
-
 
   @Exposed( accessLevel = AccessLevel.PUBLIC )
   public void refresh( OutputStream out ) {
   }
-
-
 }

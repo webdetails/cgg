@@ -1,6 +1,6 @@
 /*!
-* Copyright 2002 - 2016 Webdetails, a Pentaho company.  All rights reserved.
-* 
+* Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import javax.swing.JLabel;
 import javax.xml.transform.OutputKeys;
@@ -76,7 +78,9 @@ public class BaseScope extends ImporterTopLevel {
       // Define some global functions particular to the shell. Note
       // that these functions are not part of ECMA.
       initStandardObjects( cx, sealedStdLib );
-      final String[] names = {"print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG", "res"};
+      final String[] names = {
+        "print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG", "res", "readResource"
+      };
       defineFunctionProperties( names, BaseScope.class, ScriptableObject.DONTENUM );
       initialized = true;
     }
@@ -94,7 +98,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object load( final Context cx, final Scriptable thisObj,
                              final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -143,7 +147,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object _loadSvg( final Context cx, final Scriptable thisObj,
                                  final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -178,7 +182,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object lib( final Context cx, final Scriptable thisObj,
                             final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -216,6 +220,44 @@ public class BaseScope extends ImporterTopLevel {
     return true;
   }
 
+  public static Object readResource( final Context cx, final Scriptable thisObj,
+                                     final Object[] args, final Function funObj ) {
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
+
+    if ( arg == null ) {
+      return Context.toString( "" );
+    }
+
+    try {
+      final String url = arg.toString();
+      final BaseScope scope = (BaseScope) thisObj;
+
+      return Context.toString( scope.readResourceAsText( cx, url ) );
+
+    } catch ( Exception e ) {
+      logger.warn( "Failed to call 'load'", e );
+      return Context.toBoolean( false );
+    }
+  }
+
+  public String readResourceAsText( Context cx, String file ) {
+    try {
+      BufferedReader bufferedReader = new BufferedReader( new InputStreamReader( scriptFactory.getWebResource( file ) ) );
+
+      StringBuilder textBuilder = new StringBuilder();
+      String line;
+      while ( ( line = bufferedReader.readLine() ) != null ) {
+        textBuilder.append( line );
+      }
+
+      bufferedReader.close();
+
+      return textBuilder.toString();
+    } catch ( Exception e ) {
+      logger.warn( "Failed to call 'readResourceAsText'", e );
+      return null;
+    }
+  }
 
   //A res is an auxiliary script which is defined by a relative path from the original script.
   public static Object res( final Context cx, final Scriptable thisObj,
@@ -225,7 +267,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object _xmlToString( final Context cx, final Scriptable thisObj,
                                      final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[0] );
+    final Object arg = unwrapFirstArgument( args[ 0 ] );
     final Node node = (Node) arg;
     try {
       final Source source = new DOMSource( node );
@@ -253,17 +295,17 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object getTextLenCGG( Context cx, Scriptable thisObj,
                                       Object[] args, Function funObj ) {
-    String text = Context.toString( args[0] );
-    String fontFamily = Context.toString( args[1] );
-    String fontSize = Context.toString( args[2] ).trim();
+    String text = Context.toString( args[ 0 ] );
+    String fontFamily = Context.toString( args[ 1 ] );
+    String fontSize = Context.toString( args[ 2 ] ).trim();
     String fontStyle = "normal";
     String fontWeight = "normal";
 
     if ( args.length > 3 ) {
-      fontStyle = Context.toString( args[3] );
+      fontStyle = Context.toString( args[ 3 ] );
 
       if ( args.length > 4 ) {
-        fontWeight = Context.toString( args[4] );
+        fontWeight = Context.toString( args[ 4 ] );
       }
     }
 
@@ -281,16 +323,16 @@ public class BaseScope extends ImporterTopLevel {
   public static Object getTextHeightCGG( Context cx, Scriptable thisObj,
                                          Object[] args, Function funObj ) {
     // String text = Context.toString(args[0]);
-    String fontFamily = Context.toString( args[1] );
-    String fontSize = Context.toString( args[2] ).trim();
+    String fontFamily = Context.toString( args[ 1 ] );
+    String fontSize = Context.toString( args[ 2 ] ).trim();
     String fontStyle = "normal";
     String fontWeight = "normal";
 
     if ( args.length > 3 ) {
-      fontStyle = Context.toString( args[3] );
+      fontStyle = Context.toString( args[ 3 ] );
 
       if ( args.length > 4 ) {
-        fontWeight = Context.toString( args[4] );
+        fontWeight = Context.toString( args[ 4 ] );
       }
     }
 
@@ -309,7 +351,7 @@ public class BaseScope extends ImporterTopLevel {
     // Get size unit
     boolean convert = false;
     if ( fontSize.endsWith( "px" ) ) {
-//          convert = true;
+      //          convert = true;
       fontSize = fontSize.substring( 0, fontSize.length() - 2 );
     } else if ( fontSize.endsWith( "pt" ) ) {
       fontSize = fontSize.substring( 0, fontSize.length() - 2 );
@@ -320,6 +362,7 @@ public class BaseScope extends ImporterTopLevel {
     try {
       size = Integer.parseInt( fontSize );
     } catch ( NumberFormatException nfe ) {
+      // NOOP
     }
 
 
@@ -363,10 +406,10 @@ public class BaseScope extends ImporterTopLevel {
       fontWeight = fontWeight.toLowerCase();
 
       if ( fontWeight.equals( "bold" )
-              || fontWeight.equals( "bolder" )
-              || fontWeight.equals( "700" )
-              || fontWeight.equals( "800" )
-              || fontWeight.equals( "900" ) ) {
+        || fontWeight.equals( "bolder" )
+        || fontWeight.equals( "700" )
+        || fontWeight.equals( "800" )
+        || fontWeight.equals( "900" ) ) {
         isBold = true;
       }
     }

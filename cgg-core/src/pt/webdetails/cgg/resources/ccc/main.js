@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
+* Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -10,7 +10,7 @@
 * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
 * the license for the specific language governing your rights and limitations.
 */
-define(['cgg'], function(cgg) {
+define(['require', 'cgg'], function(contextualRequire, cgg) {
 
     // Defines an AMD loader plugin.
     return {load: load};
@@ -25,7 +25,7 @@ define(['cgg'], function(cgg) {
         // Will write multiple times, for each id of ccc...
         (cgg.debug > 2) && cgg.print("Using CCC v" + cccVersion);
 
-        require([mid], callback);
+        contextualRequire([mid], callback);
     }
 
     function getCccVersion() {
