@@ -17,13 +17,13 @@
 
 	<dependencies defaultconf="default_internal->default">
     <!-- internal dependencies -->
-		<dependency org="pentaho" name="cgg-core" rev="TRUNK-SNAPSHOT"/>
+		<dependency org="pentaho" name="cgg-core" rev="7.1-SNAPSHOT"/>
 
 		<!--  external dependencies -->
 
 		
-		<dependency org="pentaho-library" name="libbase" rev="TRUNK-SNAPSHOT"/>
-		<dependency org="pentaho-library" name="libxml" rev="TRUNK-SNAPSHOT"/>
+		<dependency org="org.pentaho.reporting.library" name="libbase" rev="7.1-SNAPSHOT"/>
+		<dependency org="org.pentaho.reporting.library" name="libxml" rev="7.1-SNAPSHOT"/>
 		
 		
 		<!-- testing dependencies -->
