@@ -108,3 +108,86 @@
         return loader(path);
     }
 }());
+
+(function() {
+  // Additional AMD configuration
+
+  var basePathCommonUI = "res:../../common-ui/resources/web/";
+
+  var requireCfg = {
+    paths:  {
+      "json": basePathCommonUI + "util/require-json/json",
+      "text": basePathCommonUI + "util/require-text/text",
+      "pentaho/data": basePathCommonUI + "pentaho/data",
+      "pentaho/visual": basePathCommonUI + "pentaho/visual",
+      "pentaho/config": basePathCommonUI + "pentaho/config",
+      "pentaho/context": basePathCommonUI + "pentaho/context",
+      "pentaho/debug": basePathCommonUI + "pentaho/debug",
+      "pentaho/service": basePathCommonUI + "pentaho/service",
+      "pentaho/i18n": basePathCommonUI + "pentaho/i18n",
+      "pentaho/lang": basePathCommonUI + "pentaho/lang",
+      "pentaho/util": basePathCommonUI + "pentaho/util",
+      "pentaho/shim": basePathCommonUI + "pentaho/shim",
+      "pentaho/type": basePathCommonUI + "pentaho/type",
+      "pentaho/ccc": basePathCommonUI + "pentaho/ccc"
+    },
+    packages: [],
+    config: {
+      "pentaho/service": {
+        "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
+      },
+
+      "pentaho/context": {
+        server: {
+          url: "@{CONTEXT_PATH}"
+        }
+      },
+
+      // setup requirejs text! plugin to use a mock xhr object that delegates to
+      // the global `readResource`.
+      // Used at least by json!, and the latter by pentaho/i18n!.
+      "text": {
+        useXhr: function() { return true; },
+        env:    "xhr",
+        createXhr: function() {
+          // A XHR mock
+          return {
+            _headers: {},
+
+            open: function(method, url, async) {
+              this._url = url;
+            },
+
+            setRequestHeader: function(name, value) {
+              this._headers[name] = value;
+            },
+
+            send: function(body) {
+              this.responseText = null;
+              this.readyState = 0;
+              this.status = 500;
+
+              this.responseText = readResource(this._url);
+              this.readyState = 4;
+              this.status = 200;
+
+              if(this.onreadystatechange) {
+                this.onreadystatechange({});
+              }
+            }
+          };
+        }
+      }
+    },
+    map: {
+      "*": {
+        "pentaho/type/theme": "pentaho/type/themes/crystal",
+        "pentaho/visual/models/theme": "pentaho/visual/models/themes/crystal"
+      }
+    }
+  };
+
+  requireCfg.packages.push({"name": "pentaho/visual/base", "main": "model"});
+
+  require.config(requireCfg);
+}());
