@@ -112,12 +112,13 @@
 (function() {
   // Additional AMD configuration
 
-  var basePathCommonUI = "res:../../common-ui/resources/web/";
+  var basePathCommonUI = "/plugin/common-ui/resources/web/";
 
   var requireCfg = {
     paths:  {
       "json": basePathCommonUI + "util/require-json/json",
       "text": basePathCommonUI + "util/require-text/text",
+      "pentaho": basePathCommonUI + "pentaho",
       "pentaho/data": basePathCommonUI + "pentaho/data",
       "pentaho/visual": basePathCommonUI + "pentaho/visual",
       "pentaho/config": basePathCommonUI + "pentaho/config",
@@ -139,7 +140,7 @@
 
       "pentaho/context": {
         server: {
-          url: "@{CONTEXT_PATH}"
+          url: "pentaho/"
         }
       },
 

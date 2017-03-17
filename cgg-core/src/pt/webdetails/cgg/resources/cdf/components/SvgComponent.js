@@ -65,8 +65,7 @@ define([
 
     render: function (cdaData, externalChartDefinition) {
       var cd = $.extend({}, this.chartDefinition);
-      console.log(externalChartDefinition.legendPosition);
-
+      
       if (externalChartDefinition) {
         cd = $.extend(externalChartDefinition, cd);
       }

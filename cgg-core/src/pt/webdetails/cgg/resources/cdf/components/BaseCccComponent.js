@@ -62,6 +62,11 @@ define([
         global.pvc = pvc;
       }
 
+      define("cdf/lib/CCC/def",      function() { return def; });
+      define("cdf/lib/CCC/cdo",      function() { return ccc.cdo; });
+      define("cdf/lib/CCC/pvc",      function() { return pvc; });
+      define("cdf/lib/CCC/protovis", function() { return pv;  });
+
       // Sync def/pvc log, taking older ccc versions into account.
       if (def.setDebug) def.setDebug(cgg.debug);
       else if (pvc.setDebug) pvc.setDebug(cgg.debug);
@@ -83,21 +88,13 @@ define([
     },
 
     render: function (cdaData) {
-      console.log("BaseCccComponent.render");
       this.preProcessChartDefinition();
 
-      try {
-        this.base(cdaData, {
-          legendPosition: "top"
-        });
-        this.endExec();
-      } catch(e) {
-        this.failExec(e);
-      }
+      BaseCccComponentExt.getExtensionsPromise(this.getCccVisualizationName(), this._vizApiStyles)
+          .then(_.bind(this.base, this, cdaData))
+          .then(_.bind(this.endExec, this), _.bind(this.failExec, this));
 
-      //BaseCccComponentExt.getExtensionsPromise(this.getCccVisualizationName(), this._vizApiStyles)
-      //    .then(_.bind(this.base, this, cdaData))
-      //    .then(_.bind(this.endExec, this), _.bind(this.failExec, this));
+      cgg.run();
     },
 
     preProcessChartDefinition: function () {
@@ -150,7 +147,7 @@ define([
       }
 
       if (this._vizApiStyles && (!cd.colors || (cd.colors && cd.colors.length == 0))) {
-//        cd.colors = BaseCccComponentExt.getColors('default');
+        cd.colors = BaseCccComponentExt.getColors('default');
       }
 
       var ChartType = this.getCccType(this.type);

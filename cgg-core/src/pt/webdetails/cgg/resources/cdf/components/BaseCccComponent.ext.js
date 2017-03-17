@@ -12,12 +12,12 @@
  */
 
 define([
-  //'cdf/PentahoTypeContext',
-  //'pentaho/visual/color/paletteRegistry',
+  '../PentahoTypeContext',
+  'pentaho/visual/color/paletteRegistry',
   'underscore',
   'jquery',
-  '../../es6-promise'
-], function(/*PentahoTypeContext, paletteRegistry, */_, $, Promise){
+  'pentaho/shim/es6-promise'
+], function(PentahoTypeContext, paletteRegistry, _, $, Promise){
 
   /**
    * The Regex to extract the chart type from its ccc visualization type
@@ -27,7 +27,7 @@ define([
    */
   var _reCccName = /^(.*)Chart$/;
 
-  //var _context = PentahoTypeContext.getInstance();
+  var _context = PentahoTypeContext.getInstance();
 
   /**
    * List of viz types to exclude from the Viz Api chart defaults
@@ -138,15 +138,14 @@ define([
    * @returns {Promise} A Promise with the Visualization Type Extensions when it is resolved
    */
   var getExtensionsPromise = function (name, applyVizApiStyles) {
-    return Promise.resolve(null); /*
      if (!!applyVizApiStyles) {
-     return _context.getAsync('pentaho/ccc/visual/' + name).then(function (View) {
-     return $.extend({}, View.type.extensionEffective);
-     });
+       return _context.getAsync('pentaho/ccc/visual/' + name).then(function (View) {
+         return $.extend({}, View.type.extensionEffective);
+       });
      } else {
-     // no external extensions
-     return Promise.resolve(null);
-     }*/
+       // no external extensions
+       return Promise.resolve(null);
+     }
   }
 
   /**
@@ -156,7 +155,8 @@ define([
    * @returns {Array} The Array with the registered colors
    */
   var getColors = function (type) {
-    return paletteRegistry.get('cdf_' + (type ? type : 'default')).colors;
+    //return paletteRegistry.get('cdf_' + (type ? type : 'default')).colors;
+    return paletteRegistry.get('palette 1').colors;
   }
 
   return {
