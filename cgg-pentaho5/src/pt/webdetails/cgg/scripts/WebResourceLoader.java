@@ -28,6 +28,8 @@ import java.net.URLConnection;
 import java.net.URLEncoder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class WebResourceLoader implements ScriptResourceLoader {
   private static final Log logger = LogFactory.getLog( WebResourceLoader.class );
@@ -64,24 +66,26 @@ public class WebResourceLoader implements ScriptResourceLoader {
     try {
       String url = script;
 
-      if ( this.userName != null ) {
-        url = url + ( url.contains( "?" ) ? "&" : "?" )
-          + URL_PARAM_USER + "=" + URLEncoder.encode( this.userName, StandardCharsets.UTF_8.name() );
+      // e.g. "http://my-server:8080/pentaho/"
+      String serverURL = PentahoSystem.getApplicationContext().getFullyQualifiedServerURL();
+      // e.g. "/pentaho/"
+      String contextPath = new URL( serverURL ).getPath();
+      // e.g. "http://my-server:8080"
+      String baseURL = serverURL.substring( 0, serverURL.length() - contextPath.length() );
+
+      String regex = "^(.[^\\?]*)\\?plugin=\\&name=plugin\\/(.[^\\/]*)(.*)$";
+      Matcher m = Pattern.compile( regex ).matcher( script );
+      if ( m.matches() ) {
+        url = m.group( 1 ).replace( "${CONTEXT_PATH}", baseURL + contextPath )
+            + "?plugin=" + m.group( 2 )
+            + "&name=" + m.group( 3 ).substring( 1, m.group( 3 ).length() );
+      } else if ( url.startsWith( "/" ) ) {
+        url = baseURL + url;
       }
 
-      // Paths already contain contextPath.
-      // e.g. "/pentaho/foo/bar"
-      if ( url.startsWith( "/" ) ) {
-        // e.g. "http://my-server:8080/pentaho/"
-        String serverURL = PentahoSystem.getApplicationContext().getFullyQualifiedServerURL();
-
-        // e.g. "/pentaho/"
-        String contextPath = new URL( serverURL ).getPath();
-
-        // e.g. "http://my-server:8080"
-        String baseURL = serverURL.substring( 0, serverURL.length() - contextPath.length() );
-
-        url = baseURL + url;
+      if ( this.userName != null ) {
+        url = url + ( url.contains( "?" ) ? "&" : "?" )
+            + URL_PARAM_USER + "=" + URLEncoder.encode( this.userName, StandardCharsets.UTF_8.name() );
       }
 
       URLConnection connection = new URL( url ).openConnection();

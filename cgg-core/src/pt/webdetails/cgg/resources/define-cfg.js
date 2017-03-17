@@ -140,7 +140,7 @@
 
       "pentaho/context": {
         server: {
-          url: "pentaho/"
+          url: "${CONTEXT_PATH}"
         }
       },
 
