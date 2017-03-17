@@ -135,6 +135,7 @@
     packages: [],
     config: {
       "pentaho/service": {
+        "cdf/components/vizApi.conf": "pentaho.config.spec.IRuleSet", 
         "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
       },
 
