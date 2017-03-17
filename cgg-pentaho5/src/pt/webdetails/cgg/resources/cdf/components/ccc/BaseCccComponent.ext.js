@@ -12,7 +12,7 @@
  */
 
 define([
-  '../PentahoTypeContext',
+  'cdf/PentahoTypeContext',
   'pentaho/visual/color/paletteRegistry',
   'underscore',
   'jquery',
@@ -155,8 +155,7 @@ define([
    * @returns {Array} The Array with the registered colors
    */
   var getColors = function (type) {
-    //return paletteRegistry.get('cdf_' + (type ? type : 'default')).colors;
-    return paletteRegistry.get('palette 1').colors;
+    return paletteRegistry.get('cdf_' + (type ? type : 'default')).colors;
   }
 
   return {

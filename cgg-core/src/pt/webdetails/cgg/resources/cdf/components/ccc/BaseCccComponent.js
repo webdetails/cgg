@@ -1,5 +1,5 @@
 /*!
- * Copyright 2002 - 2013 Webdetails, a Pentaho company.  All rights reserved.
+ * Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -13,10 +13,11 @@
 define([
   'cgg',
   'util',
-  '../dash',
+  '../../dash',
   './SvgComponent',
-  './BaseCccComponent.ext'
-], function (cgg, util, dash, SvgComponent, BaseCccComponentExt) {
+  './BaseCccComponent.ext',
+  'underscore'
+], function (cgg, util, dash, SvgComponent, BaseCccComponentExt, _) {
 
   var BaseCccComponent = SvgComponent.extend({
     chart: null,
@@ -30,12 +31,10 @@ define([
      * @returns {String|undefined} The Viz Type name if it is a valid visualization, undefined otherwise
      */
     getCccVisualizationName: function () {
-      console.log("getCccVisualizationName -> " + this.type);
       if (!this._cccVizName && this.type) {
         var cccTypeName = def.qualNameOf(this.getCccType(this.type)).name;
         this._cccVizName = BaseCccComponentExt.getVizDigestedName(cccTypeName, this.chartDefinition);
       }
-      console.log("getCccVisualizationName = " + this._cccVizName);
       return this._cccVizName;
     },
 
