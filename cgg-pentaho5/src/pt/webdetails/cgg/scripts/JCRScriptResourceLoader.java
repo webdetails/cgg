@@ -43,9 +43,7 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
       return new InputStreamReader( getContextResource( s ), CharsetHelper.getEncoding() );
     } catch ( ScriptResourceNotFoundException e ) {
       throw e;
-    } catch ( NullPointerException e ) {
-      throw e;
-    }
+    } 
   }
 
   @Override
