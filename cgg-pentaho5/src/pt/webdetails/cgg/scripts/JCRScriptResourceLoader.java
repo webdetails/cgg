@@ -39,7 +39,11 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
 
   @Override
   public Reader getContextLibraryScript( String s ) throws IOException, ScriptResourceNotFoundException {
-    return new InputStreamReader( getContextResource( s ), CharsetHelper.getEncoding() );
+    try {
+      return new InputStreamReader( getContextResource( s ), CharsetHelper.getEncoding() );
+    } catch ( ScriptResourceNotFoundException e ) {
+      throw e;
+    } 
   }
 
   @Override
@@ -50,7 +54,10 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
   @Override
   public InputStream getContextResource( String s ) throws IOException, ScriptResourceNotFoundException {
     if ( ( basePath != null && basePath.startsWith( "/system" ) )
-      || s.startsWith( "/system" ) ) {
+      || s.startsWith( "/system" )  ) {
+      throw new ScriptResourceNotFoundException( s );
+    } else if ( ( basePath != null && basePath.startsWith( "/plugin" ) )
+        || s.startsWith( "/plugin" )  ) {
       throw new ScriptResourceNotFoundException( s );
     }
     UserContentRepositoryAccess repositoryAccess = new UserContentRepositoryAccess( PentahoSessionHolder.getSession(),

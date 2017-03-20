@@ -22,7 +22,7 @@ define([
     // Force these to load,
     //  so that they can register their
     //  Component Classes or Class Handlers
-    './components/BaseCccComponent',
+    './components/ccc/BaseCccComponent',
     './components/ProtovisComponent'
 ], function(util, cgg, Base, $, Dashboards, BaseComponent, UnmanagedComponent) {
 

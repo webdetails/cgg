@@ -13,6 +13,8 @@
 
 package pt.webdetails.cgg.scripts;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import pt.webdetails.cpf.repository.pentaho.SystemPluginResourceAccess;
 import pt.webdetails.cpf.utils.CharsetHelper;
 
@@ -57,6 +59,17 @@ public class SystemFolderScriptResourceLoader implements ScriptResourceLoader {
         fullPath = basePath + "/" + s;
       }
       return resourceAccess.getFileInputStream( fullPath );
+    } else if ( basePath != null && basePath.startsWith( "/plugin" ) || s.startsWith( "/plugin" ) ) {
+      // get the plugin id first
+      String[] sections = s.split( "/" );
+
+      SystemPluginResourceAccess resourceAccess = new SystemPluginResourceAccess( sections[2], "" );
+
+      //remove the name of the plugin
+      sections = (String[]) ArrayUtils.remove( sections, 1 );
+      sections = (String[]) ArrayUtils.remove( sections, 1 );
+
+      return resourceAccess.getFileInputStream( StringUtils.join( sections, "/" ) );
     } else {
       throw new ScriptResourceNotFoundException( s );
     }
