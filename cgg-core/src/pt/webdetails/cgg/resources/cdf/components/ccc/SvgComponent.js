@@ -70,6 +70,11 @@ define([
         cd = $.extend(externalChartDefinition, cd);
       }
 
+      // special case for this array which $.extend does not smash
+      if (cd.baseAxisLabelDesiredAngles && cd.baseAxisLabelDesiredAngles.length == 0) {
+        cd.baseAxisLabelDesiredAngles = undefined;
+      }
+
       this.width = +cd.width || +this.width;
       this.height = +cd.height || +this.height;
       this.noChartBg = cgg.params.get('noChartBg') === 'true';
