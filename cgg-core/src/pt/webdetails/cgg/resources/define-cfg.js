@@ -138,7 +138,7 @@
     packages: [],
     config: {
       "pentaho/service": {
-        "pentaho/visual/config/vizApi.views.conf": "pentaho.config.spec.IRuleSet",
+        "pentaho/visual/config/vizApi.conf": "pentaho.config.spec.IRuleSet",
         "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
       },
 
