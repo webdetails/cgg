@@ -35,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import pt.webdetails.cpf.utils.CharsetHelper;
 import pt.webdetails.cpf.utils.MimeTypes;
 
@@ -46,6 +47,7 @@ public class CggService {
 
   private static final String CCC_VERSION_PARAM = "cccVersion";
   private static final String CCC_MULTICHART_OVERFLOW_PARAM = "multiChartOverflow";
+  private static final String CONTEXT_PATH_PARAM = "CONTEXT_PATH";
 
   private static final Log logger = LogFactory.getLog( CggService.class );
   private OutputStream outputStream;
@@ -136,6 +138,11 @@ public class CggService {
       if ( !StringUtils.isEmpty( cccLibVersion ) ) {
         params.put( CCC_VERSION_PARAM, cccLibVersion );
       }
+
+      // e.g. "http://my-server:8080/pentaho/"
+      String serverURL = PentahoSystem.getApplicationContext().getFullyQualifiedServerURL();
+      // e.g. "/pentaho/"
+      params.put( CONTEXT_PATH_PARAM, new URL( serverURL ).getPath() );
 
       //Ensure script begins with /
       if ( !script.startsWith( "/" ) ) {
