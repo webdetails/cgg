@@ -133,12 +133,14 @@
       "pentaho/shim": basePathCommonUI + "pentaho/shim",
       "pentaho/type": basePathCommonUI + "pentaho/type",
       "pentaho/ccc": basePathCommonUI + "pentaho/ccc",
-      "cdf/PentahoTypeContext": basePathCdf + "PentahoTypeContext"
+      "cdf/PentahoTypeContext": basePathCdf + "PentahoTypeContext",
+      "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf"
     },
     packages: [],
     config: {
       "pentaho/service": {
         "pentaho/visual/config/vizApi.conf": "pentaho.config.spec.IRuleSet",
+        "cdf/components/ccc/config/cdf.vizApi.conf": "pentaho.config.spec.IRuleSet",
         "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
       },
 
