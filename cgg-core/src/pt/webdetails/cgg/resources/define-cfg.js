@@ -13,53 +13,122 @@
 (function () {
   "use strict";
 
-  /*global lib:true, load:true */
+  /*global lib:true, load:true, params: true */
+
+  var basePathCommonUI = "/plugin/common-ui/resources/web/";
+  var basePathCdf = "/plugin/pentaho-cdf/js/";
 
   require.config({
     loadSync: loadSync,
 
-    packages: ['cgg', 'cdf', 'ccc'],
-
-    config: {
-      'cgg/main': {
-        useGlobal: true
-      }
-    },
+    packages: [
+      "cgg",
+      "cdf",
+      "ccc",
+      {"name": "pentaho/visual/base", "main": "model"}
+    ],
 
     // module -> path
-    //paths: {
-    //'ccc': 'cdf/lib/CCC/loader'
-    //},
+    paths: {
+      "underscore": basePathCommonUI + "underscore/underscore",
+      "json": basePathCommonUI + "util/require-json/json",
+      "text": basePathCommonUI + "util/require-text/text",
+      "pentaho": basePathCommonUI + "pentaho",
+      "cdf/PentahoTypeContext": basePathCdf + "PentahoTypeContext",
+      "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf"
+    },
 
     // module -> module
     map: {
-      '*': {
-        'cdf/lib/CCC': 'ccc',
-        'jquery': 'jquery-shim'
+      "*": {
+        "jquery": "jquery-shim",
+        "pentaho/type/theme": "pentaho/type/themes/crystal",
+        "pentaho/visual/models/theme": "pentaho/visual/models/themes/crystal"
       },
 
       // Within `cdf`, `jquery` is provided by the small jquery shim.
-      'cdf': {
-        'cdf/util': 'util' // use shared util module
+      "cdf": {
+        "cdf/util": "util" // use shared util module
       },
 
-      'cgg': {
-        'cgg/util': 'util' // use shared util module
+      "cgg": {
+        "cgg/util": "util" // use shared util module
       }
     },
 
     shim: {
-      'Base': {exports: 'Base'}
+      "Base": {exports: "Base"}
+    },
+
+    config: {
+      "cgg/main": {
+        useGlobal: true
+      },
+
+      "pentaho/service": {
+        "pentaho/visual/config/vizApi.conf": "pentaho.config.spec.IRuleSet",
+        "cdf/components/ccc/config/cdf.vizApi.conf": "pentaho.config.spec.IRuleSet",
+        "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
+      },
+
+      "pentaho/context": {
+        server: {
+          url: params.get("CONTEXT_PATH")
+        }
+      },
+
+      // setup requirejs text! plugin to use a mock xhr object that delegates to
+      // the global `readResource`.
+      // Used at least by json!, and the latter by pentaho/i18n!.
+      "text": {
+        useXhr: function () {
+          return true;
+        },
+        env: "xhr",
+        createXhr: function () {
+          // A XHR mock
+          return {
+            _headers: {},
+
+            open: function (method, url, async) {
+              this._url = url;
+            },
+
+            setRequestHeader: function (name, value) {
+              this._headers[name] = value;
+            },
+
+            send: function (body) {
+              this.responseText = null;
+              this.readyState = 0;
+              this.status = 500;
+
+              this.responseText = readResource(this._url);
+              this.readyState = 4;
+              this.status = 200;
+
+              if (this.onreadystatechange) {
+                this.onreadystatechange({});
+              }
+            }
+          };
+        }
+      }
     }
   });
 
   // A dummy css plugin.
   // Supports dummy loading of tipsy.css, by jquery.tipsy.js.
-  define('css', [], {
+  define("css", [], {
     load: function (cssId, req, load) {
       load(null);
     }
   });
+
+  define("cdf/lib/CCC/def",      ["ccc!"], function(ccc) { return ccc.def; });
+  define("cdf/lib/CCC/cdo",      ["ccc!"], function(ccc) { return ccc.cdo; });
+  define("cdf/lib/CCC/pvc",      ["ccc!"], function(ccc) { return ccc.pvc; });
+  define("cdf/lib/CCC/protovis", ["ccc!"], function(ccc) { return ccc.pv;  });
 
   var _load = load;
   var _lib = lib;
@@ -107,96 +176,4 @@
 
     return loader(path);
   }
-}());
-
-(function () {
-  // Additional AMD configuration
-
-  var basePathCommonUI = "/plugin/common-ui/resources/web/";
-  var basePathCdf = "/plugin/pentaho-cdf/js/";
-
-  var requireCfg = {
-    paths: {
-      "underscore": basePathCommonUI + "underscore/underscore",
-      "json": basePathCommonUI + "util/require-json/json",
-      "text": basePathCommonUI + "util/require-text/text",
-      "pentaho": basePathCommonUI + "pentaho",
-      "pentaho/data": basePathCommonUI + "pentaho/data",
-      "pentaho/visual": basePathCommonUI + "pentaho/visual",
-      "pentaho/config": basePathCommonUI + "pentaho/config",
-      "pentaho/context": basePathCommonUI + "pentaho/context",
-      "pentaho/debug": basePathCommonUI + "pentaho/debug",
-      "pentaho/service": basePathCommonUI + "pentaho/service",
-      "pentaho/i18n": basePathCommonUI + "pentaho/i18n",
-      "pentaho/lang": basePathCommonUI + "pentaho/lang",
-      "pentaho/util": basePathCommonUI + "pentaho/util",
-      "pentaho/shim": basePathCommonUI + "pentaho/shim",
-      "pentaho/type": basePathCommonUI + "pentaho/type",
-      "pentaho/ccc": basePathCommonUI + "pentaho/ccc",
-      "cdf/PentahoTypeContext": basePathCdf + "PentahoTypeContext",
-      "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf"
-    },
-    packages: [],
-    config: {
-      "pentaho/service": {
-        "pentaho/visual/config/vizApi.conf": "pentaho.config.spec.IRuleSet",
-        "cdf/components/ccc/config/cdf.vizApi.conf": "pentaho.config.spec.IRuleSet",
-        "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
-      },
-
-      "pentaho/context": {
-        server: {
-          url: "${CONTEXT_PATH}"
-        }
-      },
-
-      // setup requirejs text! plugin to use a mock xhr object that delegates to
-      // the global `readResource`.
-      // Used at least by json!, and the latter by pentaho/i18n!.
-      "text": {
-        useXhr: function () {
-          return true;
-        },
-        env: "xhr",
-        createXhr: function () {
-          // A XHR mock
-          return {
-            _headers: {},
-
-            open: function (method, url, async) {
-              this._url = url;
-            },
-
-            setRequestHeader: function (name, value) {
-              this._headers[name] = value;
-            },
-
-            send: function (body) {
-              this.responseText = null;
-              this.readyState = 0;
-              this.status = 500;
-
-              this.responseText = readResource(this._url);
-              this.readyState = 4;
-              this.status = 200;
-
-              if (this.onreadystatechange) {
-                this.onreadystatechange({});
-              }
-            }
-          };
-        }
-      }
-    },
-    map: {
-      "*": {
-        "pentaho/type/theme": "pentaho/type/themes/crystal",
-        "pentaho/visual/models/theme": "pentaho/visual/models/themes/crystal"
-      }
-    }
-  };
-
-  requireCfg.packages.push({"name": "pentaho/visual/base", "main": "model"});
-
-  require.config(requireCfg);
 }());

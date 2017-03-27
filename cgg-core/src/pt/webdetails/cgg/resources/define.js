@@ -360,10 +360,7 @@
     // Configs - Map of "absolute module id" to configuration value.
     var configs = config.config;
     for(amid in configs) {
-      var cfg = configs[amid];
-      if(cfg != null) {
-        this.get(amid, true).configConfig(cfg);
-      }
+      this.get(amid, true).configConfig(configs[amid]);
     }
 
     DEBUG && print("END configure");
@@ -407,6 +404,19 @@
   };
 
   Module.prototype.configConfig = function(config) {
+    var configOld = this.config.config;
+
+    if(config != null &&
+        configOld != null &&
+        typeof config === "object" &&
+        typeof configOld === "object") {
+      // Merge top-level
+      for(var p in config) {
+        configOld[p] = config[p];
+      }
+      return;
+    }
+
     this.config.config = config;
   };
 

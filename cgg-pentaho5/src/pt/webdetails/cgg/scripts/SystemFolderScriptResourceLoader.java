@@ -50,29 +50,45 @@ public class SystemFolderScriptResourceLoader implements ScriptResourceLoader {
 
   @Override
   public InputStream getContextResource( String s ) throws IOException, ScriptResourceNotFoundException {
-    if ( ( basePath != null && basePath.startsWith( "/system" ) )
-      || s.startsWith( "/system" ) ) {
-      SystemPluginResourceAccess resourceAccess = new SystemPluginResourceAccess( "cgg", "" );
 
-      String fullPath = s;
-      if ( basePath != null && !s.startsWith( "/system" ) ) {
-        fullPath = basePath + "/" + s;
+    String fullPath = s;
+
+    Boolean isSystem = s.startsWith( "/system" );
+    Boolean isPlugin = s.startsWith( "/plugin" );
+
+    if ( !isSystem && !isPlugin ) {
+      // However, if basePath is system, it is prepended to whatever path is given,
+      // to make it a system path.
+      if ( basePath == null || !basePath.startsWith( "/system" ) ) {
+        throw new ScriptResourceNotFoundException( s );
       }
-      return resourceAccess.getFileInputStream( fullPath );
-    } else if ( basePath != null && basePath.startsWith( "/plugin" ) || s.startsWith( "/plugin" ) ) {
-      // get the plugin id first
-      String[] sections = s.split( "/" );
 
-      SystemPluginResourceAccess resourceAccess = new SystemPluginResourceAccess( sections[2], "" );
-
-      //remove the name of the plugin
-      sections = (String[]) ArrayUtils.remove( sections, 1 );
-      sections = (String[]) ArrayUtils.remove( sections, 1 );
-
-      return resourceAccess.getFileInputStream( StringUtils.join( sections, "/" ) );
-    } else {
-      throw new ScriptResourceNotFoundException( s );
+      fullPath = basePath + "/" + s;
+      isSystem = true;
     }
+
+    String plugin;
+
+    if ( isSystem ) {
+      plugin = "cgg";
+    } else {
+      // => isPlugin
+
+      // Get the plugin id first
+      String[] sections = fullPath.split( "/" );
+
+      plugin = sections[2];
+
+      // Remove the name of the plugin
+      sections = (String[]) ArrayUtils.remove( sections, 1 );
+      sections = (String[]) ArrayUtils.remove( sections, 1 );
+
+      fullPath = StringUtils.join( sections, "/" );
+    }
+
+    SystemPluginResourceAccess resourceAccess = new SystemPluginResourceAccess( plugin, "" );
+
+    return resourceAccess.getFileInputStream( fullPath );
   }
 
   public InputStream getWebResource( String script ) throws IOException, ScriptResourceNotFoundException {

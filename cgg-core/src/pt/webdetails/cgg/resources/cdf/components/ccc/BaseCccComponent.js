@@ -61,11 +61,6 @@ define([
         global.pvc = pvc;
       }
 
-      define("cdf/lib/CCC/def",      function() { return def; });
-      define("cdf/lib/CCC/cdo",      function() { return ccc.cdo; });
-      define("cdf/lib/CCC/pvc",      function() { return pvc; });
-      define("cdf/lib/CCC/protovis", function() { return pv;  });
-
       // Sync def/pvc log, taking older ccc versions into account.
       if (def.setDebug) def.setDebug(cgg.debug);
       else if (pvc.setDebug) pvc.setDebug(cgg.debug);
