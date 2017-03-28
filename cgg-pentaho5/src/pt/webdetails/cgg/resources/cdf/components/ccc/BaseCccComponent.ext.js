@@ -18,7 +18,7 @@ define([
   'jquery',
   'pentaho/shim/es6-promise'
 ], function(PentahoTypeContext, paletteRegistry, _, $, Promise){
-
+  
   /**
    * The Regex to extract the chart type from its ccc visualization type
    *
@@ -35,7 +35,7 @@ define([
    * @type {String[]}
    * @private
    */
-  var _chartTypesBlackList = ['bullet', 'treemap', 'waterfall'];
+  var _chartTypesBlackList = ['bullet'];
 
   /**
    * List of viz types to exclude from the form verification
@@ -43,7 +43,7 @@ define([
    * @type {String[]}
    * @private
    */
-  var _chartFormExceptions = ['boxplot', 'heatGrid', 'line', 'areaStacked', 'scatter', 'pie', 'pointAbstract', 'sunburst'];
+  var _chartFormExceptions = ['waterfall', 'treemap', 'boxplot', 'heatGrid', 'line', 'areaStacked', 'scatter', 'pie', 'pointAbstract', 'sunburst'];
 
   /**
    * List of viz types to do not apply normalized to the viz type name
@@ -82,9 +82,6 @@ define([
 
     // transformations
     switch (fullName) {
-      case 'boxplot':
-        fullName = 'categoricalContinuousAbstract';
-        break;
       case 'metricDot':
         fullName = 'bubble';
         break;
@@ -121,7 +118,7 @@ define([
 
     return fullName;
   };
-                             
+
   /**
    * Checks if the Viz Api Visualization type extensions should be applied, based on its name, if the compat
    * version is 3 and if it is a valid visualization type
@@ -132,7 +129,7 @@ define([
   var isValidVisualization = function (name) {
     return !!name && name != '' && !_.contains(_chartTypesBlackList, name);
   };
-             
+
   /**
    * Gets a Promise with the Visualization Type Extensions ready to be used when it is resolved
    *
@@ -141,14 +138,14 @@ define([
    * @returns {Promise} A Promise with the Visualization Type Extensions when it is resolved
    */
   var getExtensionsPromise = function (name, applyVizApiStyles) {
-     if (!!applyVizApiStyles) {
-       return _context.getAsync('pentaho/ccc/visual/' + name).then(function (View) {
-         return $.extend({}, View.type.extensionEffective);
-       });
-     } else {
-       // no external extensions
-       return Promise.resolve(null);
-     }
+    if (!!applyVizApiStyles) {
+     return _context.getAsync('pentaho/ccc/visual/' + name).then(function (View) {
+       return $.extend({}, View.type.extensionEffective);
+     });
+    } else {
+     // no external extensions
+     return Promise.resolve(null);
+    }
   };
 
   /**
