@@ -140,8 +140,13 @@ define([
             "  MultiChartOverflow: " + (cd.multiChartOverflow || ''));
       }
 
-      if (this._vizApiStyles && (!cd.colors || (cd.colors && cd.colors.length == 0))) {
-        cd.colors = BaseCccComponentExt.getColors('default');
+      // Handle overrides
+      if (this._vizApiStyles) {
+        // apply colors if that is intended
+        if (!cd.colors || (cd.colors && cd.colors.length == 0)) {
+          cd.continuousColorAxisColors = BaseCccComponentExt.getColors("blue-3");
+          cd.discreteColorAxisColors = BaseCccComponentExt.getColors();
+        }
       }
 
       var ChartType = this.getCccType(this.type);

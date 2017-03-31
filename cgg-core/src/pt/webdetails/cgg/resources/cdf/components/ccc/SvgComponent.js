@@ -66,9 +66,17 @@ define([
     render: function (cdaData, externalChartDefinition) {
       var cd = $.extend({}, this.chartDefinition);
 
-      // special case for this array which $.extend does not smash
-      if (cd.baseAxisLabelDesiredAngles && cd.baseAxisLabelDesiredAngles.length == 0) {
-        cd.baseAxisLabelDesiredAngles = undefined;
+      // Handle cleanups
+      if (this._vizApiStyles) {
+        // special case for this array which $.extend does not smash
+        if (cd.baseAxisLabelDesiredAngles && cd.baseAxisLabelDesiredAngles.length == 0) {
+          cd.baseAxisLabelDesiredAngles = undefined;
+        }
+
+        // special case for this array which $.extend does not smash
+        if (cd.orthoAxisLabelDesiredAngles && cd.orthoAxisLabelDesiredAngles.length == 0) {
+          cd.orthoAxisLabelDesiredAngles = undefined;
+        }
       }
 
       if (externalChartDefinition) {
