@@ -69,7 +69,7 @@
 
     <!-- runtime dependencies -->
     <dependency org="org.mozilla"                 name="rhino"         rev="1.7R5"                                     conf='runtime->default' />
-    <dependency org="org.apache.xmlgraphics"      name="fop"           rev="0.94"                                      conf='runtime->default' transitive="false"/>
+    <dependency org="org.apache.xmlgraphics"      name="fop"           rev="2.2"                                      conf='runtime->default' transitive="false"/>
     <dependency org="pentaho"                     name="cpf-core"      rev="${dependency.pentaho-cpf-plugin.revision}" conf='runtime->default' transitive="false" changing="true"/>
     <dependency org="pentaho"                     name="cpf-pentaho"   rev="${dependency.pentaho-cpf-plugin.revision}" conf='runtime->default' transitive="false" changing="true"/>
     <dependency org="pentaho"                     name="cgg-core"      rev="${project.revision}"                       conf='runtime->default' transitive="false" changing="true"/>
