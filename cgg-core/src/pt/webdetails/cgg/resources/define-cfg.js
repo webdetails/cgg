@@ -71,9 +71,9 @@
         "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
       },
 
-      "pentaho/context": {
+      "pentaho/environment": {
         server: {
-          url: params.get("CONTEXT_PATH")
+          root: params.get("CONTEXT_PATH")
         }
       },
 

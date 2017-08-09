@@ -7,7 +7,7 @@ lib/
 js-lib
 runtime-lib/
 .idea
-.iml
+*.iml
 override.properties
 cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/def.js
 cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/protovis.js
