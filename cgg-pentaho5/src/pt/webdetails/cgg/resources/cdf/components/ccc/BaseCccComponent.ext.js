@@ -162,10 +162,18 @@ define([
    * @returns {Array} The Array with the registered colors
    */
   var getColors = function (colorPalette) {
+    var palette;
     if(!colorPalette) {
-      colorPalette = "pentaho/visual/color/palettes/nominalPrimary";
+      palette = _context.instances.getByType("pentaho/visual/color/palette", {
+        filter: function(onePalette) {
+          return onePalette.level === "nominal";
+        }
+      });
+    } else {
+      palette = _context.instances.getById(colorPalette);
     }
-    return _context.instances.getById(colorPalette).colors.toArray().map(function(color) { return color.value; });
+
+    return palette.colors.toArray().map(function(color) { return color.value; });
   };
 
   return {
