@@ -12,13 +12,12 @@
  */
 
 define([
-  'cdf/PentahoTypeContext',
-  'pentaho/visual/color/paletteRegistry',
-  'underscore',
-  'jquery',
+  '../../PentahoTypeContext',
+  'amd!../../lib/underscore',
+  '../../lib/jquery',
   'pentaho/shim/es6-promise'
-], function(PentahoTypeContext, paletteRegistry, _, $, Promise){
-  
+], function(PentahoTypeContext, _, $, Promise){
+
   /**
    * The Regex to extract the chart type from its ccc visualization type
    *
@@ -147,12 +146,12 @@ define([
    */
   var getExtensionsPromise = function (name, applyVizApiStyles) {
     if (!!applyVizApiStyles) {
-     return _context.getAsync('pentaho/ccc/visual/' + name).then(function (View) {
-       return $.extend({}, View.type.extensionEffective);
-     });
+      return _context.getAsync('pentaho/ccc/visual/' + name).then(function (View) {
+        return $.extend({}, View.type.extensionEffective);
+      });
     } else {
-     // no external extensions
-     return Promise.resolve(null);
+      // no external extensions
+      return Promise.resolve(null);
     }
   };
 
@@ -163,7 +162,10 @@ define([
    * @returns {Array} The Array with the registered colors
    */
   var getColors = function (colorPalette) {
-    return paletteRegistry.get(colorPalette ? colorPalette : undefined).colors;
+    if(!colorPalette) {
+      colorPalette = "pentaho/visual/color/palettes/nominalPrimary";
+    }
+    return _context.instances.getById(colorPalette).colors.toArray().map(function(color) { return color.value; });
   };
 
   return {
@@ -174,4 +176,3 @@ define([
   }
 
 });
-
