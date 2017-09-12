@@ -17,6 +17,7 @@
 
   var basePathCommonUI = "/plugin/common-ui/resources/web/";
   var basePathCdf = "/plugin/pentaho-cdf/js/";
+  var basePathKarafConfig = "/plugin/karaf/config/web-client/";
 
   require.config({
     loadSync: loadSync,
@@ -35,7 +36,7 @@
       "pentaho": basePathCommonUI + "pentaho",
       "cdf/_context": basePathCdf + "_context",
       "cdf/PentahoTypeContext": basePathCdf + "PentahoTypeContext",
-      "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf"
+      "pentaho/config/deploy": basePathKarafConfig
     },
 
     // module -> module
@@ -65,10 +66,11 @@
         useGlobal: true
       },
 
-      "pentaho/service": {
-        "pentaho/visual/config/vizApi.conf": "pentaho.config.spec.IRuleSet",
-        "cdf/components/ccc/config/cdf.vizApi.conf": "pentaho.config.spec.IRuleSet",
-        "pentaho/config/impl/instanceOfAmdLoadedService": "pentaho.config.IService"
+      "pentaho/instanceInfo": {
+        "pentaho/visual/config/vizApi.conf": {type: "pentaho.config.spec.IRuleSet"},
+        "cdf/components/ccc/config/cdf.vizApi.conf": {type: "pentaho.config.spec.IRuleSet"},
+        "pentaho/config/deploy/config": {type: "pentaho.config.spec.IRuleSet"},
+        "pentaho/config/impl/instanceOfAmdLoadedService": {type: "pentaho.config.IService"}
       },
 
       "pentaho/environment": {
