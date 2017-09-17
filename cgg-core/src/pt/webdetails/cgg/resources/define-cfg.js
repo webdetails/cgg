@@ -11,16 +11,18 @@
  * the license for the specific language governing your rights and limitations.
  */
 (function () {
+
   "use strict";
 
-  /*global lib:true, load:true, params: true */
+  /* globals params, readResource */
 
   var basePathCommonUI = "/plugin/common-ui/resources/web/";
   var basePathCdf = "/plugin/pentaho-cdf/js/";
   var basePathKarafConfig = "/system/karaf/config/web-client/";
 
   require.config({
-    loadSync: loadSync,
+
+    baseUrl: "",
 
     packages: [
       "cgg",
@@ -162,7 +164,9 @@
 
       "pentaho/environment": {
         server: {
-          root: params.get("CONTEXT_PATH")
+          // requirejs does not like to mixin java objects
+          // convert to JS string
+          root:  ("" + params.get("CONTEXT_PATH"))
         }
       },
 
@@ -209,8 +213,8 @@
   // A dummy css plugin.
   // Supports dummy loading of tipsy.css, by jquery.tipsy.js.
   define("css", [], {
-    load: function (cssId, req, load) {
-      load(null);
+    load: function (cssId, req, onload) {
+        onload(null);
     }
   });
 
@@ -218,51 +222,4 @@
   define("cdf/lib/CCC/cdo",      ["ccc!"], function(ccc) { return ccc.cdo; });
   define("cdf/lib/CCC/pvc",      ["ccc!"], function(ccc) { return ccc.pvc; });
   define("cdf/lib/CCC/protovis", ["ccc!"], function(ccc) { return ccc.pv;  });
-
-  var _load = load;
-  var _lib = lib;
-
-  var _reLoad = /(^\.)|(^\/)|(^[a-z]+:)/i;
-
-  // Synchronous load function for cgg.
-  // ./      -> load
-  // ../     -> load
-  // foo:    -> load
-  // res:    -> load(remaining_path)
-  // lib:    -> lib(remaining_path)
-  // plugin: -> ???(remaining_path) ~ pentaho system...
-  // /       -> load
-  // //      -> load
-  // else    -> lib
-  function loadSync(path) {
-    var loader;
-    var m = _reLoad.exec(path);
-    if (m) {
-      loader = _load;
-      // `load` is relative to the printing CGG script's folder.
-      var protocol = m[3];
-      if (!protocol) {
-        loader = _load;
-      } else {
-        switch (protocol.toLowerCase()) {
-          case 'res:':
-            loader = _load;
-            path = path.substr(protocol.length);
-            break;
-
-          case 'lib:':
-            loader = _lib;
-            path = path.substr(protocol.length);
-            break;
-
-          default:
-            loader = _load;
-        }
-      }
-    } else {
-      loader = _lib;
-    }
-
-    return loader(path);
-  }
 }());

@@ -12,9 +12,9 @@
  */
 
 define([
-  '../../PentahoTypeContext',
-  'amd!../../lib/underscore',
-  '../../lib/jquery',
+  'cdf/PentahoTypeContext',
+  'underscore',
+  'jquery',
   'pentaho/shim/es6-promise'
 ], function(PentahoTypeContext, _, $, Promise){
 

@@ -17,9 +17,8 @@
  */
 
 define([
-    './util',
-    './timer'
-], function(util, timer) {
+    './util'
+], function(util) {
 
     var SVG_IMPL = 'batik';
     var A_slice = Array.prototype.slice;
@@ -43,8 +42,8 @@ define([
         var win = {
             navigate:     loadPath,
             navigator:    {userAgent: ""},
-            setTimeout:   timer.setTimeout,
-            clearTimeout: timer.clearTimeout,
+            setTimeout:   util.global.setTimeout,
+            clearTimeout: util.global.clearTimeout,
             Element:      Element,
             CSSStyleDeclaration: CSSStyleDeclaration,
             get window()   { return this;    }, // !
@@ -438,6 +437,6 @@ define([
         window:   createWindow,
         console:  createConsole,
         loadSvg:  loadSvg,
-        run:      timer.run
+        run:      util.global.__timer__run__
     };
 });

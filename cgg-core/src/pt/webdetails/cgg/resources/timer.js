@@ -1,5 +1,5 @@
 /*!
- * Copyright 2002 - 2015 Webdetails, a Pentaho company.  All rights reserved.
+ * Copyright 2002 - 2017 Webdetails, a Pentaho company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -10,11 +10,11 @@
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
  * the license for the specific language governing your rights and limitations.
  */
-define([
-    './util'
-], function(util) {
+(function() {
     // Synchronous, simulated-time, setTimeout implementation.
     // Based in https://html.spec.whatwg.org/multipage/webappapis.html#timers
+
+    var global = this;
 
     var taskQueue = [],
         tasksById = {},
@@ -22,11 +22,9 @@ define([
         time = 0,
         level = 0;
 
-    return {
-        run: run,
-        setTimeout:   setTimeout,
-        clearTimeout: clearTimeout
-    };
+    global.__timer__run__ = run;
+    global.setTimeout = setTimeout;
+    global.clearTimeout = clearTimeout;
 
     // -------------
 
@@ -55,7 +53,7 @@ define([
 
         if(level > 5 && efDelay < 4) efDelay = 4;
 
-        var args = util.slice.call(arguments, 2),
+        var args = Array.prototype.slice.call(arguments, 2),
             fun  = typeof funOrCode === "function"
                 ? funOrCode
                 : buildEvaluator(String(funOrCode)),
@@ -81,14 +79,18 @@ define([
     function clearTimeout(handle) {
         if(handle == null) handle = 0;
 
-        var task = util.getOwn.call(activeTasksById, handle);
+        var task = O_getOwn.call(activeTasksById, handle);
         if(task) task.cleared = true;
+    }
+
+    function O_getOwn(p, dv) {
+        return Object.prototype.hasOwnProperty.call(this, p) ? this[p] : dv;
     }
 
     // -------------
 
     function tasksComparer(ta, tb) {
-        return util.compare(ta.at, tb.at) || util.compare(ta.id, tb.id);
+        return compare(ta.at, tb.at) || compare(ta.id, tb.id);
     }
 
     function buildEvaluator(__code__) {
@@ -97,4 +99,8 @@ define([
             (function() { eval(__code__); })();
         };
     }
-});
+
+    function compare(a, b) {
+        return a === b ? 0 : a > b ? 1 : -1;
+    }
+}());
