@@ -16,9 +16,9 @@
 
     /* globals lib, load, require */
 
-    lib('timer.js');
+    lib("timer.js");
 
-    load("/plugin/common-ui/resources/web/require.js");
+    lib("require.js");
 
     var global = this;
 
