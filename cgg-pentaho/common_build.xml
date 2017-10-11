@@ -1,12 +1,12 @@
 <!--===========================================================================
     COMMON_BUILD.XML (version 20081010)
     
-    This is the build file that is used across all Pentaho projects that are
+    This is the build file that is used across all Hitachi Vantara projects that are
     using the "new and improved" ivy builds.
     
     This file contains the default implementation of the ant tasks to 
     perform a build. This file should be included by the build.xml file 
-    for each project in the Pentaho system. That build file should 
+    for each project in the Hitachi Vantara system. That build file should 
     redefine any task that is defined in this file IF AND ONLY IF the 
     functioning of that task should be different for that specific
     project.
