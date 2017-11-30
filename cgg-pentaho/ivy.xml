@@ -37,13 +37,13 @@
     <!--  pentaho dependencies -->
 	<!-- pentaho-bi-platform-plugin-services pulls js-1.7R1 -->
 	  <dependency org="pentaho" name="mondrian"                            rev="3.5.4"                              changing="true" transitive="false"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-plugin-services" rev="${dependency.bi-platform.revision}" changing="true" transitive="false"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-plugin-actions"  rev="${dependency.bi-platform.revision}" changing="true" transitive="false"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-web-servlet"     rev="${dependency.bi-platform.revision}" changing="true" transitive="false"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-engine-core"     rev="${dependency.bi-platform.revision}" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-api"             rev="${dependency.bi-platform.revision}" transitive="false" />
-    <dependency org="pentaho" name="pentaho-bi-platform-util"            rev="${dependency.bi-platform.revision}" changing="true" transitive="false"/>
-    <dependency org="pentaho" name="pentaho-bi-platform-engine-services" rev="${dependency.bi-platform.revision}" transitive="false" />
+    <dependency org="pentaho" name="pentaho-bi-platform-plugin-services" rev="${platform.version}" changing="true" transitive="false"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-plugin-actions"  rev="${platform.version}" changing="true" transitive="false"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-web-servlet"     rev="${platform.version}" changing="true" transitive="false"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-engine-core"     rev="${platform.version}" transitive="false" />
+    <dependency org="pentaho" name="pentaho-bi-platform-api"             rev="${platform.version}" transitive="false" />
+    <dependency org="pentaho" name="pentaho-bi-platform-util"            rev="${platform.version}" changing="true" transitive="false"/>
+    <dependency org="pentaho" name="pentaho-bi-platform-engine-services" rev="${platform.version}" transitive="false" />
 
 
     <!-- runtime dependencies -->
@@ -74,8 +74,8 @@
     <dependency org="crimson"                     name="crimson"               rev="1.1.3"                                     conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.avalon.framework" name="avalon-framework-api"  rev="4.3.1"                                     conf='runtime->default' transitive="false"/>
     <dependency org="org.apache.avalon.framework" name="avalon-framework-impl" rev="4.3.1"                                     conf='runtime->default' transitive="false"/>
-    <dependency org="pentaho"                     name="cpf-core"              rev="${dependency.pentaho-cpf-plugin.revision}" conf='runtime->default' changing="true" transitive="false" />
-    <dependency org="pentaho"                     name="cpf-pentaho"           rev="${dependency.pentaho-cpf-plugin.revision}" conf='runtime->default' changing="true" transitive="false" />
+    <dependency org="pentaho"                     name="cpf-core"              rev="${pentaho-cpf-plugin.version}" conf='runtime->default' changing="true" transitive="false" />
+    <dependency org="pentaho"                     name="cpf-pentaho"           rev="${pentaho-cpf-plugin.version}" conf='runtime->default' changing="true" transitive="false" />
     <dependency org="pentaho"                     name="cgg-core"              rev="${project.revision}"                       conf='runtime->default' changing="true" transitive="false" />
 
     <!--  codegen dependencies -->
