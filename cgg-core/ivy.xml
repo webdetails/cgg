@@ -57,7 +57,7 @@
         <dependency org="com.google.code.gson"   name="gson"             rev="2.2.2"        conf='default_external->default' />
 
         <!-- js dependencies -->
-        <dependency org="pentaho"                name="ccc"           rev="${dependency.pentaho-ccc-plugin.revision}" transitive="false" changing="true" conf="js->default">
+        <dependency org="pentaho"                name="ccc"           rev="${pentaho-ccc-plugin.version}" transitive="false" changing="true" conf="js->default">
             <artifact name="ccc" type="zip" ext="zip"/>
         </dependency>
 
@@ -67,7 +67,7 @@
         <dependency org="commons-io" name="commons-io" rev="2.4"  conf="test->default"/>
 
         <!-- other plugin dependencies -->
-        <dependency org="pentaho"    name="cpf-core"   rev="${dependency.pentaho-cpf-plugin.revision}" conf="default_internal->default" transitive="false" changing="true" />
+        <dependency org="pentaho"    name="cpf-core"   rev="${pentaho-cpf-plugin.version}" conf="default_internal->default" transitive="false" changing="true" />
 
 	</dependencies>
 </ivy-module>

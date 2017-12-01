@@ -61,17 +61,17 @@
 
     <!--  pentaho dependencies -->
     <!-- pentaho-bi-platform-plugin-services pulls js-1.7R3 -->
-    <dependency org="pentaho" name="mondrian"                          rev="${dependency.mondrian.revision}"     transitive="false" changing="true"/>
-    <dependency org="pentaho" name="pentaho-platform-api"              rev="${dependency.bi-platform.revision}"  transitive="false" changing="true"/>
-    <dependency org="pentaho" name="pentaho-platform-core"             rev="${dependency.bi-platform.revision}"  transitive="false" changing="true"/>
-    <dependency org="pentaho" name="pentaho-platform-repository"       rev="${dependency.bi-platform.revision}"  transitive="false" changing="true"/>
-    <dependency org="pentaho" name="pentaho-platform-extensions"       rev="${dependency.bi-platform.revision}"  transitive="false" changing="true"/>
+    <dependency org="pentaho" name="mondrian"                          rev="${mondrian.version}"     transitive="false" changing="true"/>
+    <dependency org="pentaho" name="pentaho-platform-api"              rev="${platform.version}"  transitive="false" changing="true"/>
+    <dependency org="pentaho" name="pentaho-platform-core"             rev="${platform.version}"  transitive="false" changing="true"/>
+    <dependency org="pentaho" name="pentaho-platform-repository"       rev="${platform.version}"  transitive="false" changing="true"/>
+    <dependency org="pentaho" name="pentaho-platform-extensions"       rev="${platform.version}"  transitive="false" changing="true"/>
 
     <!-- runtime dependencies -->
     <dependency org="org.mozilla"                 name="rhino"         rev="1.7R5"                                     conf='runtime->default' />
     <dependency org="org.apache.xmlgraphics"      name="fop"           rev="2.2"                                      conf='runtime->default' transitive="false"/>
-    <dependency org="pentaho"                     name="cpf-core"      rev="${dependency.pentaho-cpf-plugin.revision}" conf='runtime->default' transitive="false" changing="true"/>
-    <dependency org="pentaho"                     name="cpf-pentaho"   rev="${dependency.pentaho-cpf-plugin.revision}" conf='runtime->default' transitive="false" changing="true"/>
+    <dependency org="pentaho"                     name="cpf-core"      rev="${pentaho-cpf-plugin.version}" conf='runtime->default' transitive="false" changing="true"/>
+    <dependency org="pentaho"                     name="cpf-pentaho"   rev="${pentaho-cpf-plugin.version}" conf='runtime->default' transitive="false" changing="true"/>
     <dependency org="pentaho"                     name="cgg-core"      rev="${project.revision}"                       conf='runtime->default' transitive="false" changing="true"/>
 
     <!--  codegen dependencies -->
