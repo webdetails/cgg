@@ -45,7 +45,9 @@
         <dependency org="org.apache.xmlgraphics" name="batik-util"       rev="${batik.rev}" conf='default_external->default' transitive="false" />
         <dependency org="org.apache.xmlgraphics" name="batik-xml"        rev="${batik.rev}" conf='default_external->default' transitive="false" />
         <dependency org="org.apache.xmlgraphics" name="batik-bridge"     rev="${batik.rev}" conf='default_external->default' transitive="false"/>
-        <dependency org="org.apache.xmlgraphics" name="xmlgraphics-commons" rev="1.5"       conf="default_external->default" transitive="false"/>
+        <dependency org="org.apache.xmlgraphics" name="batik-constants"  rev="${batik.rev}" conf='default_external->default' transitive="false"/>
+        <dependency org="org.apache.xmlgraphics" name="batik-i18n"       rev="${batik.rev}" conf='default_external->default' transitive="false"/>
+        <dependency org="org.apache.xmlgraphics" name="xmlgraphics-commons" rev="2.2"       conf="default_external->default" transitive="false"/>
         <!-- FOP is required by batik-transcoder -->
         <dependency org="org.apache.xmlgraphics" name="fop"              rev="2.2"         conf='default_external->default' transitive="false" />
         <!-- XALAN is required by batik-dom -->
