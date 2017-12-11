@@ -155,9 +155,9 @@
         "pentaho/visual/models/bubble": {base: "pentaho/visual/models/abstract"},
 
         "pentaho/visual/action/base": {base: "pentaho/type/action/base"},
-        "pentaho/visual/action/data": {base: "pentaho/visual/action/base"},
-        "pentaho/visual/action/select": {alias: "select", base: "pentaho/visual/action/data"},
-        "pentaho/visual/action/execute": {alias: "execute", base: "pentaho/visual/action/data"},
+        "pentaho/visual/action/select": {alias: "select", base: "pentaho/visual/action/base"},
+        "pentaho/visual/action/execute": {alias: "execute", base: "pentaho/visual/action/base"},
+        "pentaho/visual/action/update": {base: "pentaho/visual/action/base"},
 
         "pentaho/visual/color/palette": {base: "complex"}
       },
