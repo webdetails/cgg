@@ -9,13 +9,11 @@ runtime-lib/
 .idea
 *.iml
 override.properties
-cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/def.js
-cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/protovis.js
-cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/pvc.js
-cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/cdo.js
-cgg-core/src/pt/webdetails/cgg/resources/ccc/2.0/protovis-compat.js
-!/cgg-core/src/pt/webdetails/cgg/resources/lib/
-cgg-core/cccStub-svg-test.svg
-cgg-core/cccRaw-svg-test.svg
-cgg-core/dial-svg-test.svg
-cgg-core/tags-j2d-test.png
+# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/def.js
+# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/protovis.js
+# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/pvc.js
+# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/cdo.js
+# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/protovis-compat.js
+*-svg-test.svg
+*-j2d-test.png
+target/

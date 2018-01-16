@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.pentaho.ctools</groupId>
+    <artifactId>cgg-assemblies</artifactId>
+    <version>8.1.0.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.pentaho.ctools</groupId>
+  <artifactId>cgg</artifactId>
+  <version>8.1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>CGG Plugin</name>
+
+  <properties>
+    <sequential.build.id>manual-${maven.build.timestamp}</sequential.build.id>
+    <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
+  </properties>
+  <dependencies>
+
+    <dependency>
+      <groupId>org.pentaho.ctools</groupId>
+      <artifactId>cgg-core</artifactId>
+      <version>${pentaho-cgg-plugin.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.pentaho.ctools</groupId>
+      <artifactId>cgg-pentaho</artifactId>
+      <version>${pentaho-cgg-plugin.version}</version>
+      <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>cpf-core</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>cpf-pentaho</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>rhino</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.xmlgraphics</groupId>
+      <artifactId>fop</artifactId>
+    </dependency>
+  </dependencies>
+</project>
