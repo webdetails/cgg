@@ -1462,7 +1462,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           description="Cleans all the files generated from a build with the exception of IVY-downloaded jars (see clean-all)"
           depends="clean-tests, clean-cobertura, clean-sonar, clean-javadoc, clean-dist">
     <delete dir="${classes.dir}"/>
+  	<!--
     <delete dir="${bin.dir}"/>
+    -->
   </target>
 
 
