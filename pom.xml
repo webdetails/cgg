@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.pentaho</groupId>
+    <artifactId>pentaho-ce-jar-parent-pom</artifactId>
+    <version>8.1.0.0-SNAPSHOT</version>
+  </parent>
+  <groupId>org.pentaho.ctools</groupId>
+  <artifactId>cgg-parent</artifactId>
+  <version>8.1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <licenses>
+    <license>
+      <name>Mozilla Public License, Version 2.0</name>
+      <url>http://www.mozilla.org/MPL/2.0/index.txt</url>
+    </license>
+  </licenses>
+  <modules>
+    <module>core</module>
+    <module>pentaho</module>
+    <module>assemblies</module>
+  </modules>
+  <scm>
+    <connection>scm:git:git@github.com:webdetails/${project.artifactId}.git</connection>
+    <developerConnection>scm:git:git@github.com:webdetails/${project.artifactId}.git</developerConnection>
+    <url>scm:git:git@github.com:webdetails/${project.artifactId}.git</url>
+  </scm>
+  <properties>
+    <timestamp>${maven.build.timestamp}</timestamp>
+    <maven.build.timestamp.format>yyyy/MM/dd hh\:mm</maven.build.timestamp.format>
+    <project.stage>master</project.stage>
+
+    <batik.version>1.9.1</batik.version>
+    <cpf.version>8.1.0.0-SNAPSHOT</cpf.version>
+    <platform.version>8.1.0.0-SNAPSHOT</platform.version>
+    <commons-logging.version>1.1.1</commons-logging.version>
+    <commons-lang.version>2.6</commons-lang.version>
+    <xalan.version>2.7.1</xalan.version>
+    <xercesImpl.version>2.9.1</xercesImpl.version>
+    <pentaho-cgg-plugin.version>${project.version}</pentaho-cgg-plugin.version>
+  </properties>
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>rhino</artifactId>
+      <version>1.7R5</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>cpf-core</artifactId>
+      <version>${cpf.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>cpf-pentaho</artifactId>
+      <version>${cpf.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>${commons-logging.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>${commons-lang.version}</version>
+      <scope>provided</scope>
+    </dependency>
+       <dependency>
+         <!-- fop depends on org.apache.xmlgraphics batik 1.9 and will break during resolve whenever it is allowed to get transitive -->
+        <groupId>org.apache.xmlgraphics</groupId>
+        <artifactId>fop</artifactId>
+        <version>2.2</version>
+          <exclusions>
+            <exclusion>
+              <groupId>*</groupId>
+              <artifactId>*</artifactId>
+            </exclusion>
+          </exclusions>
+      </dependency>
+    </dependencies>
+</dependencyManagement>
+</project>
