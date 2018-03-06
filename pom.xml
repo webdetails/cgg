@@ -33,7 +33,7 @@
     <project.stage>master</project.stage>
 
     <batik.version>1.9.1</batik.version>
-    <cpf.version>8.1.0.0-SNAPSHOT</cpf.version>
+    <pentaho-cpf-plugin.version>8.1.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
     <platform.version>8.1.0.0-SNAPSHOT</platform.version>
     <commons-logging.version>1.1.1</commons-logging.version>
     <commons-lang.version>2.6</commons-lang.version>
@@ -58,7 +58,7 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>cpf-core</artifactId>
-      <version>${cpf.version}</version>
+      <version>${pentaho-cpf-plugin.version}</version>
       <exclusions>
         <exclusion>
           <artifactId>*</artifactId>
@@ -69,7 +69,7 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>cpf-pentaho</artifactId>
-      <version>${cpf.version}</version>
+      <version>${pentaho-cpf-plugin.version}</version>
       <exclusions>
         <exclusion>
           <artifactId>*</artifactId>

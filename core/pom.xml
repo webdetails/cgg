@@ -18,8 +18,8 @@
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy/MM/dd hh\:mm</maven.build.timestamp.format>
 
-    <ccc.version>8.1.0.0-SNAPSHOT</ccc.version>
-    <cpf-core.version>8.1.0.0-SNAPSHOT</cpf-core.version>
+    <pentaho-ccc-plugin.version>8.1.0.0-SNAPSHOT</pentaho-ccc-plugin.version>
+    <pentaho-cpf-plugin.version>8.1.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
 
     <commons-lang3.version>3.0.1</commons-lang3.version>
   </properties>
@@ -39,7 +39,7 @@
    <dependency>
       <groupId>pentaho</groupId>
       <artifactId>cpf-core</artifactId>
-      <version>${cpf-core.version}</version>
+      <version>${pentaho-cpf-plugin.version}</version>
    </dependency>
 
    <!-- default_external -->
@@ -209,9 +209,9 @@
    </dependency>
 
     <dependency>
-      <groupId>pentaho</groupId>
+      <groupId>org.pentaho.ctools</groupId>
       <artifactId>ccc</artifactId>
-      <version>${ccc.version}</version>
+      <version>${pentaho-ccc-plugin.version}</version>
       <type>zip</type>
       <exclusions>
         <exclusion>
