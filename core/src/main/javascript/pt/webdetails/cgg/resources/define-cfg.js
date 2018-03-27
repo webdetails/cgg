@@ -99,8 +99,6 @@
         "pentaho/type/list": {alias: "list", base: "value"},
         "pentaho/type/element": {alias: "element", base: "value"},
         "pentaho/type/complex": {alias: "complex", base: "element"},
-        "pentaho/type/application": {alias: "application", base: "complex"},
-        "pentaho/type/model": {alias: "model", base: "complex"},
         "pentaho/type/simple": {alias: "simple", base: "element"},
         "pentaho/type/number": {alias: "number", base: "simple"},
         "pentaho/type/string": {alias: "string", base: "simple"},
@@ -127,8 +125,13 @@
         "pentaho/data/filter/isLessOrEqual": {alias: "<=", base: "pentaho/data/filter/property"},
         "pentaho/data/filter/isLike": {alias: "like", base: "pentaho/data/filter/property"},
 
-        "pentaho/visual/base/model": {base: "model"},
+        "pentaho/visual/base/model": {base: "complex"},
         "pentaho/visual/base/view": { base: "complex"},
+
+        "pentaho/visual/role/adaptation/strategy": {base: "complex"},
+        "pentaho/visual/role/adaptation/identityStrategy": {base: "pentaho/visual/role/adaptation/strategy"},
+        "pentaho/visual/role/adaptation/tupleStrategy": {base: "pentaho/visual/role/adaptation/strategy"},
+        "pentaho/visual/role/adaptation/entityWithTimeIntervalKeyStrategy": {base: "pentaho/visual/role/adaptation/strategy"},
 
         "pentaho/visual/models/abstract": {base: "pentaho/visual/base/model"},
         "pentaho/visual/samples/calc/model": {base: "pentaho/visual/base/model"},
