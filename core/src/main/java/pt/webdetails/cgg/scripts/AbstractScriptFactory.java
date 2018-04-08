@@ -57,21 +57,21 @@ public abstract class AbstractScriptFactory implements ScriptFactory {
     return getResourceLoader().getWebResource( script );
   }
 
-  public Script createScript( final String path, final String scriptType )
+  public Script createScript( final String path, final String scriptType, final boolean isMultiPage )
     throws ScriptResourceNotFoundException, ScriptExecuteException {
     ScriptType st = ScriptType.valueOf( scriptType.toUpperCase( Locale.ENGLISH ) );
-    return createScript( path, st );
+    return createScript( path, st, isMultiPage );
   }
 
-  public Script createScript( final String path, final ScriptType scriptType )
+  public Script createScript( final String path, final ScriptType scriptType, final boolean isMultiPage )
     throws ScriptResourceNotFoundException, ScriptExecuteException {
     final Script script;
     switch ( scriptType ) {
       case SVG:
-        script = new SvgScript( path );
+        script = new SvgScript( path, isMultiPage );
         break;
       case J2D:
-        script = new Java2DScript( path );
+        script = new Java2DScript( path, isMultiPage );
         break;
       default:
         throw new IllegalArgumentException();

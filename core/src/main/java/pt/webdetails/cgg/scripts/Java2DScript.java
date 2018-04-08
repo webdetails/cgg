@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -33,9 +33,9 @@ public class Java2DScript extends BaseScript
   private long width;
   private long height;
 
-  public Java2DScript(final String source)
+  public Java2DScript(final String source, final boolean isMultiPage)
   {
-    super(source);
+    super(source, isMultiPage);
   }
 
   public void configure(final int width,

@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -31,13 +31,15 @@ public abstract class BaseScript implements Script
 {
   private static final Log logger = LogFactory.getLog(BaseScript.class);
   private String source;
+  private boolean isMultiPage;
   private BaseScope scope;
   private DataSourceFactory dataSourceFactory;
   private ScriptFactory scriptFactory;
 
-  protected BaseScript(final String source)
+  protected BaseScript(final String source, final boolean isMultiPage)
   {
     this.source = source;
+    this.isMultiPage = isMultiPage;
   }
 
   public void configure(final int width,
@@ -63,6 +65,11 @@ public abstract class BaseScript implements Script
   public BaseScope getScope()
   {
     return scope;
+  }
+
+  public boolean getIsMultiPage()
+  {
+    return isMultiPage;
   }
 
   private void initializeObjects(final DataSourceFactory dataSourceFactory) throws ScriptExecuteException

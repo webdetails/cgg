@@ -47,11 +47,11 @@ public class CggService {
 
   private static final String CCC_VERSION_PARAM = "cccVersion";
   private static final String CCC_MULTICHART_OVERFLOW_PARAM = "multiChartOverflow";
+  private static final String CCC_MULTICHART_OVERFLOW_PAGE = "page";
   private static final String CONTEXT_PATH_PARAM = "CONTEXT_PATH";
 
   private static final Log logger = LogFactory.getLog( CggService.class );
   private OutputStream outputStream;
-  private static final String MIME_SVG = "image/svg+xml";
 
 
   public void setOutputStream( final OutputStream stream ) {
@@ -76,10 +76,12 @@ public class CggService {
     @DefaultValue( "svg" ) @QueryParam( "type" ) String type,
     @DefaultValue( "png" ) @QueryParam( "outputType" ) String outputType,
     @DefaultValue( "" ) @QueryParam( "attachmentName" ) String attachmentName,
+    @DefaultValue( "grow" ) @QueryParam( "multiChartOverflow" ) String multiChartOverflow,
     @DefaultValue( "0" ) @QueryParam( "width" ) Long width,
     @DefaultValue( "0" ) @QueryParam( "height" ) Long height,
     @Context HttpServletResponse servletResponse, @Context HttpServletRequest servletRequest ) {
-    this.draw( script, type, outputType, attachmentName, null, null,
+
+    this.draw( script, type, outputType, attachmentName, multiChartOverflow, null,
       width, height, servletResponse, servletRequest, null );
   }
 
@@ -87,13 +89,13 @@ public class CggService {
                     String type,
                     String outputType,
                     String attachmentName,
-                    String multiChartOverflow,
                     Long width,
                     Long height,
                     HttpServletResponse servletResponse,
                     HttpServletRequest servletRequest ) {
-    this.draw( script, type, outputType, attachmentName, multiChartOverflow, null, width, height,
-      servletResponse, servletRequest, null );
+
+    this.draw( script, type, outputType, attachmentName, null, null,
+        width, height, servletResponse, servletRequest, null );
   }
 
   public void draw( String script,
@@ -132,8 +134,11 @@ public class CggService {
       }
 
       if ( !StringUtils.isEmpty( multiChartOverflow ) ) {
+        multiChartOverflow = multiChartOverflow.toLowerCase();
         params.put( CCC_MULTICHART_OVERFLOW_PARAM, multiChartOverflow );
       }
+
+      final boolean isMultiPage = CCC_MULTICHART_OVERFLOW_PAGE.equals( multiChartOverflow );
 
       if ( !StringUtils.isEmpty( cccLibVersion ) ) {
         params.put( CCC_VERSION_PARAM, cccLibVersion );
@@ -144,11 +149,10 @@ public class CggService {
       // e.g. "/pentaho/"
       params.put( CONTEXT_PATH_PARAM, new URL( serverURL ).getPath() );
 
-      //Ensure script begins with /
+      // Ensure script begins with /
       if ( !script.startsWith( "/" ) ) {
         script = "/" + script;
       }
-
 
       String replacedScript = StringUtils.replace( script, "\\", "/" );
       File f = new File( replacedScript );
@@ -174,6 +178,8 @@ public class CggService {
             if ( !attachmentName.isEmpty() ) {
               String fileName = attachmentName.indexOf( "." ) > 0 ? attachmentName : attachmentName + "." + outputType;
               setResponseHeaders( MimeTypes.getMimeType( fileName ), fileName, servletResponse );
+            } else if ( isMultiPage ) {
+              setResponseHeaders( "multipart/mixed", servletResponse );
             } else {
               setResponseHeaders( mimeType, servletResponse );
             }
@@ -181,7 +187,7 @@ public class CggService {
         }
       );
 
-      cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), params );
+      cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), isMultiPage, params );
 
     } catch ( Exception ex ) {
       logger.fatal( "Error while rendering script", ex );

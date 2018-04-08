@@ -44,13 +44,25 @@ public abstract class AbstractCgg
                                 final int width,
                                 final int height,
                                 final Map<String, Object> params)
-      throws ScriptCreationException, FileNotFoundException, ScriptExecuteException
+          throws ScriptCreationException, FileNotFoundException, ScriptExecuteException
+  {
+    draw( scriptFile, scriptType, outputType, width, height, false, params );
+  }
+
+  public synchronized void draw(final String scriptFile,
+                                final String scriptType,
+                                final String outputType,
+                                final int width,
+                                final int height,
+                                final boolean isMultiPage,
+                                final Map<String, Object> params)
+          throws ScriptCreationException, FileNotFoundException, ScriptExecuteException
   {
     try
     {
       final ScriptFactory factory = getScriptFactory();
       factory.enterContext();
-      final Script script = factory.createScript(scriptFile, scriptType);
+      final Script script = factory.createScript(scriptFile, scriptType, isMultiPage);
       script.configure(width, height, getDataSourceFactory(), factory);
       final Chart chart = script.execute(params);
       produceOutput(chart, outputType);

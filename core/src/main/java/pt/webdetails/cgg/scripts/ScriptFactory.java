@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -27,7 +27,7 @@ public interface ScriptFactory extends ScriptResourceLoader
 
   public void exitContext();
 
-  public Script createScript(String path, String scriptType)
+  public Script createScript( String path, String scriptType, boolean isMultiPage )
       throws ScriptResourceNotFoundException, IOException, ScriptCreationException, ScriptExecuteException;
 
   public void clearCachedScopes();
