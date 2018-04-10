@@ -1,6 +1,6 @@
 /*!
 * Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
-* 
+*
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
 * this file except in compliance with the license. If you need a copy of the license,
@@ -36,8 +36,8 @@ import pt.webdetails.cgg.ScriptExecuteException;
 
 public class SvgScript extends BaseScript {
 
-  public SvgScript( final String source ) {
-    super( source );
+  public SvgScript( final String source, final boolean isMultiPage ) {
+    super( source, isMultiPage );
   }
 
   @Override
@@ -52,7 +52,7 @@ public class SvgScript extends BaseScript {
       executeScript( params );
       final NativeJavaObject nativeDoc = (NativeJavaObject) ScriptableObject.getProperty( getScope(), "_document" );
       final Document unwrappedDoc = (Document) nativeDoc.unwrap();
-      return new SVGChart( unwrappedDoc );
+      return new SVGChart( unwrappedDoc, getIsMultiPage() );
     } catch ( Exception e ) {
       throw new ScriptExecuteException( e );
     } finally {

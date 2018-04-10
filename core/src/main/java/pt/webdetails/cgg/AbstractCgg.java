@@ -1,16 +1,15 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
-*
-* This software was developed by Webdetails and is provided under the terms
-* of the Mozilla Public License, Version 2.0, or any later version. You may not use
-* this file except in compliance with the license. If you need a copy of the license,
-* please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
-*
-* Software distributed under the Mozilla Public License is distributed on an "AS IS"
-* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
-* the license for the specific language governing your rights and limitations.
-*/
-
+ * Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ *
+ * This software was developed by Webdetails and is provided under the terms
+ * of the Mozilla Public License, Version 2.0, or any later version. You may not use
+ * this file except in compliance with the license. If you need a copy of the license,
+ * please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
+ *
+ * Software distributed under the Mozilla Public License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
+ * the license for the specific language governing your rights and limitations.
+ */
 package pt.webdetails.cgg;
 
 import java.io.FileNotFoundException;
@@ -25,102 +24,91 @@ import pt.webdetails.cgg.scripts.DefaultScriptFactory;
 import pt.webdetails.cgg.scripts.Script;
 import pt.webdetails.cgg.scripts.ScriptFactory;
 
-public abstract class AbstractCgg
-{
+public abstract class AbstractCgg {
   private ScriptFactory scriptFactory;
   private OutputFactory outputFactory;
   private DataSourceFactory dataSourceFactory;
 
-  public AbstractCgg()
-  {
+  public AbstractCgg() {
     this.scriptFactory = new DefaultScriptFactory();
     this.outputFactory = DefaultOutputFactory.getInstance();
     this.dataSourceFactory = DefaultDataSourceFactory.getInstance();
   }
 
-  public synchronized void draw(final String scriptFile,
-                                final String scriptType,
-                                final String outputType,
-                                final int width,
-                                final int height,
-                                final Map<String, Object> params)
-      throws ScriptCreationException, FileNotFoundException, ScriptExecuteException
-  {
-    try
-    {
+  public synchronized void draw( final String scriptFile,
+                                 final String scriptType,
+                                 final String outputType,
+                                 final int width,
+                                 final int height,
+                                 final Map<String, Object> params )
+      throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
+    draw( scriptFile, scriptType, outputType, width, height, false, params );
+  }
+
+  public synchronized void draw( final String scriptFile,
+                                 final String scriptType,
+                                 final String outputType,
+                                 final int width,
+                                 final int height,
+                                 final boolean isMultiPage,
+                                 final Map<String, Object> params )
+      throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
+    try {
       final ScriptFactory factory = getScriptFactory();
       factory.enterContext();
-      final Script script = factory.createScript(scriptFile, scriptType);
-      script.configure(width, height, getDataSourceFactory(), factory);
-      final Chart chart = script.execute(params);
-      produceOutput(chart, outputType);
+      final Script script = factory.createScript( scriptFile, scriptType, isMultiPage );
+      script.configure( width, height, getDataSourceFactory(), factory );
+      final Chart chart = script.execute( params );
+      produceOutput( chart, outputType );
       factory.exitContext();
-    }
-    catch (ScriptCreationException e)
-    {
+    } catch ( ScriptCreationException e ) {
       throw e;
-    }
-    catch (FileNotFoundException se)
-    {
+    } catch ( FileNotFoundException se ) {
       throw se;
-    }
-    catch (ScriptExecuteException se)
-    {
+    } catch ( ScriptExecuteException se ) {
       throw se;
-    }
-    catch (Exception e)
-    {
-      throw new ScriptExecuteException(e);
+    } catch ( Exception e ) {
+      throw new ScriptExecuteException( e );
     }
   }
 
-  public ScriptFactory getScriptFactory()
-  {
+  public ScriptFactory getScriptFactory() {
     return scriptFactory;
   }
 
-  public void setScriptFactory(final ScriptFactory scriptFactory)
-  {
-    if (scriptFactory == null)
-    {
+  public void setScriptFactory( final ScriptFactory scriptFactory ) {
+    if ( scriptFactory == null ) {
       throw new NullPointerException();
     }
     this.scriptFactory = scriptFactory;
   }
 
-  public OutputFactory getOutputFactory()
-  {
+  public OutputFactory getOutputFactory() {
     return outputFactory;
   }
 
-  public void setOutputFactory(final OutputFactory outputFactory)
-  {
-    if (outputFactory == null)
-    {
+  public void setOutputFactory( final OutputFactory outputFactory ) {
+    if ( outputFactory == null ) {
       throw new NullPointerException();
     }
     this.outputFactory = outputFactory;
   }
 
-  public DataSourceFactory getDataSourceFactory()
-  {
+  public DataSourceFactory getDataSourceFactory() {
     return dataSourceFactory;
   }
 
-  public void setDataSourceFactory(final DataSourceFactory dataSourceFactory)
-  {
-    if (dataSourceFactory == null)
-    {
+  public void setDataSourceFactory( final DataSourceFactory dataSourceFactory ) {
+    if ( dataSourceFactory == null ) {
       throw new NullPointerException();
     }
     this.dataSourceFactory = dataSourceFactory;
   }
 
-  protected abstract void produceOutput(final Chart chart,
-                                        final String requestedOutputHandler) throws IOException, ScriptExecuteException;
+  protected abstract void produceOutput( final Chart chart,
+                                         final String requestedOutputHandler ) throws IOException, ScriptExecuteException;
 
-  public synchronized void refresh()
-  {
+  public synchronized void refresh() {
     getScriptFactory().clearCachedScopes();
   }
 }

@@ -9,11 +9,11 @@ runtime-lib/
 .idea
 *.iml
 override.properties
-# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/def.js
-# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/protovis.js
-# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/pvc.js
-# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/cdo.js
-# core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/protovis-compat.js
+core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/def.js
+core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/protovis.js
+core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/pvc.js
+core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/cdo.js
+core/src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0/protovis-compat.js
 *-svg-test.svg
 *-j2d-test.png
 target/

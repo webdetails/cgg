@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -32,7 +32,7 @@ public abstract class AbstractScriptFactory implements ScriptFactory {
 
   protected AbstractScriptFactory() {
     contextFactory = new ContextFactory();
-    contexts = new HashMap<ScriptType, BaseScope>();
+    contexts = new HashMap<>();
   }
 
   protected abstract ScriptResourceLoader getResourceLoader();
@@ -57,21 +57,21 @@ public abstract class AbstractScriptFactory implements ScriptFactory {
     return getResourceLoader().getWebResource( script );
   }
 
-  public Script createScript( final String path, final String scriptType )
-    throws ScriptResourceNotFoundException, ScriptExecuteException {
+  public Script createScript( final String path, final String scriptType, final boolean isMultiPage )
+    throws ScriptExecuteException {
     ScriptType st = ScriptType.valueOf( scriptType.toUpperCase( Locale.ENGLISH ) );
-    return createScript( path, st );
+    return createScript( path, st, isMultiPage );
   }
 
-  public Script createScript( final String path, final ScriptType scriptType )
-    throws ScriptResourceNotFoundException, ScriptExecuteException {
+  public Script createScript( final String path, final ScriptType scriptType, final boolean isMultiPage )
+    throws ScriptExecuteException {
     final Script script;
     switch ( scriptType ) {
       case SVG:
-        script = new SvgScript( path );
+        script = new SvgScript( path, isMultiPage );
         break;
       case J2D:
-        script = new Java2DScript( path );
+        script = new Java2DScript( path, isMultiPage );
         break;
       default:
         throw new IllegalArgumentException();
