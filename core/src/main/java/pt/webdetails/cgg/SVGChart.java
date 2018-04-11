@@ -10,11 +10,8 @@
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
  * the license for the specific language governing your rights and limitations.
  */
-
 package pt.webdetails.cgg;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,12 +26,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import pt.webdetails.cgg.output.PngOutputHandler;
+import pt.webdetails.cgg.output.SVGOutputHandler;
 import pt.webdetails.cpf.utils.CharsetHelper;
 
-import javax.imageio.ImageIO;
+import javax.activation.DataHandler;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
 
 /**
  * @author pdpi
@@ -104,14 +104,17 @@ public class SVGChart implements Chart {
           renderPageAsPng( pageOutputStream, svg );
         }
 
-        rootElem.removeChild( pageNodes[pageIndex] );
-
-        BufferedImage image = ImageIO.read( new ByteArrayInputStream( pageOutputStream.toByteArray() ) );
-
         MimeBodyPart bodyPart = new MimeBodyPart();
-        bodyPart.setContent( image, isAsSvg ? "image/svg+xml" : "image/png" );
+
+        String mime_type = isAsSvg ? SVGOutputHandler.MIME_SVG : PngOutputHandler.MIME_PNG;
+
+        bodyPart.setDataHandler( new DataHandler( new ByteArrayDataSource( pageOutputStream.toByteArray(), mime_type ) ) );
+        bodyPart.setHeader( "Content-Type", mime_type );
+        bodyPart.setFileName( "export_" + pageIndex + ( isAsSvg ? ".svg" : ".png" ) );
 
         multiPart.addBodyPart( bodyPart );
+
+        rootElem.removeChild( pageNodes[pageIndex] );
       }
 
       multiPart.writeTo( out );

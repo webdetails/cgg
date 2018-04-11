@@ -179,6 +179,8 @@ public class CggService {
               String fileName = attachmentName.indexOf( "." ) > 0 ? attachmentName : attachmentName + "." + outputType;
               setResponseHeaders( MimeTypes.getMimeType( fileName ), fileName, servletResponse );
             } else if ( isMultiPage ) {
+              // setting the Content-Type with the mime type "multipart/mixed" isn't enough,
+              // the client also needs the boundary property to be able to split the parts
               setResponseHeaders( "multipart/mixed", servletResponse );
             } else {
               setResponseHeaders( mimeType, servletResponse );
