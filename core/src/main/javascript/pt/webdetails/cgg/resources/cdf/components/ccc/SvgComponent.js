@@ -67,7 +67,7 @@ define([
       var cd = $.extend({}, this.chartDefinition);
 
       // Handle cleanups
-      if (this._vizApiStyles) {
+      if (this.__applyVizApiStyles) {
         // special case for this array which $.extend does not smash
         if (cd.baseAxisLabelDesiredAngles && cd.baseAxisLabelDesiredAngles.length == 0) {
           cd.baseAxisLabelDesiredAngles = undefined;

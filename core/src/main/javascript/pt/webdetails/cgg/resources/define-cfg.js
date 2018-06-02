@@ -40,8 +40,6 @@
       "json": basePathCommonUI + "util/require-json/json",
       "text": basePathCommonUI + "util/require-text/text",
       "pentaho": basePathCommonUI + "pentaho",
-      "cdf/_context": basePathCdf + "_context",
-      "cdf/PentahoTypeContext": basePathCdf + "PentahoTypeContext",
       "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf",
       "pentaho/config/deploy": basePathKarafConfig
     },
