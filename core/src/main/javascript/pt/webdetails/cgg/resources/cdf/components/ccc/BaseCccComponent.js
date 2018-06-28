@@ -19,23 +19,41 @@ define([
   'underscore'
 ], function (cgg, util, dash, SvgComponent, BaseCccComponentExt, _) {
 
+  // ATTENTION: A part of this code is synchronized with:
+  // cdf/core-js/src/main/javascript/cdf/components/ccc/BaseCccComponent.js
+
+  var DEFAULT_QUANTITATIVE_PALETTE_ID = "pentaho/visual/color/palettes/quantitativeBlue3";
+
   var BaseCccComponent = SvgComponent.extend({
     chart: null,
     ccc: null,
 
-    _cccVizName: null,
+    /**
+     * The identifier of the matching visualization view type, if any; `null` if none.
+     *
+     * When uninitialized, the value is `undefined`.
+     *
+     * @type {?string|undefined}
+     * @private
+     */
+    __cccVizViewId: undefined,
 
     /**
-     * Gets and assigns the Ccc Visualization name
+     * Gets the identifier of the matching visualization view type, if any.
      *
-     * @returns {String|undefined} The Viz Type name if it is a valid visualization, undefined otherwise
+     * @returns {?string} The visualization type identifier, `null` otherwise.
+     * @private
      */
-    getCccVisualizationName: function () {
-      if (!this._cccVizName && this.type) {
-        var cccTypeName = def.qualNameOf(this.getCccType(this.type)).name;
-        this._cccVizName = BaseCccComponentExt.getVizDigestedName(cccTypeName, this.chartDefinition);
+    __getMatchingVizViewId: function () {
+
+      if (this.__cccVizViewId === undefined) {
+
+        // NOTE: This part is different from CDF getCccType...
+        var cccClassName = def.qualNameOf(this.getCccType(this.type)).name;
+        this.__cccVizViewId = BaseCccComponentExt.getMatchingVizViewId(cccClassName, this.chartDefinition);
       }
-      return this._cccVizName;
+
+      return this.__cccVizViewId;
     },
 
     init: function () {
@@ -82,16 +100,32 @@ define([
     },
 
     render: function (cdaData) {
+
       this.preProcessChartDefinition();
 
-      BaseCccComponentExt.getExtensionsPromise(this.getCccVisualizationName(), this._vizApiStyles)
+      var extensionsPromise = this.__applyVizApiStyles
+          ? BaseCccComponentExt.getExtensionsPromise(this.__getMatchingVizViewId())
+          : Promise.resolve(null);
+
+      extensionsPromise
           .then(_.bind(this.base, this, cdaData))
           .then(_.bind(this.endExec, this), _.bind(this.failExec, this));
 
       cgg.run();
     },
 
+    /**
+     * Gets a value that indicates if the Viz. API styles should be applied.
+     *
+     * @type {boolean}
+     * @private
+     */
+    __applyVizApiStyles: false,
+
     preProcessChartDefinition: function () {
+
+      var applyVizApiStyles = false;
+
       var cd = this.chartDefinition;
       if (cd) {
         var pvc = this.ccc.pvc;
@@ -116,17 +150,19 @@ define([
           for (var p in cd) {
             var m = /^barLine(.*)$/.exec(p);
             if (m) {
-              p2 = 'secondAxis' + (m[1] || '');
+              var p2 = 'secondAxis' + (m[1] || '');
               cd[p2] = cd[p];
               delete cd[p];
             }
           }
         } else if (compatVersion >= 3) {
-          this._vizApiStyles = BaseCccComponentExt.isValidVisualization(this.getCccVisualizationName());
+          applyVizApiStyles = this.__getMatchingVizViewId() !== null;
         }
 
         cd.extensionPoints = dash.propertiesArrayToObject(cd.extensionPoints);
       }
+
+      this.__applyVizApiStyles = applyVizApiStyles;
     },
 
     renderCore: function (cdaData, cd) {
@@ -141,14 +177,14 @@ define([
       }
 
       // Handle overrides
-      if (this._vizApiStyles) {
+      if (this.__applyVizApiStyles) {
         // apply colors if that is intended
-        if (!cd.colors || (cd.colors && cd.colors.length == 0)) {
-          if (!cd.continuousColorAxisColors
-              || (cd.continuousColorAxisColors && cd.continuousColorAxisColors.length == 0))  {
-            cd.continuousColorAxisColors =
-                BaseCccComponentExt.getColors("pentaho/visual/color/palettes/quantitativeBlue3");
+        if (isArrayEmpty(cd.colors)) {
+
+          if (isArrayEmpty(cd.continuousColorAxisColors))  {
+            cd.continuousColorAxisColors = BaseCccComponentExt.getColors(DEFAULT_QUANTITATIVE_PALETTE_ID);
           }
+
           cd.discreteColorAxisColors = BaseCccComponentExt.getColors();
         }
       }
@@ -190,5 +226,9 @@ define([
   });
 
   return BaseCccComponent;
+
+  function isArrayEmpty(values) {
+    return values == null || values.length === 0;
+  }
 });
 
