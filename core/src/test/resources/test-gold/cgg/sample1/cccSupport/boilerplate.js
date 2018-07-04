@@ -18,14 +18,23 @@ var pvc = ccc.pvc;
 var pv  = ccc.pv;
 
 function boilerplate(type,settings, data, dataSettings) {
+
   var elem = document.createElement('g');
   elem.setAttribute('id','canvas');
+
   document.lastChild.appendChild(elem);
+
   settings.canvas = 'canvas';
   settings.showTooltips = false;
+
   var chart = new pvc[type](settings);
   chart.setData(data, dataSettings);
   chart.render();
+
+  var error = chart.getLastRenderError();
+  if(error) {
+    throw error;
+  }
 
   document.lastChild.appendChild(elem.lastChild);
   document.lastChild.setAttribute('width', settings.width);
