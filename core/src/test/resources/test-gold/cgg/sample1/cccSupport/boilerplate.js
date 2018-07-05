@@ -33,6 +33,7 @@ function boilerplate(type,settings, data, dataSettings) {
 
   var error = chart.getLastRenderError();
   if(error) {
+    print("CCC render error: " + error.message + "\nStack: " + error.stack);
     throw error;
   }
 
