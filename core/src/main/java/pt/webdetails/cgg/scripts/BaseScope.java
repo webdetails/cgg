@@ -297,56 +297,70 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object getTextLenCGG( Context cx, Scriptable thisObj,
                                       Object[] args, Function funObj ) {
-    String text = Context.toString( args[ 0 ] );
-    String fontFamily = Context.toString( args[ 1 ] );
-    String fontSize = Context.toString( args[ 2 ] ).trim();
-    String fontStyle = "normal";
-    String fontWeight = "normal";
 
-    if ( args.length > 3 ) {
-      fontStyle = Context.toString( args[ 3 ] );
+    try {
+      String text = Context.toString( args[ 0 ] );
+      String fontFamily = Context.toString( args[ 1 ] );
+      String fontSize = Context.toString( args[ 2 ] ).trim();
+      String fontStyle = "normal";
+      String fontWeight = "normal";
 
-      if ( args.length > 4 ) {
-        fontWeight = Context.toString( args[ 4 ] );
+      if ( args.length > 3 ) {
+        fontStyle = Context.toString( args[ 3 ] );
+
+        if ( args.length > 4 ) {
+          fontWeight = Context.toString( args[ 4 ] );
+        }
       }
+
+      Font ffont = getFont( fontFamily, fontSize, fontStyle, fontWeight );
+
+      JLabel label = new JLabel();
+
+      FontMetrics fMetric = label.getFontMetrics( ffont );
+
+      int width = fMetric.stringWidth( text );
+
+      return Context.toNumber( width );
+
+    } catch ( RuntimeException e ) {
+      logger.warn( "Failed to call 'getTextLenCGG'", e );
+      return Context.toNumber( 0 );
     }
-
-    Font ffont = getFont( fontFamily, fontSize, fontStyle, fontWeight );
-
-    JLabel label = new JLabel();
-
-    FontMetrics fMetric = label.getFontMetrics( ffont );
-
-    int width = fMetric.stringWidth( text );
-
-    return Context.toNumber( width );
   }
 
   public static Object getTextHeightCGG( Context cx, Scriptable thisObj,
                                          Object[] args, Function funObj ) {
-    // String text = Context.toString(args[0]);
-    String fontFamily = Context.toString( args[ 1 ] );
-    String fontSize = Context.toString( args[ 2 ] ).trim();
-    String fontStyle = "normal";
-    String fontWeight = "normal";
 
-    if ( args.length > 3 ) {
-      fontStyle = Context.toString( args[ 3 ] );
+    try {
+      // String text = Context.toString(args[0]);
+      String fontFamily = Context.toString( args[ 1 ] );
+      String fontSize = Context.toString( args[ 2 ] ).trim();
+      String fontStyle = "normal";
+      String fontWeight = "normal";
 
-      if ( args.length > 4 ) {
-        fontWeight = Context.toString( args[ 4 ] );
+      if ( args.length > 3 ) {
+        fontStyle = Context.toString( args[ 3 ] );
+
+        if ( args.length > 4 ) {
+          fontWeight = Context.toString( args[ 4 ] );
+        }
       }
+
+      Font ffont = getFont( fontFamily, fontSize, fontStyle, fontWeight );
+
+      JLabel label = new JLabel();
+
+      FontMetrics fMetric = label.getFontMetrics( ffont );
+
+      int height = fMetric.getHeight();
+
+      return Context.toNumber( height );
+
+    } catch ( RuntimeException e ) {
+      logger.warn( "Failed to call 'getTextHeightCGG'", e );
+      return Context.toNumber( 10 );
     }
-
-    Font ffont = getFont( fontFamily, fontSize, fontStyle, fontWeight );
-
-    JLabel label = new JLabel();
-
-    FontMetrics fMetric = label.getFontMetrics( ffont );
-
-    int height = fMetric.getHeight();
-
-    return Context.toNumber( height );
   }
 
   private static Font getFont( String fontFamily, String fontSize, String fontStyle, String fontWeight ) {
