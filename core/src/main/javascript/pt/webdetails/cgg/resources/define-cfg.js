@@ -142,9 +142,6 @@
           "alias": "enum",
           "base": "element"
         },
-        "pentaho/type/action/Base": {
-          "base": "element"
-        },
         "pentaho/data/filter/Abstract": {
           "base": "complex"
         },
@@ -291,20 +288,6 @@
         },
         "pentaho/visual/models/Bubble": {
           "base": "pentaho/visual/models/Abstract"
-        },
-        "pentaho/visual/action/Base": {
-          "base": "pentaho/type/action/Base"
-        },
-        "pentaho/visual/action/Select": {
-          "alias": "select",
-          "base": "pentaho/visual/action/Base"
-        },
-        "pentaho/visual/action/Execute": {
-          "alias": "execute",
-          "base": "pentaho/visual/action/Base"
-        },
-        "pentaho/visual/action/Update": {
-          "base": "pentaho/visual/action/Base"
         },
         "pentaho/visual/color/Palette": {
           "base": "complex"
