@@ -1,5 +1,5 @@
 /*!
- * Copyright 2017 - 2018 Webdetails, a Hitachi Vantara company. All rights reserved.
+ * Copyright 2017 - 2019 Webdetails, a Hitachi Vantara company. All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -155,7 +155,7 @@ define([
 
       localRequire([vizViewId], function(View) {
 
-        var extension = $.extend({}, View.type.extensionEffective);
+        var extension = $.extend({}, View.prototype.extensionEffective);
         resolve(extension);
 
       }, reject);
