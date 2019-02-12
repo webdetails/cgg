@@ -1,5 +1,5 @@
 /*!
- * Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ * Copyright 2002 - 2019 Webdetails, a Hitachi Vantara company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -15,8 +15,8 @@
   "use strict";
 
   /* globals params, readResource */
-
-  var basePathCommonUI = "/plugin/common-ui/resources/web/compressed/";
+  var basePathCommonUIUncompressed = "/plugin/common-ui/resources/web/";
+  var basePathCommonUI = basePathCommonUIUncompressed + "compressed/";
   var basePathCdf = "/plugin/pentaho-cdf/js/";
   var basePathKarafConfig = "/system/karaf/config/web-client/";
 
@@ -41,7 +41,8 @@
       "text": basePathCommonUI + "util/require-text/text",
       "pentaho": basePathCommonUI + "pentaho",
       "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf",
-      "pentaho/config/deploy": basePathKarafConfig
+      "pentaho/config/deploy": basePathKarafConfig,
+      "pentaho/visual/config/vizApi.conf": basePathCommonUIUncompressed + "pentaho/visual/config/vizApi.conf"
     },
 
     // module -> module
@@ -199,10 +200,7 @@
           "alias": "like",
           "base": "pentaho/data/filter/Property"
         },
-        "pentaho/visual/base/Model": {
-          "base": "complex"
-        },
-        "pentaho/visual/base/View": {
+        "pentaho/visual/Model": {
           "base": "complex"
         },
         "pentaho/visual/role/adaptation/Strategy": {
@@ -221,10 +219,10 @@
           "ranking": -20
         },
         "pentaho/visual/models/Abstract": {
-          "base": "pentaho/visual/base/Model"
+          "base": "pentaho/visual/Model"
         },
         "pentaho/visual/samples/calc/Model": {
-          "base": "pentaho/visual/base/Model"
+          "base": "pentaho/visual/Model"
         },
         "pentaho/visual/models/CartesianAbstract": {
           "base": "pentaho/visual/models/Abstract"
@@ -451,13 +449,16 @@
         "pentaho/type/_baseLoader",
         "pentaho/type/InstanceType",
         "pentaho/type/Instance",
+        "pentaho/action/States",
+        "pentaho/lang/UserError",
+        "pentaho/lang/RuntimeError",
+        "pentaho/action/Execution",
         "pentaho/type/action/_transactionControl",
         "pentaho/type/ReferenceList",
         "pentaho/type/action/ChangeRef",
         "pentaho/type/action/AbstractTransactionScope",
         "pentaho/type/action/TransactionScope",
         "pentaho/type/action/CommittedScope",
-        "pentaho/lang/UserError",
         "pentaho/type/action/TransactionRejectedError",
         "pentaho/type/action/Transaction",
         "pentaho/type/util",
@@ -467,6 +468,7 @@
         "pentaho/lang/Event",
         "pentaho/lang/EventSource",
         "pentaho/type/mixins/Container",
+        "pentaho/action/Base",
         "pentaho/type/action/Change",
         "pentaho/type/action/Changeset",
         "pentaho/type/action/PrimitiveChange",
@@ -559,36 +561,36 @@
         "pentaho/visual/role/MappingField",
         "pentaho/data/util",
         "pentaho/visual/role/AbstractMapping",
-        "pentaho/visual/base/KeyTypes",
+        "pentaho/visual/KeyTypes",
         "pentaho/visual/role/AbstractProperty",
         "pentaho/visual/color/Level",
         "pentaho/visual/color/Palette",
         "pentaho/visual/color/PaletteProperty",
-        "pentaho/visual/base/Application",
-        "pentaho/visual/base/AbstractModel",
-        "pentaho/visual/role/Mode",
-        "pentaho/visual/role/Mapping",
-        "pentaho/visual/role/Property",
-        "pentaho/visual/base/Model",
-        "pentaho/action/Base",
+        "pentaho/visual/Application",
+        "pentaho/visual/AbstractModel",
+        "pentaho/action/impl/Target",
         "pentaho/action/Generic",
         "pentaho/visual/action/Base",
         "pentaho/visual/action/Update",
+        "pentaho/visual/action/ModelChangedError",
+        "pentaho/visual/action/UpdateExecution",
+        "pentaho/visual/action/Interaction",
+        "pentaho/visual/action/InteractionExecution",
         "pentaho/visual/action/mixins/Data",
         "pentaho/visual/action/mixins/Positioned",
         "pentaho/visual/action/SelectionModes",
         "pentaho/visual/action/Select",
+        "pentaho/visual/action/SelectExecution",
         "pentaho/visual/action/Execute",
-        "pentaho/action/States",
-        "pentaho/lang/RuntimeError",
-        "pentaho/action/Execution",
-        "pentaho/action/impl/Target",
-        "pentaho/visual/base/ModelChangedError",
+        "pentaho/visual/role/Mode",
+        "pentaho/visual/role/Mapping",
+        "pentaho/visual/role/Property",
+        "pentaho/visual/Model",
         "pentaho/util/BitSet",
-        "pentaho/visual/base/View",
+        "pentaho/visual/impl/View",
         "pentaho/visual/role/ExternalMapping",
         "pentaho/visual/role/ExternalProperty",
-        "pentaho/visual/base/ModelAdapter",
+        "pentaho/visual/ModelAdapter",
         "pentaho/visual/color/utils",
         "pentaho/visual/color/palettes/divergentRyb3",
         "pentaho/visual/color/palettes/divergentRyb5",
