@@ -41,6 +41,7 @@
     <xercesImpl.version>2.9.1</xercesImpl.version>
     <pentaho-cgg-plugin.version>8.3.0.0-SNAPSHOT</pentaho-cgg-plugin.version>
     <mail.version>1.4.1</mail.version>
+    <javax.servlet-api>3.0.1</javax.servlet-api>
   </properties>
 <dependencyManagement>
   <dependencies>
