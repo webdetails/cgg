@@ -84,7 +84,13 @@ public class CggService {
     this.draw( script, type, outputType, attachmentName, multiChartOverflow, null,
       width, height, servletResponse, servletRequest, null );
 
-    return Response.status( servletResponse.getStatus() ).build();
+    Response.Status responseStatus = Response.Status.fromStatusCode( servletResponse.getStatus() );
+
+    if ( responseStatus != null ) {
+      return Response.status( responseStatus ).build();
+    } else {
+      return Response.serverError().build();
+    }
   }
 
   public void draw( String script,
