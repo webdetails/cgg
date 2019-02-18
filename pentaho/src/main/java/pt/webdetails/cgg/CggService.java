@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2019 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -71,7 +71,7 @@ public class CggService {
   @GET
   @Path( "/draw" )
   @Consumes( { APPLICATION_XML, APPLICATION_JSON } )
-  public void draw(
+  public Response draw(
     @QueryParam( "script" ) String script,
     @DefaultValue( "svg" ) @QueryParam( "type" ) String type,
     @DefaultValue( "png" ) @QueryParam( "outputType" ) String outputType,
@@ -83,6 +83,8 @@ public class CggService {
 
     this.draw( script, type, outputType, attachmentName, multiChartOverflow, null,
       width, height, servletResponse, servletRequest, null );
+
+    return Response.status( servletResponse.getStatus() ).build();
   }
 
   public void draw( String script,
