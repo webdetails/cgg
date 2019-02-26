@@ -81,7 +81,31 @@
 
         "pentaho/config/spec/IRuleSet": {
           "base": null,
-          "isAbstract": true
+          "isVirtual": true
+        },
+        "pentaho/module/Annotation": {
+          "base": null
+        },
+        "pentaho/module/SyncAnnotation": {
+          "base": "pentaho/module/Annotation"
+        },
+        "pentaho/module/AsyncAnnotation": {
+          "base": "pentaho/module/Annotation"
+        },
+        "pentaho/config/ExternalAnnotation": {
+          "base": "pentaho/module/AsyncAnnotation"
+        },
+        "pentaho/module/LoadUIInfoAnnotation": {
+          "base": "pentaho/module/AsyncAnnotation"
+        },
+        "pentaho/i18n/LoadConfigAnnotation": {
+          "base": "pentaho/config/ExternalAnnotation"
+        },
+        "pentaho/theme/LoadThemeAnnotation": {
+          "base": "pentaho/module/AsyncAnnotation"
+        },
+        "pentaho/theme/ThemeAnnotation": {
+          "base": "pentaho/module/SyncAnnotation"
         },
         "pentaho/type/Instance": {
           "alias": "instance",
@@ -203,6 +227,9 @@
         "pentaho/visual/Model": {
           "base": "complex"
         },
+        "pentaho/visual/DefaultViewAnnotation": {
+          "base": "pentaho/module/SyncAnnotation"
+        },
         "pentaho/visual/role/adaptation/Strategy": {
           "base": "complex"
         },
@@ -219,10 +246,16 @@
           "ranking": -20
         },
         "pentaho/visual/models/Abstract": {
-          "base": "pentaho/visual/Model"
+          "base": "pentaho/visual/Model",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Abstract"}
+          }
         },
         "pentaho/visual/samples/calc/Model": {
-          "base": "pentaho/visual/Model"
+          "base": "pentaho/visual/Model",
+          "annotations": {
+            "pentaho/visual/DefaultView": {/* "module": "./View" */}
+          }
         },
         "pentaho/visual/models/CartesianAbstract": {
           "base": "pentaho/visual/models/Abstract"
@@ -237,28 +270,52 @@
           "base": "pentaho/visual/models/Abstract"
         },
         "pentaho/visual/models/BarHorizontal": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/BarHorizontal"}
+          }
         },
         "pentaho/visual/models/Bar": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Bar"}
+          }
         },
         "pentaho/visual/models/BarStacked": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/BarStacked"}
+          }
         },
         "pentaho/visual/models/BarStackedHorizontal": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/BarStackedHorizontal"}
+          }
         },
         "pentaho/visual/models/BarNormalized": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/BarNormalized"}
+          }
         },
         "pentaho/visual/models/BarNormalizedHorizontal": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/BarNormalizedHorizontal"}
+          }
         },
         "pentaho/visual/models/BarLine": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/BarLine"}
+          }
         },
         "pentaho/visual/models/Line": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Line"}
+          }
         },
         "pentaho/visual/models/PointAbstract": {
           "base": "pentaho/visual/models/Abstract"
@@ -267,25 +324,46 @@
           "base": "pentaho/visual/models/Abstract"
         },
         "pentaho/visual/models/AreaStacked": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/AreaStacked"}
+          }
         },
         "pentaho/visual/models/Pie": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Pie"}
+          }
         },
         "pentaho/visual/models/HeatGrid": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/HeatGrid"}
+          }
         },
         "pentaho/visual/models/Sunburst": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Sunburst"}
+          }
         },
         "pentaho/visual/models/Donut": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Donut"}
+          }
         },
         "pentaho/visual/models/Scatter": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Scatter"}
+          }
         },
         "pentaho/visual/models/Bubble": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {"module": "pentaho/ccc/visual/Bubble"}
+          }
         },
         "pentaho/visual/color/Palette": {
           "base": "complex"
@@ -396,7 +474,9 @@
         "pentaho/util/object",
         "pentaho/util/fun",
         "pentaho/util/text",
-        "pentaho/util/requireJSConfig",
+        "pentaho/shim/_es6-promise/es6-promise",
+        "pentaho/shim/es6-promise",
+        "pentaho/util/requireJS",
         "pentaho/debug/Levels",
         "pentaho/debug/impl/Manager",
         "pentaho/util/domWindow",
@@ -410,22 +490,23 @@
         "pentaho/lang/ArgumentInvalidError",
         "pentaho/_core/module/MetaService",
         "pentaho/util/logger",
+        "pentaho/util/arg",
         "pentaho/lang/ArgumentInvalidTypeError",
         "pentaho/lang/ArgumentRangeError",
         "pentaho/lang/OperationInvalidError",
         "pentaho/lang/NotImplementedError",
         "pentaho/util/error",
-        "pentaho/util/arg",
-        "pentaho/shim/_es6-promise/es6-promise",
-        "pentaho/shim/es6-promise",
         "pentaho/util/promise",
+        "pentaho/util/spec",
         "pentaho/module/util",
         "pentaho/_core/module/Meta",
         "pentaho/_core/module/InstanceMeta",
         "pentaho/_core/module/TypeMeta",
         "pentaho/_core/module/Service",
-        "pentaho/util/spec",
         "pentaho/_core/config/Service",
+        "pentaho/module/Annotation",
+        "pentaho/module/AsyncAnnotation",
+        "pentaho/config/ExternalAnnotation",
         "pentaho/_core/Core",
         "pentaho/util/url",
         "pentaho/environment/impl/Environment",
