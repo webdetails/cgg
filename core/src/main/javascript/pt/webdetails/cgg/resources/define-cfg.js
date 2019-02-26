@@ -95,9 +95,6 @@
         "pentaho/config/ExternalAnnotation": {
           "base": "pentaho/module/AsyncAnnotation"
         },
-        "pentaho/module/LoadUIInfoAnnotation": {
-          "base": "pentaho/module/AsyncAnnotation"
-        },
         "pentaho/i18n/LoadConfigAnnotation": {
           "base": "pentaho/config/ExternalAnnotation"
         },
