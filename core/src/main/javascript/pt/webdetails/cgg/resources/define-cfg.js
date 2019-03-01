@@ -49,7 +49,6 @@
     map: {
       "*": {
         "jquery": "jquery-shim",
-        "pentaho/type/theme": "pentaho/type/themes/crystal",
         "pentaho/visual/models/theme": "pentaho/visual/models/themes/crystal"
       },
 
