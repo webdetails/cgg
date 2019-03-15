@@ -42,14 +42,13 @@
       "pentaho": basePathCommonUI + "pentaho",
       "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf",
       "pentaho/config/deploy": basePathKarafConfig,
-      "pentaho/visual/config/vizApi.conf": basePathCommonUIUncompressed + "pentaho/visual/config/vizApi.conf"
+      "pentaho/visual/config": basePathCommonUIUncompressed + "pentaho/visual/config"
     },
 
     // module -> module
     map: {
       "*": {
-        "jquery": "jquery-shim",
-        "pentaho/visual/models/theme": "pentaho/visual/models/themes/crystal"
+        "jquery": "jquery-shim"
       },
 
       // Within `cdf`, `jquery` is provided by the small jquery shim.
@@ -85,23 +84,17 @@
         "pentaho/module/Annotation": {
           "base": null
         },
-        "pentaho/module/SyncAnnotation": {
-          "base": "pentaho/module/Annotation"
-        },
-        "pentaho/module/AsyncAnnotation": {
-          "base": "pentaho/module/Annotation"
-        },
         "pentaho/config/ExternalAnnotation": {
-          "base": "pentaho/module/AsyncAnnotation"
+          "base": "pentaho/module/Annotation"
         },
         "pentaho/i18n/LoadConfigAnnotation": {
           "base": "pentaho/config/ExternalAnnotation"
         },
         "pentaho/theme/LoadThemeAnnotation": {
-          "base": "pentaho/module/AsyncAnnotation"
+          "base": "pentaho/module/Annotation"
         },
         "pentaho/theme/ThemeAnnotation": {
-          "base": "pentaho/module/SyncAnnotation"
+          "base": "pentaho/module/Annotation"
         },
         "pentaho/type/Instance": {
           "alias": "instance",
@@ -224,7 +217,7 @@
           "base": "complex"
         },
         "pentaho/visual/DefaultViewAnnotation": {
-          "base": "pentaho/module/SyncAnnotation"
+          "base": "pentaho/module/Annotation"
         },
         "pentaho/visual/role/adaptation/Strategy": {
           "base": "complex"
@@ -250,7 +243,7 @@
         "pentaho/visual/samples/calc/Model": {
           "base": "pentaho/visual/Model",
           "annotations": {
-            "pentaho/visual/DefaultView": {/* "module": "./View" */}
+            "pentaho/visual/DefaultView": {}
           }
         },
         "pentaho/visual/models/CartesianAbstract": {
@@ -364,7 +357,7 @@
         "pentaho/visual/color/Palette": {
           "base": "complex"
         },
-        "pentaho/visual/config/vizApi.conf": {
+        "pentaho/visual/config": {
           "type": "pentaho/config/spec/IRuleSet"
         },
         "pentaho/visual/color/palettes/nominalPrimary": {
@@ -499,9 +492,8 @@
         "pentaho/_core/module/InstanceMeta",
         "pentaho/_core/module/TypeMeta",
         "pentaho/_core/module/Service",
-        "pentaho/_core/config/Service",
         "pentaho/module/Annotation",
-        "pentaho/module/AsyncAnnotation",
+        "pentaho/_core/config/Service",
         "pentaho/config/ExternalAnnotation",
         "pentaho/_core/Core",
         "pentaho/util/url",
@@ -519,6 +511,14 @@
         "pentaho/module/subtypesOf",
         "pentaho/module/instanceOf",
         "pentaho/module/instancesOf",
+        "pentaho/i18n/MessageBundle",
+        "pentaho/i18n/LoadConfigAnnotation",
+        "pentaho/theme/main",
+        "pentaho/theme",
+        "pentaho/theme/ThemeAnnotation",
+        "pentaho/theme/impl/Service",
+        "pentaho/theme/service",
+        "pentaho/theme/LoadThemeAnnotation",
         "pentaho/type/SpecificationContext",
         "pentaho/type/SpecificationScope",
         "pentaho/type/impl/SpecificationProcessor",
@@ -668,6 +668,7 @@
         "pentaho/visual/role/ExternalMapping",
         "pentaho/visual/role/ExternalProperty",
         "pentaho/visual/ModelAdapter",
+        "pentaho/visual/action/WellKnownErrorNames",
         "pentaho/visual/color/utils",
         "pentaho/visual/color/palettes/divergentRyb3",
         "pentaho/visual/color/palettes/divergentRyb5",
@@ -740,6 +741,9 @@
         "pentaho/visual/scene/util",
         "pentaho/visual/scene/impl/Variable",
         "pentaho/visual/scene/Base",
+        "pentaho/visual/DefaultViewAnnotation",
+        "pentaho/visual/util",
+        "pentaho/visual/samples/calc/Model",
         "pentaho/ccc/visual/_util",
         "pentaho/ccc/visual/Abstract",
         "pentaho/ccc/visual/CartesianAbstract",
