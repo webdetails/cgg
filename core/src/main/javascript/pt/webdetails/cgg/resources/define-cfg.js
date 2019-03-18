@@ -17,7 +17,6 @@
   /* globals params, readResource */
   var basePathCommonUIUncompressed = "/plugin/common-ui/resources/web/";
   var basePathCommonUI = basePathCommonUIUncompressed + "compressed/";
-  var basePathCdf = "/plugin/pentaho-cdf/js/";
   var basePathKarafConfig = "/system/karaf/config/web-client/";
 
   require.config({
@@ -40,7 +39,6 @@
       "json": basePathCommonUI + "util/require-json/json",
       "text": basePathCommonUI + "util/require-text/text",
       "pentaho": basePathCommonUI + "pentaho",
-      "cdf/components/ccc/config/cdf.vizApi.conf": basePathCdf + "components/ccc/config/cdf.vizApi.conf",
       "pentaho/config/deploy": basePathKarafConfig,
       "pentaho/visual/config": basePathCommonUIUncompressed + "pentaho/visual/config"
     },
@@ -74,7 +72,6 @@
       // Keep all in sync.
 
       "pentaho/modules": {
-        "cdf/components/ccc/config/cdf.vizApi.conf": {type: "pentaho/config/spec/IRuleSet"},
         "pentaho/config/deploy/config": {type: "pentaho/config/spec/IRuleSet"},
 
         "pentaho/config/spec/IRuleSet": {
