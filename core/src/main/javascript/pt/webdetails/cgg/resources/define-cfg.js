@@ -240,19 +240,21 @@
             "pentaho/visual/DefaultView": {}
           }
         },
+
         "pentaho/visual/models/CartesianAbstract": {
           "base": "pentaho/visual/models/Abstract"
         },
+
         "pentaho/visual/models/CategoricalContinuousAbstract": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/CartesianAbstract"
         },
 
         "pentaho/visual/models/BarAbstract": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/CategoricalContinuousAbstract"
         },
 
         "pentaho/visual/models/Bar": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/BarAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/Bar"
@@ -260,7 +262,7 @@
           }
         },
         "pentaho/visual/models/BarHorizontal": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/BarAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/BarHorizontal"
@@ -268,7 +270,7 @@
           }
         },
         "pentaho/visual/models/BarStacked": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/BarAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/BarStacked"
@@ -276,7 +278,7 @@
           }
         },
         "pentaho/visual/models/BarStackedHorizontal": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/BarAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/BarStackedHorizontal"
@@ -284,7 +286,7 @@
           }
         },
         "pentaho/visual/models/BarLine": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/BarAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/BarLine"
@@ -292,10 +294,10 @@
           }
         },
         "pentaho/visual/models/BarNormalizedAbstract": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/BarAbstract"
         },
         "pentaho/visual/models/BarNormalized": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/BarNormalizedAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/BarNormalized"
@@ -303,7 +305,7 @@
           }
         },
         "pentaho/visual/models/BarNormalizedHorizontal": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/BarNormalizedAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/BarNormalizedHorizontal"
@@ -328,7 +330,7 @@
           }
         },
         "pentaho/visual/models/Donut": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/Pie",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/Donut"
@@ -337,10 +339,10 @@
         },
 
         "pentaho/visual/models/MetricPointAbstract": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/CartesianAbstract"
         },
         "pentaho/visual/models/Scatter": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/MetricPointAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/Scatter"
@@ -348,7 +350,7 @@
           }
         },
         "pentaho/visual/models/Bubble": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/MetricPointAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/Bubble"
@@ -357,10 +359,10 @@
         },
 
         "pentaho/visual/models/PointAbstract": {
-          "base": "pentaho/visual/models/Abstract"
+          "base": "pentaho/visual/models/CartesianAbstract"
         },
         "pentaho/visual/models/Line": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/PointAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/Line"
@@ -368,7 +370,7 @@
           }
         },
         "pentaho/visual/models/AreaStacked": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/PointAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/AreaStacked"
@@ -377,14 +379,13 @@
         },
 
         "pentaho/visual/models/HeatGrid": {
-          "base": "pentaho/visual/models/Abstract",
+          "base": "pentaho/visual/models/CartesianAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/HeatGrid"
             }
           }
         },
-
 
         "pentaho/visual/color/Palette": {
           "base": "complex"
