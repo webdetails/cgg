@@ -491,7 +491,7 @@
     },
 
     bundles: {
-      "pentaho/platformBundle": [
+      "pentaho/platformCore": [
         "pentaho/util/has",
         "pentaho/util/object",
         "pentaho/util/fun",
@@ -552,6 +552,16 @@
         "pentaho/theme/impl/Service",
         "pentaho/theme/service",
         "pentaho/theme/LoadThemeAnnotation",
+        "pentaho/csrf/service",
+        "pentaho/lang/UserError",
+        "pentaho/lang/RuntimeError",
+        "pentaho/lang/Event",
+        "pentaho/lang/EventSource",
+        "pentaho/lang/Collection",
+        "pentaho/util/date"
+      ],
+
+      "pentaho/platformBundle": [
         "pentaho/type/SpecificationContext",
         "pentaho/type/SpecificationScope",
         "pentaho/type/impl/SpecificationProcessor",
@@ -560,8 +570,6 @@
         "pentaho/type/InstanceType",
         "pentaho/type/Instance",
         "pentaho/action/States",
-        "pentaho/lang/UserError",
-        "pentaho/lang/RuntimeError",
         "pentaho/action/Execution",
         "pentaho/type/action/_transactionControl",
         "pentaho/type/ReferenceList",
@@ -575,8 +583,6 @@
         "pentaho/type/ValidationError",
         "pentaho/type/Value",
         "pentaho/type/Element",
-        "pentaho/lang/Event",
-        "pentaho/lang/EventSource",
         "pentaho/type/mixins/Container",
         "pentaho/action/Base",
         "pentaho/type/action/Change",
@@ -591,7 +597,6 @@
         "pentaho/type/List",
         "pentaho/type/mixins/DiscreteDomain",
         "pentaho/type/Property",
-        "pentaho/lang/Collection",
         "pentaho/type/PropertyTypeCollection",
         "pentaho/type/action/Replace",
         "pentaho/type/action/ComplexChangeset",
@@ -599,7 +604,6 @@
         "pentaho/type/String",
         "pentaho/type/Number",
         "pentaho/type/Boolean",
-        "pentaho/util/date",
         "pentaho/type/Date",
         "pentaho/type/Object",
         "pentaho/type/Function",
