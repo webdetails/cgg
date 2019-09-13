@@ -38,7 +38,6 @@
     <batik.version>1.9.1</batik.version>
     <pentaho-cpf-plugin.version>9.0.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
     <platform.version>9.0.0.0-SNAPSHOT</platform.version>
-    <commons-logging.version>1.1.1</commons-logging.version>
     <commons-lang.version>2.6</commons-lang.version>
     <xalan.version>2.7.1</xalan.version>
     <pentaho-cgg-plugin.version>9.0.0.0-SNAPSHOT</pentaho-cgg-plugin.version>
@@ -81,12 +80,6 @@
             <groupId>*</groupId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>commons-logging</groupId>
-        <artifactId>commons-logging</artifactId>
-        <version>${commons-logging.version}</version>
-        <scope>provided</scope>
       </dependency>
       <dependency>
         <groupId>commons-lang</groupId>
