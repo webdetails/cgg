@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -13,9 +13,16 @@
 
 /* globals lib */
 
+// Intl polyfill requires this.
+var globalThis = this;
+
+// Rhino binds "global" to some apparently unnecessary native function.
+// This messes up scripts that expect the global "global" property to
+// be, actually, the JS global object.
+globalThis.global = this;
+
 // Global stuff - JS language shims
-lib('shims.js');
-lib('json.js');
+lib('intl/install.js');
 lib('require-adapter.js');
 lib('define-cfg.js');
 

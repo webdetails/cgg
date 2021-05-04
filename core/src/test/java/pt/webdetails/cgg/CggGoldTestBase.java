@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 * 
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,11 +82,14 @@ public class CggGoldTestBase {
   private byte[] executeCgg( final File file, final String scriptType, final String outputType )
     throws IOException, ScriptCreationException, ScriptExecuteException {
     final Map<String, Object> parameter = loadParameter( file );
+
+    Locale locale = Locale.US;
+
     final ByteArrayOutputStream out = new ByteArrayOutputStream();
 
     final URL scriptContext = file.getParentFile().toURI().toURL();
     final DefaultCgg cgg = new DefaultCgg( out, scriptContext );
-    cgg.draw( file.getName(), scriptType, outputType, 800, 600, parameter );
+    cgg.draw( file.getName(), scriptType, outputType, 800, 600, false, locale, parameter );
     return out.toByteArray();
   }
 
@@ -95,7 +99,7 @@ public class CggGoldTestBase {
     final Properties p = new Properties();
     final File propertiesFile = new File( properties );
     if ( propertiesFile.exists() == false ) {
-      return new HashMap<String, Object>();
+      return new HashMap<>();
     }
 
     final FileInputStream inStream = new FileInputStream( properties );
@@ -137,7 +141,10 @@ public class CggGoldTestBase {
         run( file, goldTargetDirectory );
         System.out.printf( "Finished   %s%n", file );
       } catch ( Throwable re ) {
-        System.out.printf( re.getMessage() );
+        if ( re.getMessage() != null ) {
+          System.out.printf( re.getMessage() );
+        }
+
         re.printStackTrace( System.out );
         throw new Exception( "Failed at " + file, re );
       }
@@ -281,18 +288,26 @@ public class CggGoldTestBase {
 
   private Integer checkDifferenceNodeProperties( NodeDetail controlNode, NodeDetail testNode ) {
     Node node = testNode.getNode().getAttributes().getNamedItem( TRANSFORM_ATTRIBUTE );
-    Pattern pTranslate = Pattern.compile( TRANSLATE_REGEX );
+    if ( node == null ) {
+      // No attribute in testNode, but there is an attribute in controlNode (with almost zero values)?
+      node = controlNode.getNode().getAttributes().getNamedItem( TRANSFORM_ATTRIBUTE );
+    }
 
-    Matcher mTestNode = pTranslate.matcher( node.getNodeValue() );
+    if ( node != null ) {
+      Pattern pTranslate = Pattern.compile( TRANSLATE_REGEX );
+      Matcher mTestNode = pTranslate.matcher( node.getNodeValue() );
 
-    if ( mTestNode.matches() ) {
-      String[] valueSplit = mTestNode.group( 1 ).split( "," );
-      Double x = new Double( valueSplit[ 0 ] ), y = new Double( valueSplit[ 1 ] );
+      if ( mTestNode.matches() ) {
+        String[] valueSplit = mTestNode.group( 1 ).split( "," );
+        Double x = new Double( valueSplit[ 0 ] );
+        Double y = new Double( valueSplit[ 1 ] );
 
-      if ( x < VALUE_MIN && y < VALUE_MIN ) {
-        return DifferenceListener.RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
+        if ( x < VALUE_MIN && y < VALUE_MIN ) {
+          return DifferenceListener.RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
+        }
       }
     }
+
     return DifferenceListener.RETURN_ACCEPT_DIFFERENCE;
   }
 

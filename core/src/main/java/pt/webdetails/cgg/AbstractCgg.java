@@ -1,5 +1,5 @@
 /*!
- * Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ * Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -14,6 +14,7 @@ package pt.webdetails.cgg;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 
 import pt.webdetails.cgg.datasources.DataSourceFactory;
@@ -52,12 +53,27 @@ public abstract class AbstractCgg {
                                  final int height,
                                  final boolean isMultiPage,
                                  final Map<String, Object> params )
+    throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
+    draw( scriptFile, scriptType, outputType, width, height, isMultiPage, Locale.getDefault(), params );
+  }
+
+  public synchronized void draw( final String scriptFile,
+                                 final String scriptType,
+                                 final String outputType,
+                                 final int width,
+                                 final int height,
+                                 final boolean isMultiPage,
+                                 final Locale locale,
+                                 final Map<String, Object> params )
       throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
     try {
       final ScriptFactory factory = getScriptFactory();
       factory.enterContext();
       final Script script = factory.createScript( scriptFile, scriptType, isMultiPage );
+
       script.configure( width, height, getDataSourceFactory(), factory );
+      script.configureLocale( locale );
+
       final Chart chart = script.execute( params );
       produceOutput( chart, outputType );
       factory.exitContext();

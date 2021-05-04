@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -11,9 +11,8 @@
 * the license for the specific language governing your rights and limitations.
 */
 define([
-    './util',
     './interop'
-], function(util, interop) {
+], function(interop) {
 
     createDataSource.detectQueryType = detectQueryType;
 
@@ -27,7 +26,7 @@ define([
     }
 
     function DataSource(queryType) {
-        var _ds = util.global.datasourceFactory.createDatasource(queryType);
+        var _ds = globalThis.datasourceFactory.createDatasource(queryType);
 
         this.type = queryType;
 

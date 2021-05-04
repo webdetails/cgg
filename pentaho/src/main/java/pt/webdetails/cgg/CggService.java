@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2019 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -32,6 +33,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.pentaho.platform.util.messages.LocaleHelper;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 
@@ -175,6 +177,8 @@ public class CggService {
         userSession = PentahoSessionHolder.getSession();
       }
 
+      Locale locale = LocaleHelper.getLocale();
+
       final WebCgg cgg = new WebCgg(
         context,
         servletResponse,
@@ -197,7 +201,7 @@ public class CggService {
         }
       );
 
-      cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), isMultiPage, params );
+      cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), isMultiPage, locale, params );
 
     } catch ( Exception ex ) {
       logger.fatal( "Error while rendering script", ex );
