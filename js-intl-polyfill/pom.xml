@@ -15,7 +15,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <nodejs.version>v15.1.0</nodejs.version>
+    <nodejs.version>v14.17.0</nodejs.version>
     <npm.version/>
     <frontend-maven-plugin.workingDirectory>${project.basedir}</frontend-maven-plugin.workingDirectory>
     <frontend-maven-plugin.installDirectory>${project.build.directory}</frontend-maven-plugin.installDirectory>
