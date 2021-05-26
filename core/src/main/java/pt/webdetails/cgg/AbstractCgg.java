@@ -12,11 +12,6 @@
  */
 package pt.webdetails.cgg;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Locale;
-import java.util.Map;
-
 import pt.webdetails.cgg.datasources.DataSourceFactory;
 import pt.webdetails.cgg.datasources.DefaultDataSourceFactory;
 import pt.webdetails.cgg.output.DefaultOutputFactory;
@@ -24,6 +19,11 @@ import pt.webdetails.cgg.output.OutputFactory;
 import pt.webdetails.cgg.scripts.DefaultScriptFactory;
 import pt.webdetails.cgg.scripts.Script;
 import pt.webdetails.cgg.scripts.ScriptFactory;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Objects;
 
 public abstract class AbstractCgg {
   private ScriptFactory scriptFactory;
@@ -41,20 +41,9 @@ public abstract class AbstractCgg {
                                  final String outputType,
                                  final int width,
                                  final int height,
-                                 final Map<String, Object> params )
-      throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
-    draw( scriptFile, scriptType, outputType, width, height, false, params );
-  }
-
-  public synchronized void draw( final String scriptFile,
-                                 final String scriptType,
-                                 final String outputType,
-                                 final int width,
-                                 final int height,
-                                 final boolean isMultiPage,
-                                 final Map<String, Object> params )
+                                 final Map<String, Object> genericParamMap )
     throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
-    draw( scriptFile, scriptType, outputType, width, height, isMultiPage, Locale.getDefault(), params );
+    draw( new DrawParameters( scriptFile, scriptType, outputType, width, height, genericParamMap ) );
   }
 
   public synchronized void draw( final String scriptFile,
@@ -63,19 +52,27 @@ public abstract class AbstractCgg {
                                  final int width,
                                  final int height,
                                  final boolean isMultiPage,
-                                 final Locale locale,
-                                 final Map<String, Object> params )
-      throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
+                                 final Map<String, Object> genericParamMap )
+    throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
+    draw( new DrawParameters( scriptFile, scriptType, outputType, width, height, isMultiPage, genericParamMap ) );
+  }
+
+  public synchronized void draw( final DrawParameters parameters )
+    throws ScriptCreationException, FileNotFoundException, ScriptExecuteException {
+
+    Objects.requireNonNull( parameters );
+
     try {
       final ScriptFactory factory = getScriptFactory();
       factory.enterContext();
-      final Script script = factory.createScript( scriptFile, scriptType, isMultiPage );
+      final Script script =
+        factory.createScript( parameters.getScriptFile(), parameters.getScriptType(), parameters.isMultiPage() );
 
-      script.configure( width, height, getDataSourceFactory(), factory );
-      script.configureLocale( locale );
+      script.configure( parameters.getWidth(), parameters.getHeight(), getDataSourceFactory(), factory );
+      script.configureLocale( parameters.getLocale() );
 
-      final Chart chart = script.execute( params );
-      produceOutput( chart, outputType );
+      final Chart chart = script.execute( parameters.getGenericParameters() );
+      produceOutput( chart, parameters.getOutputType() );
       factory.exitContext();
     } catch ( ScriptCreationException e ) {
       throw e;
@@ -122,7 +119,8 @@ public abstract class AbstractCgg {
   }
 
   protected abstract void produceOutput( final Chart chart,
-                                         final String requestedOutputHandler ) throws IOException, ScriptExecuteException;
+                                         final String requestedOutputHandler )
+    throws IOException, ScriptExecuteException;
 
   public synchronized void refresh() {
     getScriptFactory().clearCachedScopes();

@@ -89,7 +89,15 @@ public class CggGoldTestBase {
 
     final URL scriptContext = file.getParentFile().toURI().toURL();
     final DefaultCgg cgg = new DefaultCgg( out, scriptContext );
-    cgg.draw( file.getName(), scriptType, outputType, 800, 600, false, locale, parameter );
+    cgg.draw( new DrawParameters(
+      file.getName(),
+      scriptType,
+      outputType,
+      800,
+      600,
+      false,
+      locale,
+      parameter ) );
     return out.toByteArray();
   }
 
