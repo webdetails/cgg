@@ -4,7 +4,7 @@
   "description": "The JavaScript Intl shim for CGG core",
   "private": true,
   "scripts": {
-    "build": "npx rimraf ./target/dist; npx rollup --config rollup.config.js"
+    "build": "rimraf ./target/dist; rollup --config rollup.config.js"
   },
   "devDependencies": {
     "@formatjs/intl-datetimeformat": "^3.3.5",
