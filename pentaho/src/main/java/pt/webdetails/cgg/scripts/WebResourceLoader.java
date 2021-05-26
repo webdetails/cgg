@@ -35,7 +35,7 @@ public class WebResourceLoader implements ScriptResourceLoader {
   private static final Log logger = LogFactory.getLog( WebResourceLoader.class );
 
   private static final String URL_PARAM_USER = "_TRUST_USER_";
-  private static final String URL_PARAM_LOCALE_OVERRIDE_ = "_TRUST_LOCALE_OVERRIDE_";
+  private static final String URL_PARAM_LOCALE_OVERRIDE = "_TRUST_LOCALE_OVERRIDE_";
   private String context;
   private String userName;
 
@@ -73,7 +73,7 @@ public class WebResourceLoader implements ScriptResourceLoader {
 
         Locale localeOverride = LocaleHelper.getLocaleOverride();
         if ( localeOverride != null ) {
-          url = url + "&" + URL_PARAM_LOCALE_OVERRIDE_ + "="
+          url = url + "&" + URL_PARAM_LOCALE_OVERRIDE + "="
               + URLEncoder.encode( localeOverride.toString(), StandardCharsets.UTF_8.name() );
         }
       }

@@ -190,7 +190,7 @@ public class BaseScope extends ImporterTopLevel {
       return Context.toBoolean( false );
     }
 
-    final boolean isSilent = args.length > 1 ? Context.toBoolean( args[1] ) : false;
+    final boolean isSilent = args.length > 1 && Context.toBoolean( args[ 1 ] );
 
     try {
       final String file = arg.toString();
