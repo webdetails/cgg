@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -11,7 +11,6 @@
 * the license for the specific language governing your rights and limitations.
 */
 define([
-    './util',
     'cgg',
     'Base',
     'jquery',
@@ -24,19 +23,13 @@ define([
     //  Component Classes or Class Handlers
     './components/ccc/BaseCccComponent',
     './components/ProtovisComponent'
-], function(util, cgg, Base, $, Dashboards, BaseComponent, UnmanagedComponent) {
+], function(cgg, Base, $, Dashboards, BaseComponent, UnmanagedComponent) {
 
-    if(cgg.useGlobal) {
-        var global = util.global;
-
-        global.Base   = Base;
-        global.$      =
-        global.jQuery = $;
-
-        global.Dashboards         = Dashboards;
-        global.BaseComponent      = BaseComponent;
-        global.UnmanagedComponent = UnmanagedComponent;
-    }
+    globalThis.Base = Base;
+    globalThis.$ = globalThis.jQuery = $;
+    globalThis.Dashboards = Dashboards;
+    globalThis.BaseComponent = BaseComponent;
+    globalThis.UnmanagedComponent = UnmanagedComponent;
 
     // Register cgg renderer.
     cgg.registerRenderer({render: renderComponent});

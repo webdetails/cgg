@@ -1,5 +1,5 @@
 /*!
- * Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ * Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -12,12 +12,11 @@
  */
 define([
   'cgg',
-  'util',
   '../../dash',
   './SvgComponent',
   './BaseCccComponent.ext',
   'underscore'
-], function (cgg, util, dash, SvgComponent, BaseCccComponentExt, _) {
+], function (cgg, dash, SvgComponent, BaseCccComponentExt, _) {
 
   // ATTENTION: A part of this code is synchronized with:
   // cdf/core-js/src/main/javascript/cdf/components/ccc/BaseCccComponent.js
@@ -71,13 +70,10 @@ define([
           return describe(s, {ownOnly: false});
         };
 
-      if (cgg.useGlobal) {
-        var global = util.global;
-        global.pv = ccc.pv;
-        global.def = def;
-        global.cdo = ccc.cdo;
-        global.pvc = pvc;
-      }
+      globalThis.pv = ccc.pv;
+      globalThis.def = def;
+      globalThis.cdo = ccc.cdo;
+      globalThis.pvc = pvc;
 
       // Sync def/pvc log, taking older ccc versions into account.
       if (def.setDebug) def.setDebug(cgg.debug);
