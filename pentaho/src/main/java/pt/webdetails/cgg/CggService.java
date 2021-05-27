@@ -1,22 +1,27 @@
 /*!
-* Copyright 2002 - 2019 Webdetails, a Hitachi Vantara company.  All rights reserved.
-*
-* This software was developed by Webdetails and is provided under the terms
-* of the Mozilla Public License, Version 2.0, or any later version. You may not use
-* this file except in compliance with the license. If you need a copy of the license,
-* please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
-*
-* Software distributed under the Mozilla Public License is distributed on an "AS IS"
-* basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
-* the license for the specific language governing your rights and limitations.
-*/
+ * Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ *
+ * This software was developed by Webdetails and is provided under the terms
+ * of the Mozilla Public License, Version 2.0, or any later version. You may not use
+ * this file except in compliance with the license. If you need a copy of the license,
+ * please go to  http://mozilla.org/MPL/2.0/. The Initial Developer is Webdetails.
+ *
+ * Software distributed under the Mozilla Public License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
+ * the license for the specific language governing your rights and limitations.
+ */
 package pt.webdetails.cgg;
 
-import java.io.File;
-import java.io.OutputStream;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.util.messages.LocaleHelper;
+import pt.webdetails.cpf.utils.CharsetHelper;
+import pt.webdetails.cpf.utils.MimeTypes;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -27,17 +32,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
-
-import org.pentaho.platform.engine.core.system.PentahoSystem;
-import pt.webdetails.cpf.utils.CharsetHelper;
-import pt.webdetails.cpf.utils.MimeTypes;
+import java.io.File;
+import java.io.OutputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Locale;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
@@ -103,7 +103,7 @@ public class CggService {
                     HttpServletRequest servletRequest ) {
 
     this.draw( script, type, outputType, attachmentName, null, null,
-        width, height, servletResponse, servletRequest, null );
+      width, height, servletResponse, servletRequest, null );
   }
 
   public void draw( String script,
@@ -175,6 +175,8 @@ public class CggService {
         userSession = PentahoSessionHolder.getSession();
       }
 
+      Locale locale = LocaleHelper.getLocale();
+
       final WebCgg cgg = new WebCgg(
         context,
         servletResponse,
@@ -197,7 +199,15 @@ public class CggService {
         }
       );
 
-      cgg.draw( replacedScript, type, outputType, width.intValue(), height.intValue(), isMultiPage, params );
+      cgg.draw( new DrawParameters(
+        replacedScript,
+        type,
+        outputType,
+        width.intValue(),
+        height.intValue(),
+        isMultiPage,
+        locale,
+        params ) );
 
     } catch ( Exception ex ) {
       logger.fatal( "Error while rendering script", ex );

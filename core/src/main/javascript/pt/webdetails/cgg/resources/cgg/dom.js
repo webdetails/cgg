@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -16,9 +16,7 @@
  * http://codereview.stackexchange.com/questions/12444/queryselectorall-shim-for-non-ie-browsers
  */
 
-define([
-    './util'
-], function(util) {
+define(function() {
 
     var SVG_IMPL = 'batik';
     var A_slice = Array.prototype.slice;
@@ -31,7 +29,7 @@ define([
     }
 
     function loadSvg(path) {
-        return createDocument(util.global._loadSvg(path));
+        return createDocument(globalThis._loadSvg(path));
     }
 
     // DOM shims
@@ -42,8 +40,8 @@ define([
         var win = {
             navigate:     loadPath,
             navigator:    {userAgent: ""},
-            setTimeout:   util.global.setTimeout,
-            clearTimeout: util.global.clearTimeout,
+            setTimeout:   globalThis.setTimeout,
+            clearTimeout: globalThis.clearTimeout,
             Element:      Element,
             CSSStyleDeclaration: CSSStyleDeclaration,
             get window()   { return this;    }, // !
@@ -62,25 +60,16 @@ define([
         }
 
         function syncGlobal() {
-            if(cgg.useGlobal) {
-                var global = util.global;
-
-                // Rhino binds "global" to some apparently unnecessary native function.
-                // This messes up scripts that expect the global "global" property to
-                // be, actually, the JS global object.
-                global.global    = global;
-
-                global.window    = global;
-                global.document  = doc;
-                global._document = doc._node;
-                global.console   = win.console;
-                global.navigate  = loadPath;
-                global.navigator = {userAgent: ""};
-                global.Element   = Element;
-                global.CSSStyleDeclaration = CSSStyleDeclaration;
-                global.clearTimeout = win.clearTimeout;
-                global.setTimeout   = win.setTimeout;
-            }
+            globalThis.window    = globalThis;
+            globalThis.document  = doc;
+            globalThis._document = doc._node;
+            globalThis.console   = win.console;
+            globalThis.navigate  = loadPath;
+            globalThis.navigator = {userAgent: ""};
+            globalThis.Element   = Element;
+            globalThis.CSSStyleDeclaration = CSSStyleDeclaration;
+            globalThis.clearTimeout = win.clearTimeout;
+            globalThis.setTimeout   = win.setTimeout;
         }
 
         return win;
@@ -345,7 +334,7 @@ define([
             stringify: String,
 
             logNode: function(node) {
-                printer.print(util.global._xmlToString(unwrapNode(node)));
+                printer.print(globalThis._xmlToString(unwrapNode(node)));
             }
         };
 
@@ -448,6 +437,6 @@ define([
         window:   createWindow,
         console:  createConsole,
         loadSvg:  loadSvg,
-        run:      util.global.__timer__run__
+        run:      globalThis.__timer__run__
     };
 });
