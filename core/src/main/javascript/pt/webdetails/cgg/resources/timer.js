@@ -1,5 +1,5 @@
 /*!
- * Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ * Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -14,17 +14,15 @@
     // Synchronous, simulated-time, setTimeout implementation.
     // Based in https://html.spec.whatwg.org/multipage/webappapis.html#timers
 
-    var global = this;
-
     var taskQueue = [],
         tasksById = {},
         lastTid = 0,
         time = 0,
         level = 0;
 
-    global.__timer__run__ = run;
-    global.setTimeout = setTimeout;
-    global.clearTimeout = clearTimeout;
+    globalThis.__timer__run__ = run;
+    globalThis.setTimeout = setTimeout;
+    globalThis.clearTimeout = clearTimeout;
 
     // -------------
 

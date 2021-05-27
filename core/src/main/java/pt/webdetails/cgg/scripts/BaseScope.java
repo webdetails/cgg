@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2018 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -100,7 +100,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object load( final Context cx, final Scriptable thisObj,
                              final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[ 0 ] );
+    final Object arg = unwrapArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -139,7 +139,7 @@ public class BaseScope extends ImporterTopLevel {
     return true;
   }
 
-  private static Object unwrapFirstArgument( final Object arg ) {
+  private static Object unwrapArgument( final Object arg ) {
     if ( arg instanceof NativeJavaObject ) {
       final NativeJavaObject no = (NativeJavaObject) arg;
       return no.unwrap();
@@ -149,7 +149,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object _loadSvg( final Context cx, final Scriptable thisObj,
                                  final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[ 0 ] );
+    final Object arg = unwrapArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
@@ -184,17 +184,22 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object lib( final Context cx, final Scriptable thisObj,
                             final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[ 0 ] );
+    final Object arg = unwrapArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toBoolean( false );
     }
+
+    final boolean isSilent = args.length > 1 && Context.toBoolean( args[ 1 ] );
+
     try {
       final String file = arg.toString();
       final BaseScope scope = (BaseScope) thisObj;
       return Context.toBoolean( scope.loadSystemScript( cx, file ) );
     } catch ( Exception e ) {
-      logger.warn( "Failed to call 'lib'", e );
+      if ( !isSilent ) {
+        logger.warn( "Failed to call 'lib'", e );
+      }
       return Context.toBoolean( false );
     }
   }
@@ -224,7 +229,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object readResource( final Context cx, final Scriptable thisObj,
                                      final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[ 0 ] );
+    final Object arg = unwrapArgument( args[ 0 ] );
 
     if ( arg == null ) {
       return Context.toString( "" );
@@ -269,7 +274,7 @@ public class BaseScope extends ImporterTopLevel {
 
   public static Object _xmlToString( final Context cx, final Scriptable thisObj,
                                      final Object[] args, final Function funObj ) {
-    final Object arg = unwrapFirstArgument( args[ 0 ] );
+    final Object arg = unwrapArgument( args[ 0 ] );
     final Node node = (Node) arg;
     try {
       final Source source = new DOMSource( node );

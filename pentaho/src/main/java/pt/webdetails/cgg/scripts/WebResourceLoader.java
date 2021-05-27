@@ -16,6 +16,7 @@ package pt.webdetails.cgg.scripts;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.util.messages.LocaleHelper;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
@@ -28,11 +29,13 @@ import java.net.URLConnection;
 import java.net.URLEncoder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class WebResourceLoader implements ScriptResourceLoader {
   private static final Log logger = LogFactory.getLog( WebResourceLoader.class );
 
   private static final String URL_PARAM_USER = "_TRUST_USER_";
+  private static final String URL_PARAM_LOCALE_OVERRIDE = "_TRUST_LOCALE_OVERRIDE_";
   private String context;
   private String userName;
 
@@ -67,6 +70,12 @@ public class WebResourceLoader implements ScriptResourceLoader {
       if ( this.userName != null ) {
         url = url + ( url.contains( "?" ) ? "&" : "?" )
           + URL_PARAM_USER + "=" + URLEncoder.encode( this.userName, StandardCharsets.UTF_8.name() );
+
+        Locale localeOverride = LocaleHelper.getLocaleOverride();
+        if ( localeOverride != null ) {
+          url = url + "&" + URL_PARAM_LOCALE_OVERRIDE + "="
+              + URLEncoder.encode( localeOverride.toString(), StandardCharsets.UTF_8.name() );
+        }
       }
 
       // Paths already contain contextPath.
