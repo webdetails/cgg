@@ -228,6 +228,20 @@
         </exclusion>
       </exclusions>
     </dependency>
+
+    <dependency>
+      <groupId>org.pentaho.ctools</groupId>
+      <artifactId>cgg-js-intl-polyfill</artifactId>
+      <version>${project.version}</version>
+      <type>zip</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
     <dependency>
       <groupId>javax.mail</groupId>
       <artifactId>mail</artifactId>
@@ -287,6 +301,17 @@
               <includeArtifactIds>ccc</includeArtifactIds>
               <outputDirectory>target/generated-sources</outputDirectory>
               <includes>ccc/amd/*.js</includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>unpack-cgg-js-intl-polyfill</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>unpack-dependencies</goal>
+            </goals>
+            <configuration>
+              <includeArtifactIds>cgg-js-intl-polyfill</includeArtifactIds>
+              <outputDirectory>src/main/javascript/pt/webdetails/cgg/resources</outputDirectory>
             </configuration>
           </execution>
         </executions>
