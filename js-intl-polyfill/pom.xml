@@ -12,12 +12,13 @@
   </parent>
 
   <artifactId>cgg-js-intl-polyfill</artifactId>
-  <packaging>pom</packaging>
   <version>8.3.0.0-SNAPSHOT</version>
+
+  <packaging>pom</packaging>
 
   <properties>
     <nodejs.version>v14.17.0</nodejs.version>
-    <npm.version/>
+    <npm.version>6.14.13</npm.version>
     <frontend-maven-plugin.workingDirectory>${project.basedir}</frontend-maven-plugin.workingDirectory>
     <frontend-maven-plugin.installDirectory>${project.build.directory}</frontend-maven-plugin.installDirectory>
   </properties>
