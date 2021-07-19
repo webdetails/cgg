@@ -71,10 +71,10 @@ public class WebResourceLoader implements ScriptResourceLoader {
         url = url + ( url.contains( "?" ) ? "&" : "?" )
           + URL_PARAM_USER + "=" + URLEncoder.encode( this.userName, StandardCharsets.UTF_8.name() );
 
-        Locale localeOverride = LocaleHelper.getLocaleOverride();
-        if ( localeOverride != null ) {
+        Locale locale = LocaleHelper.getLocale();
+        if ( locale != null ) {
           url = url + "&" + URL_PARAM_LOCALE_OVERRIDE + "="
-              + URLEncoder.encode( localeOverride.toString(), StandardCharsets.UTF_8.name() );
+              + URLEncoder.encode( locale.toString(), StandardCharsets.UTF_8.name() );
         }
       }
 

@@ -39,7 +39,7 @@
                 try {
                     task.fun.apply(null, task.args);
                 } catch(ex) {
-                    print("ERROR - setTimeout: " + ex);
+                    print("ERROR - setTimeout: " + ex.message + ":\n" + ex.stack);
                 }
             }
         }
