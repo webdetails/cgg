@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <artifactId>cgg-parent</artifactId>
     <groupId>org.pentaho.ctools</groupId>
-    <version>9.3.0.0-SNAPSHOT</version>
+    <version>9.3.0.0-20</version>
   </parent>
 
   <artifactId>cgg-core</artifactId>
-  <version>9.3.0.0-SNAPSHOT</version>
+  <version>9.3.0.0-20</version>
   <packaging>jar</packaging>
 
   <properties>
@@ -21,8 +19,8 @@
     <timestamp>${maven.build.timestamp}</timestamp>
     <maven.build.timestamp.format>yyyy/MM/dd hh\:mm</maven.build.timestamp.format>
 
-    <pentaho-ccc-plugin.version>9.3.0.0-SNAPSHOT</pentaho-ccc-plugin.version>
-    <pentaho-cpf-plugin.version>9.3.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
+    <pentaho-ccc-plugin.version>9.3.0.0-20</pentaho-ccc-plugin.version>
+    <pentaho-cpf-plugin.version>9.3.0.0-20</pentaho-cpf-plugin.version>
 
     <commons-lang3.version>3.0.1</commons-lang3.version>
   </properties>
@@ -331,13 +329,13 @@
             </goals>
             <configuration>
               <target>
-                <copy todir="src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0" flatten="true">
+                <copy flatten="true" todir="src/main/javascript/pt/webdetails/cgg/resources/ccc/2.0">
                   <fileset dir="target/generated-sources/ccc/amd">
-                    <include name="def.js" />
-                    <include name="pvc.js" />
-                    <include name="cdo.js" />
-                    <include name="protovis.js" />
-                    <include name="protovis-compat.js" />
+                    <include name="def.js"/>
+                    <include name="pvc.js"/>
+                    <include name="cdo.js"/>
+                    <include name="protovis.js"/>
+                    <include name="protovis-compat.js"/>
                   </fileset>
                 </copy>
               </target>
