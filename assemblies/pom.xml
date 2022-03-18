@@ -7,12 +7,12 @@
   <parent>
     <groupId>org.pentaho.ctools</groupId>
     <artifactId>cgg-parent</artifactId>
-    <version>9.2.0.0-SNAPSHOT</version>
+    <version>9.2.0.3-482</version>
   </parent>
 
   <groupId>org.pentaho.ctools</groupId>
   <artifactId>cgg-assemblies</artifactId>
-  <version>9.2.0.0-SNAPSHOT</version>
+  <version>9.2.0.3-482</version>
   <packaging>pom</packaging>
 
   <modules>
