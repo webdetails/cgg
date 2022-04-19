@@ -26,9 +26,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
-
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 public class WebResourceLoader implements ScriptResourceLoader {
@@ -67,17 +64,6 @@ public class WebResourceLoader implements ScriptResourceLoader {
     try {
       String url = script;
 
-      if ( this.userName != null ) {
-        url = url + ( url.contains( "?" ) ? "&" : "?" )
-          + URL_PARAM_USER + "=" + URLEncoder.encode( this.userName, StandardCharsets.UTF_8.name() );
-
-        Locale locale = LocaleHelper.getLocale();
-        if ( locale != null ) {
-          url = url + "&" + URL_PARAM_LOCALE_OVERRIDE + "="
-              + URLEncoder.encode( locale.toString(), StandardCharsets.UTF_8.name() );
-        }
-      }
-
       // Paths already contain contextPath.
       // e.g. "/pentaho/foo/bar"
       if ( url.startsWith( "/" ) ) {
@@ -94,6 +80,14 @@ public class WebResourceLoader implements ScriptResourceLoader {
       }
 
       URLConnection connection = new URL( url ).openConnection();
+
+      if ( this.userName != null ) {
+        connection.setRequestProperty(URL_PARAM_USER,this.userName);
+        Locale locale = LocaleHelper.getLocale();
+        if ( locale != null ) {
+          connection.setRequestProperty(URL_PARAM_LOCALE_OVERRIDE, locale.toString());
+        }
+      }
 
       return new BufferedInputStream( connection.getInputStream() );
     } catch ( MalformedURLException ex ) {
