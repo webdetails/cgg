@@ -1,5 +1,5 @@
 /*!
- * Copyright 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ * Copyright 2017-2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -10,7 +10,7 @@
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or  implied. Please refer to
  * the license for the specific language governing your rights and limitations.
  */
-(function () {
+(function() {
 
     "use strict";
 
@@ -20,11 +20,9 @@
 
     lib("require.js");
 
-    var global = this;
-
     var reLoad = /(^\.)|(^\/)|(^[a-z]+:)/i;
 
-    var requireReal = global.require;
+    var requireReal = globalThis.require;
 
     requireReal.load = function (context, moduleName, url) {
 
@@ -34,7 +32,7 @@
         context.completeLoad(moduleName);
     };
 
-    var requireFake = global.requirejs = global.require = function(id) {
+    var requireFake = globalThis.requirejs = globalThis.require = function(id) {
 
         var result;
         var error;
@@ -47,7 +45,7 @@
                 error = _error;
             });
 
-            global.__timer__run__();
+            globalThis.__timer__run__();
 
             if(error) { // only in sync case...
                 throw error;
