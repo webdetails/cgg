@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -11,26 +11,21 @@
 * the license for the specific language governing your rights and limitations.
 */
 define([
-    'module',
-    './util',
     './events',
     './dom',
     './parameters',
     './dataSource'
-], function(module, util, events, dom, parameters, dataSource) {
+], function(events, dom, parameters, dataSource) {
     "use strict";
 
-    var EA = [];
     var _trigger = events();
 
     // Fields backing get/set properties
-    var config = module.config() || {};
-    var _useGlobal  = config.useGlobal != null ? !!config.useGlobal : false;
-    var _debugLevel = readDebugLevel(util.global.params, 1);
+    var _debugLevel = readDebugLevel(globalThis.params, 1);
     var _win, _renderer;
 
     var cgg = {
-        print:    util.global.print,
+        print:    globalThis.print,
         trigger:  _trigger,
         on:       _trigger.on,
         dataSource: dataSource,
@@ -41,15 +36,14 @@ define([
         element:  dom.element,
         style:    dom.style,
         registerRenderer: function(v) { _renderer = v; },
-        get win()       { return _useGlobal ? util.global : _win; },
-        get debug()     { return _debugLevel; },
-        get useGlobal() { return _useGlobal;  }
+        get win()       { return globalThis; },
+        get debug()     { return _debugLevel; }
     };
 
     // Create the non-global window.
     _win = dom.window(
         cgg,
-        util.global._document,
+        globalThis._document,
         dom.console(/*printer*/cgg)
     );
 
@@ -66,7 +60,7 @@ define([
         printNode:    function(node) { _win.console.printNode(node); }
     };
 
-    if(_useGlobal) util.global.cgg = cgg;
+    globalThis.cgg = cgg;
 
     return cgg;
 

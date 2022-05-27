@@ -1,5 +1,5 @@
 /*!
-* Copyright 2002 - 2017 Webdetails, a Hitachi Vantara company.  All rights reserved.
+* Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
 *
 * This software was developed by Webdetails and is provided under the terms
 * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -11,9 +11,8 @@
 * the license for the specific language governing your rights and limitations.
 */
 define([
-    './util',
     './interop'
-], function(util, interop) {
+], function(interop) {
 
     var CggParameters = function() { this._params = {}; };
 
@@ -38,16 +37,14 @@ define([
 
         importGlobal();
 
-        if(cgg.useGlobal) {
-            var params = cgg.params;
+        var params = cgg.params;
 
-            util.global.params = params;
+        globalThis.params = params;
 
-            params.each(function(v, name) {
-                var dv = _parameterDefaults[name];
-                if(dv != null) util.global[parameterVar(name)] = v;
-            });
-        }
+        params.each(function(v, name) {
+            var dv = _parameterDefaults[name];
+            if(dv != null) globalThis[parameterVar(name)] = v;
+        });
 
         return {
             init:     initParameter,
@@ -67,7 +64,7 @@ define([
 
         function importGlobal() {
             var changed;
-            var params = util.global.params;
+            var params = globalThis.params;
             if(!params) {
                 // Nothing to import.
                 // Create cggParams if there ain't one.
@@ -88,7 +85,7 @@ define([
                 }
             }
 
-            if(changed && cgg.useGlobal) util.global.params = params;
+            if(changed) globalThis.params = params;
 
             return params;
         }
@@ -113,7 +110,7 @@ define([
 
                     // Also, define a global variable for this parameter
                     // (only for DS parameters)
-                    if(cgg.useGlobal) util.global[parameterVar(name)] = v;
+                    globalThis[parameterVar(name)] = v;
 
                     params.put(name, v);
                 }
@@ -131,20 +128,18 @@ define([
 
         // Component data source parameters namespace
         function getParameterValue(name) {
-            if(cgg.useGlobal) {
-                // Prefer global value, if there is one.
-                var varName = parameterVar(name);
-                if(varName in util.global) return util.global[varName];
-            }
+            // Prefer global value, if there is one.
+            var varName = parameterVar(name);
+            if(varName in globalThis) return globalThis[varName];
+
             return cgg.params.get(name);
         }
 
         function setParameterValue(name, v) {
-            if(cgg.useGlobal) {
-                // Sync global value, if there is one already
-                var varName = parameterVar(name);
-                if(varName in util.global) util.global[varName] = v;
-            }
+            // Sync global value, if there is one already
+            var varName = parameterVar(name);
+            if(varName in globalThis) globalThis[varName] = v;
+
             cgg.params.put(name, v);
         }
     }
