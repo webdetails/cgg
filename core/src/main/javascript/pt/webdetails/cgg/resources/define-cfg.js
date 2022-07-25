@@ -695,7 +695,6 @@
         "pentaho/visual/action/SelectExecution",
         "pentaho/visual/action/Execute",
         "pentaho/visual/action/Message",
-        "pentaho/visual/action/MessageExecution",
         "pentaho/visual/role/Mode",
         "pentaho/visual/role/Mapping",
         "pentaho/visual/role/Property",
