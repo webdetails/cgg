@@ -206,6 +206,11 @@
           "alias": "like",
           "base": "pentaho/data/filter/Property"
         },
+
+        // region Viz. API
+        "pentaho/visual/config": {
+          "type": "pentaho/config/spec/IRuleSet"
+        },
         "pentaho/visual/Model": {
           "base": "complex"
         },
@@ -227,6 +232,8 @@
           "base": "pentaho/visual/role/adaptation/Strategy",
           "ranking": -20
         },
+
+        // region Standard Models
         "pentaho/visual/models/Abstract": {
           "base": "pentaho/visual/Model"
         },
@@ -382,12 +389,41 @@
             }
           }
         },
+        // endregion
 
+        // region CCC Views
+        "pentaho/ccc/visual/Abstract": {"base": null},
+        "pentaho/ccc/visual/CartesianAbstract": {"base": "pentaho/ccc/visual/Abstract"},
+        "pentaho/ccc/visual/CategoricalContinuousAbstract": {"base": "pentaho/ccc/visual/CartesianAbstract"},
+
+        "pentaho/ccc/visual/BarAbstract": {"base": "pentaho/ccc/visual/CategoricalContinuousAbstract"},
+        "pentaho/ccc/visual/Bar": {"base": "pentaho/ccc/visual/BarAbstract"},
+        "pentaho/ccc/visual/BarHorizontal": {"base": "pentaho/ccc/visual/BarAbstract"},
+        "pentaho/ccc/visual/BarStacked": {"base": "pentaho/ccc/visual/BarAbstract"},
+        "pentaho/ccc/visual/BarStackedHorizontal": {"base": "pentaho/ccc/visual/BarAbstract"},
+        "pentaho/ccc/visual/BarLine": {"base": "pentaho/ccc/visual/BarAbstract"},
+        "pentaho/ccc/visual/BarNormalizedAbstract": {"base": "pentaho/ccc/visual/BarAbstract"},
+        "pentaho/ccc/visual/BarNormalized": {"base": "pentaho/ccc/visual/BarNormalizedAbstract"},
+        "pentaho/ccc/visual/BarNormalizedHorizontal": {"base": "pentaho/ccc/visual/BarNormalizedAbstract"},
+
+        "pentaho/ccc/visual/Sunburst": {"base": "pentaho/ccc/visual/Abstract"},
+        "pentaho/ccc/visual/Pie": {"base": "pentaho/ccc/visual/Abstract"},
+        "pentaho/ccc/visual/Donut": {"base": "pentaho/ccc/visual/Pie"},
+
+        "pentaho/ccc/visual/MetricPointAbstract": {"base": "pentaho/ccc/visual/CartesianAbstract"},
+        "pentaho/ccc/visual/Scatter": {"base": "pentaho/ccc/visual/MetricPointAbstract"},
+        "pentaho/ccc/visual/Bubble": {"base": "pentaho/ccc/visual/MetricPointAbstract"},
+
+        "pentaho/ccc/visual/PointAbstract": {"base": "pentaho/ccc/visual/CartesianAbstract"},
+        "pentaho/ccc/visual/Line": {"base": "pentaho/ccc/visual/PointAbstract"},
+        "pentaho/ccc/visual/AreaStacked": {"base": "pentaho/ccc/visual/PointAbstract"},
+
+        "pentaho/ccc/visual/HeatGrid": {"base": "pentaho/ccc/visual/CartesianAbstract"},
+        // endregion
+
+        // region Color Palettes
         "pentaho/visual/color/Palette": {
           "base": "complex"
-        },
-        "pentaho/visual/config": {
-          "type": "pentaho/config/spec/IRuleSet"
         },
         "pentaho/visual/color/palettes/nominalPrimary": {
           "type": "pentaho/visual/color/Palette",
@@ -437,6 +473,9 @@
           "type": "pentaho/visual/color/Palette",
           "ranking": -10
         }
+        // endregion
+
+        // endregion
       },
 
       "pentaho/environment": {
