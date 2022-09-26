@@ -533,6 +533,7 @@
         "pentaho/environment",
         "pentaho/_core/main",
         "pentaho/config/service",
+        "pentaho/config/impl/Service",
         "pentaho/module/service",
         "pentaho/module/metaService",
         "pentaho/module/metaOf",
