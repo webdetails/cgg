@@ -37,6 +37,7 @@
     <project.stage>master</project.stage>
 
     <batik.version>1.9.1</batik.version>
+    <rhino.version>1.7.13</rhino.version>
     <pentaho-cpf-plugin.version>9.3.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
     <platform.version>9.3.0.0-SNAPSHOT</platform.version>
     <commons-lang.version>2.6</commons-lang.version>
@@ -51,7 +52,7 @@
       <dependency>
         <groupId>org.mozilla</groupId>
         <artifactId>rhino</artifactId>
-        <version>1.7.13</version>
+        <version>${rhino.version}</version>
         <exclusions>
           <exclusion>
             <artifactId>*</artifactId>
