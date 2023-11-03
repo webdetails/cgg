@@ -389,6 +389,14 @@
             }
           }
         },
+        "pentaho/visual/models/Treemap": {
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {
+              "module": "pentaho/ccc/visual/Treemap"
+            }
+          }
+        },
         // endregion
 
         // region CCC Views
@@ -764,6 +772,7 @@
         "pentaho/visual/models/types/FontStyle",
         "pentaho/visual/models/types/Sides",
         "pentaho/visual/models/types/LabelsOption",
+        "pentaho/visual/models/types/TreemapLayoutMode",
         "pentaho/visual/models/Abstract",
         "pentaho/visual/models/types/DisplayUnits",
         "pentaho/visual/models/CartesianAbstract",
@@ -805,6 +814,7 @@
         "pentaho/visual/models/Scatter",
         "pentaho/visual/models/types/SliceOrder",
         "pentaho/visual/models/Sunburst",
+        "pentaho/visual/models/Treemap",
         "pentaho/visual/models/all",
         "pentaho/visual/role/adaptation/Strategy",
         "pentaho/visual/role/adaptation/IdentityStrategy",
