@@ -1,5 +1,5 @@
 /*!
- * Copyright 2002 - 2021 Webdetails, a Hitachi Vantara company.  All rights reserved.
+ * Copyright 2002 - 2023 Webdetails, a Hitachi Vantara company.  All rights reserved.
  *
  * This software was developed by Webdetails and is provided under the terms
  * of the Mozilla Public License, Version 2.0, or any later version. You may not use
@@ -389,6 +389,14 @@
             }
           }
         },
+        "pentaho/visual/models/Waterfall": {
+          "base": "pentaho/visual/models/BarAbstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {
+              "module": "pentaho/ccc/visual/Waterfall"
+            }
+          }
+        },
         "pentaho/visual/models/Treemap": {
           "base": "pentaho/visual/models/Abstract",
           "annotations": {
@@ -427,6 +435,7 @@
         "pentaho/ccc/visual/AreaStacked": {"base": "pentaho/ccc/visual/PointAbstract"},
 
         "pentaho/ccc/visual/HeatGrid": {"base": "pentaho/ccc/visual/CartesianAbstract"},
+        "pentaho/ccc/visual/Waterfall": {"base": "pentaho/ccc/visual/BarAbstract"},
         // endregion
 
         // region Color Palettes
@@ -773,6 +782,7 @@
         "pentaho/visual/models/types/Sides",
         "pentaho/visual/models/types/LabelsOption",
         "pentaho/visual/models/types/TreemapLayoutMode",
+        "pentaho/visual/models/types/WaterDirection",
         "pentaho/visual/models/Abstract",
         "pentaho/visual/models/types/DisplayUnits",
         "pentaho/visual/models/CartesianAbstract",
@@ -815,6 +825,7 @@
         "pentaho/visual/models/types/SliceOrder",
         "pentaho/visual/models/Sunburst",
         "pentaho/visual/models/Treemap",
+        "pentaho/visual/models/Waterfall",
         "pentaho/visual/models/all",
         "pentaho/visual/role/adaptation/Strategy",
         "pentaho/visual/role/adaptation/IdentityStrategy",
