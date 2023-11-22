@@ -364,11 +364,22 @@
         "pentaho/visual/models/PointAbstract": {
           "base": "pentaho/visual/models/CartesianAbstract"
         },
+        "pentaho/visual/models/LineAbstract": {
+          "base": "pentaho/visual/models/PointAbstract"
+        },
         "pentaho/visual/models/Line": {
-          "base": "pentaho/visual/models/PointAbstract",
+          "base": "pentaho/visual/models/LineAbstract",
           "annotations": {
             "pentaho/visual/DefaultView": {
               "module": "pentaho/ccc/visual/Line"
+            }
+          }
+        },
+        "pentaho/visual/models/LineStacked": {
+          base: "pentaho/visual/models/LineAbstract",
+          annotations: {
+            "pentaho/visual/DefaultView": {
+              module: "pentaho/ccc/visual/LineStacked"
             }
           }
         },
@@ -431,7 +442,9 @@
         "pentaho/ccc/visual/Bubble": {"base": "pentaho/ccc/visual/MetricPointAbstract"},
 
         "pentaho/ccc/visual/PointAbstract": {"base": "pentaho/ccc/visual/CartesianAbstract"},
-        "pentaho/ccc/visual/Line": {"base": "pentaho/ccc/visual/PointAbstract"},
+        "pentaho/ccc/visual/LineAbstract": {"base": "pentaho/ccc/visual/PointAbstract"},
+        "pentaho/ccc/visual/Line": {"base": "pentaho/ccc/visual/LineAbstract"},
+        "pentaho/ccc/visual/LineStacked": {"base": "pentaho/ccc/visual/LineAbstract"},
         "pentaho/ccc/visual/AreaStacked": {"base": "pentaho/ccc/visual/PointAbstract"},
 
         "pentaho/ccc/visual/HeatGrid": {"base": "pentaho/ccc/visual/CartesianAbstract"},
@@ -821,6 +834,8 @@
         "pentaho/visual/models/Donut",
         "pentaho/visual/models/HeatGrid",
         "pentaho/visual/models/Line",
+        "pentaho/visual/models/LineAbstract",
+        "pentaho/visual/models/LineStacked",
         "pentaho/visual/models/Scatter",
         "pentaho/visual/models/types/SliceOrder",
         "pentaho/visual/models/Sunburst",
@@ -870,6 +885,8 @@
         "pentaho/ccc/visual/Donut",
         "pentaho/ccc/visual/HeatGrid",
         "pentaho/ccc/visual/Line",
+        "pentaho/ccc/visual/LineAbstract",
+        "pentaho/ccc/visual/LineStacked",
         "pentaho/ccc/visual/Scatter",
         "pentaho/ccc/visual/Sunburst",
         "pentaho/ccc/visual/Treemap",
