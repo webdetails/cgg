@@ -391,6 +391,14 @@
             }
           }
         },
+        "pentaho/visual/models/Dot": {
+          "base": "pentaho/visual/models/PointAbstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {
+              "module": "pentaho/ccc/visual/Dot"
+            }
+          }
+        },
 
         "pentaho/visual/models/HeatGrid": {
           "base": "pentaho/visual/models/CartesianAbstract",
@@ -446,6 +454,7 @@
         "pentaho/ccc/visual/Line": {"base": "pentaho/ccc/visual/LineAbstract"},
         "pentaho/ccc/visual/LineStacked": {"base": "pentaho/ccc/visual/LineAbstract"},
         "pentaho/ccc/visual/AreaStacked": {"base": "pentaho/ccc/visual/PointAbstract"},
+        "pentaho/ccc/visual/Dot": {"base": "pentaho/ccc/visual/PointAbstract"},
 
         "pentaho/ccc/visual/HeatGrid": {"base": "pentaho/ccc/visual/CartesianAbstract"},
         "pentaho/ccc/visual/Waterfall": {"base": "pentaho/ccc/visual/BarAbstract"},
@@ -832,6 +841,7 @@
         "pentaho/visual/models/Bubble",
         "pentaho/visual/models/Pie",
         "pentaho/visual/models/Donut",
+        "pentaho/visual/models/Dot",
         "pentaho/visual/models/HeatGrid",
         "pentaho/visual/models/Line",
         "pentaho/visual/models/LineAbstract",
@@ -883,6 +893,7 @@
         "pentaho/ccc/visual/Bubble",
         "pentaho/ccc/visual/Pie",
         "pentaho/ccc/visual/Donut",
+        "pentaho/ccc/visual/Dot",
         "pentaho/ccc/visual/HeatGrid",
         "pentaho/ccc/visual/Line",
         "pentaho/ccc/visual/LineAbstract",
