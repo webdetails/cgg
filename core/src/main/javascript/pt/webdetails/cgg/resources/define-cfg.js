@@ -416,6 +416,14 @@
             }
           }
         },
+        "pentaho/visual/models/Boxplot": {
+          "base": "pentaho/visual/models/CategoricalContinuousAbstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {
+              "module": "pentaho/ccc/visual/Boxplot"
+            }
+          }
+        },
         "pentaho/visual/models/Waterfall": {
           "base": "pentaho/visual/models/BarAbstract",
           "annotations": {
@@ -458,6 +466,8 @@
 
         "pentaho/ccc/visual/HeatGrid": {"base": "pentaho/ccc/visual/CartesianAbstract"},
         "pentaho/ccc/visual/Waterfall": {"base": "pentaho/ccc/visual/BarAbstract"},
+        "pentaho/ccc/visual/Treemap": {"base": "pentaho/ccc/visual/Abstract"},
+        "pentaho/ccc/visual/Boxplot": {"base": "pentaho/ccc/visual/CategoricalContinuousAbstract"},
         // endregion
 
         // region Color Palettes
@@ -850,6 +860,7 @@
         "pentaho/visual/models/types/SliceOrder",
         "pentaho/visual/models/Sunburst",
         "pentaho/visual/models/Treemap",
+        "pentaho/visual/models/Boxplot",
         "pentaho/visual/models/Waterfall",
         "pentaho/visual/models/all",
         "pentaho/visual/role/adaptation/Strategy",
