@@ -424,6 +424,14 @@
             }
           }
         },
+        "pentaho/visual/models/Funnel": {
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {
+              "module": "pentaho/visual/views/echarts/Funnel"
+            }
+          }
+        },
         "pentaho/visual/models/Waterfall": {
           "base": "pentaho/visual/models/BarAbstract",
           "annotations": {
@@ -436,6 +444,7 @@
 
         // region CCC Views
         "pentaho/ccc/visual/Abstract": {"base": null},
+        "pentaho/visual/views/echarts/Abstract": {"base": null},
         "pentaho/ccc/visual/CartesianAbstract": {"base": "pentaho/ccc/visual/Abstract"},
         "pentaho/ccc/visual/CategoricalContinuousAbstract": {"base": "pentaho/ccc/visual/CartesianAbstract"},
 
@@ -468,6 +477,7 @@
         "pentaho/ccc/visual/Waterfall": {"base": "pentaho/ccc/visual/BarAbstract"},
         "pentaho/ccc/visual/Treemap": {"base": "pentaho/ccc/visual/Abstract"},
         "pentaho/ccc/visual/Boxplot": {"base": "pentaho/ccc/visual/CategoricalContinuousAbstract"},
+        "pentaho/visual/views/echarts/Funnel": {"base": "pentaho/visual/views/echarts/Abstract"},
         // endregion
 
         // region Color Palettes
@@ -861,6 +871,7 @@
         "pentaho/visual/models/Sunburst",
         "pentaho/visual/models/Treemap",
         "pentaho/visual/models/Boxplot",
+        "pentaho/visual/models/Funnel",
         "pentaho/visual/models/Waterfall",
         "pentaho/visual/models/all",
         "pentaho/visual/role/adaptation/Strategy",
@@ -900,6 +911,8 @@
         "pentaho/ccc/visual/BarStacked",
         "pentaho/ccc/visual/BarStackedHorizontal",
         "pentaho/ccc/visual/Boxplot",
+        "pentaho/visual/views/echarts/Funnel",
+        "pentaho/visual/views/echarts/Abstract",
         "pentaho/ccc/visual/MetricPointAbstract",
         "pentaho/ccc/visual/Bubble",
         "pentaho/ccc/visual/Pie",
