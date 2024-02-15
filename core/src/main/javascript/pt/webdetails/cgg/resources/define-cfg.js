@@ -440,6 +440,14 @@
             }
           }
         },
+        "pentaho/visual/models/Gauge": {
+          "base": "pentaho/visual/models/Abstract",
+          "annotations": {
+            "pentaho/visual/DefaultView": {
+              "module": "pentaho/visual/views/echarts/Gauge"
+            }
+          }
+        },
         // endregion
 
         // region CCC Views
@@ -478,6 +486,7 @@
         "pentaho/ccc/visual/Treemap": {"base": "pentaho/ccc/visual/Abstract"},
         "pentaho/ccc/visual/Boxplot": {"base": "pentaho/ccc/visual/CategoricalContinuousAbstract"},
         "pentaho/visual/views/echarts/Funnel": {"base": "pentaho/visual/views/echarts/Abstract"},
+        "pentaho/visual/views/echarts/Gauge": {"base": "pentaho/visual/views/echarts/Abstract"},
         // endregion
 
         // region Color Palettes
@@ -873,6 +882,7 @@
         "pentaho/visual/models/Boxplot",
         "pentaho/visual/models/Funnel",
         "pentaho/visual/models/Waterfall",
+        "pentaho/visual/models/Gauge",
         "pentaho/visual/models/all",
         "pentaho/visual/role/adaptation/Strategy",
         "pentaho/visual/role/adaptation/IdentityStrategy",
@@ -913,6 +923,7 @@
         "pentaho/ccc/visual/Boxplot",
         "pentaho/visual/views/echarts/Funnel",
         "pentaho/visual/views/echarts/Abstract",
+        "pentaho/visual/views/echarts/Gauge",
         "pentaho/ccc/visual/MetricPointAbstract",
         "pentaho/ccc/visual/Bubble",
         "pentaho/ccc/visual/Pie",
