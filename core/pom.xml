@@ -25,6 +25,9 @@
     <pentaho-cpf-plugin.version>10.2.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
 
     <commons-lang3.version>3.0.1</commons-lang3.version>
+    <maven-surefire-plugin.argLine>
+      --add-opens java.desktop/sun.java2d=ALL-UNNAMED
+    </maven-surefire-plugin.argLine>
   </properties>
 
   <dependencies>
@@ -201,7 +204,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.10</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
