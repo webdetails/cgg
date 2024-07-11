@@ -62,6 +62,9 @@ public class JCRScriptResourceLoader implements ScriptResourceLoader {
     }
     UserContentRepositoryAccess repositoryAccess = new UserContentRepositoryAccess( PentahoSessionHolder.getSession(),
       s.startsWith( "/" ) ? null : basePath );
+    if ( !repositoryAccess.fileExists( s ) ) {
+      throw new ScriptResourceNotFoundException( s );
+    }
     return repositoryAccess.getFileInputStream( s );
   }
 
