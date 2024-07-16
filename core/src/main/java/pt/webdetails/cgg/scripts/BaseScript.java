@@ -131,10 +131,9 @@ public abstract class BaseScript implements Script {
 
     try {
       scope.loadScript( cx, source );
-    } catch ( ScriptResourceNotFoundException e ) {
+    } catch ( ScriptResourceNotFoundException | IOException e ) {
       logger.error( "Failed to read " + source + ": " + e.toString(), e );
-    } catch ( IOException e ) {
-      logger.error( "Failed to read " + source + ": " + e.toString(), e );
+      throw new ScriptExecuteException( e );
     }
   }
 }
