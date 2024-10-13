@@ -7,11 +7,11 @@
   <parent>
     <artifactId>cgg-parent</artifactId>
     <groupId>org.pentaho.ctools</groupId>
-    <version>10.2.0.0-SNAPSHOT</version>
+    <version>10.2.0.0-222</version>
   </parent>
   <groupId>org.pentaho.ctools</groupId>
   <artifactId>cgg-pentaho</artifactId>
-  <version>10.2.0.0-SNAPSHOT</version>
+  <version>10.2.0.0-222</version>
 
   <packaging>jar</packaging>
 
