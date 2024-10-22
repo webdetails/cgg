@@ -30,11 +30,11 @@ import pt.webdetails.cgg.output.PngOutputHandler;
 import pt.webdetails.cgg.output.SVGOutputHandler;
 import pt.webdetails.cpf.utils.CharsetHelper;
 
-import javax.activation.DataHandler;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMultipart;
-import javax.mail.util.ByteArrayDataSource;
+import jakarta.activation.DataHandler;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.util.ByteArrayDataSource;
 
 /**
  * @author pdpi
