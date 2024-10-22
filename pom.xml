@@ -42,8 +42,6 @@
     <commons-lang.version>2.6</commons-lang.version>
     <xalan.version>2.7.1</xalan.version>
     <pentaho-cgg-plugin.version>10.3.0.0-SNAPSHOT</pentaho-cgg-plugin.version>
-    <mail.version>1.4.1</mail.version>
-    <javax.servlet-api>3.0.1</javax.servlet-api>
   </properties>
 
   <dependencyManagement>
