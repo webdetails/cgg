@@ -86,9 +86,19 @@ public class SystemFolderScriptResourceLoader implements ScriptResourceLoader {
       fullPath = StringUtils.join( sections, "/" );
     }
 
-    SystemPluginResourceAccess resourceAccess = new SystemPluginResourceAccess( plugin, "" );
+    SystemPluginResourceAccess resourceAccess;
+    try{
+      resourceAccess = new SystemPluginResourceAccess( plugin, "" );
+    } catch (IllegalArgumentException e ){
+      throw new ScriptResourceNotFoundException( fullPath, e );
+    }
 
-    return resourceAccess.getFileInputStream( fullPath );
+    InputStream inputStream = resourceAccess.getFileInputStream( fullPath );
+    if (inputStream == null){
+      throw new ScriptResourceNotFoundException( fullPath );
+    }
+
+    return inputStream;
   }
 
   public InputStream getWebResource( String script ) throws IOException, ScriptResourceNotFoundException {

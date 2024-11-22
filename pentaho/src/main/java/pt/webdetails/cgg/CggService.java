@@ -19,9 +19,11 @@ import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.util.messages.LocaleHelper;
+import pt.webdetails.cgg.scripts.ScriptResourceNotFoundException;
 import pt.webdetails.cpf.utils.CharsetHelper;
 import pt.webdetails.cpf.utils.MimeTypes;
 
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -35,6 +37,7 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -162,7 +165,8 @@ public class CggService {
         script = "/" + script;
       }
 
-      String replacedScript = StringUtils.replace( script, "\\", "/" );
+      // Normalize the path to have consumable backslashes and to prevent "escape" from the PS context via relative pathing "../"
+      String replacedScript = script == null ? null : Paths.get( script ).normalize().toString().replace( "\\", "/" );
       File f = new File( replacedScript );
 
       URL context = new URL( "file", "", StringUtils.replace( replacedScript, f.getName(), "" ) );
@@ -211,9 +215,24 @@ public class CggService {
 
     } catch ( Exception ex ) {
       logger.fatal( "Error while rendering script", ex );
+      if ( servletResponse != null ) {
+        processException( ex, servletResponse );
+      }
     }
   }
 
+  private void processException( Exception ex, HttpServletResponse servletResponse ){
+      Throwable rootCause = ex;
+      while ( rootCause.getCause() != null ) {
+        rootCause = rootCause.getCause();
+      }
+
+      if ( rootCause instanceof ScriptResourceNotFoundException ) {
+        servletResponse.setStatus( 404 );
+      } else {
+        servletResponse.setStatus( 400 );
+      }
+  }
 
   protected void setResponseHeaders( final String mimeType, final HttpServletResponse response ) {
     setResponseHeaders( mimeType, 0, null, response );
