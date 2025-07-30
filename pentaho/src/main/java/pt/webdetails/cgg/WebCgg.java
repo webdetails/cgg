@@ -15,7 +15,7 @@ package pt.webdetails.cgg;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import pt.webdetails.cgg.datasources.WebDataSourceFactory;
 import pt.webdetails.cgg.output.OutputHandler;
