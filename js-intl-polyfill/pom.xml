@@ -8,11 +8,11 @@
   <parent>
     <artifactId>cgg-parent</artifactId>
     <groupId>org.pentaho.ctools</groupId>
-    <version>11.0.0.0-SNAPSHOT</version>
+    <version>11.0.0.0-137</version>
   </parent>
 
   <artifactId>cgg-js-intl-polyfill</artifactId>
-  <version>11.0.0.0-SNAPSHOT</version>
+  <version>11.0.0.0-137</version>
 
   <packaging>pom</packaging>
 
