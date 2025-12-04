@@ -36,7 +36,7 @@
     <maven.build.timestamp.format>yyyy/MM/dd hh\:mm</maven.build.timestamp.format>
     <project.stage>master</project.stage>
 
-    <rhino.version>1.7.13</rhino.version>
+    <rhino.version>1.7.14.1</rhino.version>
     <pentaho-cpf-plugin.version>11.1.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
     <platform.version>11.1.0.0-SNAPSHOT</platform.version>
     <commons-lang.version>2.6</commons-lang.version>
