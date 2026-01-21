@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,6 +32,10 @@ public abstract class AbstractScriptFactory implements ScriptFactory {
   private HashMap<ScriptType, BaseScope> contexts;
 
   protected AbstractScriptFactory() {
+    // Force UTC timezone for JavaScript date parsing.
+    // This prevents dates from being shifted by local timezone offset.
+    TimeZone.setDefault( TimeZone.getTimeZone( "UTC" ) );
+
     contextFactory = new ContextFactory();
     contexts = new HashMap<>();
   }
