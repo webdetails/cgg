@@ -3573,11 +3573,19 @@ pv.Scale.quantitative = function() {
         increment = function(d) { d.setSeconds(d.getSeconds() + step*dateTickPrecision/1000);};
       }
 
-
-      while (true) {
-        increment(date);
-        if (date > max) break;
+      if (pv.get(options, 'roundInside', true)) {
+        while (true) {
+          increment(date);
+          if (date > max) break;
+          dates.push(new Date(date));
+        }
+      } else {
         dates.push(new Date(date));
+        while (true) {
+          increment(date);
+          dates.push(new Date(date));
+          if (date > max) break;
+        }
       }
       return reverse ? dates.reverse() : dates;
     }
@@ -7428,7 +7436,7 @@ pv.SvgScene.lineIntersect = function(o1, d1, o2, d2) {
 
   NOTE:
   As yy points down, and because of the way Vector.perp() is written,
-  perp() corresponds to rotating 90º clockwise.
+  perp() corresponds to rotating 90ï¿½ clockwise.
 
   -----
 
