@@ -10,9 +10,10 @@
  * Change Date: 2030-06-15
  ******************************************************************************/
 
+// datetimeformat v7 export map requires explicit '.js' paths for these entry imports.
 import "@formatjs/intl-getcanonicallocales/polyfill";
 import "@formatjs/intl-locale/polyfill";
 import "@formatjs/intl-pluralrules/polyfill";
 import "@formatjs/intl-numberformat/polyfill";
-import "@formatjs/intl-datetimeformat/polyfill";
-import "@formatjs/intl-datetimeformat/add-all-tz";
+import "@formatjs/intl-datetimeformat/polyfill.js";
+import "@formatjs/intl-datetimeformat/add-all-tz.js";

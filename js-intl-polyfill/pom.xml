@@ -28,8 +28,8 @@
   <packaging>pom</packaging>
 
   <properties>
-    <nodejs.version>v14.17.0</nodejs.version>
-    <npm.version>6.14.13</npm.version>
+    <nodejs.version>v24.11.1</nodejs.version>
+    <npm.version>11.6.2</npm.version>
     <frontend-maven-plugin.workingDirectory>${project.basedir}</frontend-maven-plugin.workingDirectory>
     <frontend-maven-plugin.installDirectory>${project.build.directory}</frontend-maven-plugin.installDirectory>
   </properties>
