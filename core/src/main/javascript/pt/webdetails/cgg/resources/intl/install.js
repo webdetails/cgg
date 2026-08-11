@@ -31,6 +31,9 @@ lib('intl/polyfill.js');
     loadMetadataFacet('pluralrules');
   }
 
+  // Chart data dates are constructed with `new Date(...)`, which interprets their values in Rhino's local timezone.
+  // Rhino obtains its local timezone from the JVM. DateTimeFormat must use that same timezone so it cancels out
+  // during formatting. Otherwise, DateTimeFormat defaults to UTC and shifts formatted values from their originals.
   Intl.DateTimeFormat.__setDefaultTimeZone(getOffsetString());
 
   function loadMetadataFacet(facet) {
