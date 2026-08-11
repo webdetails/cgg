@@ -31,6 +31,11 @@ lib('intl/polyfill.js');
     loadMetadataFacet('pluralrules');
   }
 
+  // Chart data dates are constructed with `new Date(...)`, which interprets their values in Rhino's local timezone.
+  // Rhino obtains its local timezone from the JVM. DateTimeFormat must use that same timezone so it cancels out
+  // during formatting. Otherwise, DateTimeFormat defaults to UTC and shifts formatted values from their originals.
+  Intl.DateTimeFormat.__setDefaultTimeZone(getOffsetString());
+
   function loadMetadataFacet(facet) {
     var loaded = candidateLocales.some(function(candidateLocale) {
 
@@ -83,6 +88,21 @@ lib('intl/polyfill.js');
     }
 
     return a;
+  }
+
+  function getOffsetString() {
+    // getTimezoneOffset() returns the offset from local time to UTC
+    // with the opposite sign of the conventional UTC offset
+    const offsetMinutes = -new Date().getTimezoneOffset();
+
+    // Whether the timezone is ahead (+) or behind (-) UTC
+    const sign = offsetMinutes >= 0 ? "+" : "-";
+    const absoluteMinutes = Math.abs(offsetMinutes);
+
+    const hours = String(Math.floor(absoluteMinutes / 60)).padStart(2, '0');
+    const minutes = String(absoluteMinutes % 60).padStart(2, '0');
+
+    return `${sign}${hours}:${minutes}`;
   }
 }());
 
