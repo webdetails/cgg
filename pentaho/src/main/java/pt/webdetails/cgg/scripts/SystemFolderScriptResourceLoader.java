@@ -14,8 +14,8 @@
 
 package pt.webdetails.cgg.scripts;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import pt.webdetails.cpf.repository.pentaho.SystemPluginResourceAccess;
 import pt.webdetails.cpf.utils.CharsetHelper;
 

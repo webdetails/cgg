@@ -35,7 +35,7 @@
     <pentaho-ccc-plugin.version>11.1.0.0-SNAPSHOT</pentaho-ccc-plugin.version>
     <pentaho-cpf-plugin.version>11.1.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
 
-    <commons-lang3.version>3.0.1</commons-lang3.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
     <maven-surefire-plugin.argLine>
       --add-opens java.desktop/sun.java2d=ALL-UNNAMED
     </maven-surefire-plugin.argLine>
@@ -49,8 +49,8 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
     </dependency>
 
     <!-- default_internal (explicit) -->

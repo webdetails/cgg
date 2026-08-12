@@ -39,7 +39,7 @@
     <rhino.version>1.7.13</rhino.version>
     <pentaho-cpf-plugin.version>11.1.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
     <platform.version>11.1.0.0-SNAPSHOT</platform.version>
-    <commons-lang.version>2.6</commons-lang.version>
+    <commons-lang3.version>3.18.0</commons-lang3.version>
     <xalan.version>2.7.1</xalan.version>
     <pentaho-cgg-plugin.version>11.1.0.0-SNAPSHOT</pentaho-cgg-plugin.version>
   </properties>
@@ -81,9 +81,9 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-        <version>${commons-lang.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
