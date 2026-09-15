@@ -47,13 +47,21 @@ public class RhinoNumberFormattingTest {
 
   @Before
   public void setUp() {
-    // Mirrors the context configuration cgg uses in production -- see AbstractScriptFactory.
-    ContextFactory contextFactory = new ContextFactory();
-    cx = contextFactory.enterContext();
-    cx.setGeneratingDebug( false );
-    cx.setOptimizationLevel( -1 );
-    cx.setLanguageVersion( Context.VERSION_ES6 );
+    cx = enterProductionContext();
     scope = cx.initStandardObjects();
+  }
+
+  /**
+   * Mirrors the context configuration cgg uses in production -- see AbstractScriptFactory. The
+   * language version matters: several Rhino number-formatting behaviours differ between the default
+   * version and VERSION_ES6, so a test run at the default version would not describe cgg.
+   */
+  private static Context enterProductionContext() {
+    final Context context = new ContextFactory().enterContext();
+    context.setGeneratingDebug( false );
+    context.setOptimizationLevel( -1 );
+    context.setLanguageVersion( Context.VERSION_ES6 );
+    return context;
   }
 
   @After
@@ -156,8 +164,12 @@ public class RhinoNumberFormattingTest {
    * CVE-2025-66453: formatting an attacker-controlled float could drive Rhino's dtoa routine into
    * raising 5 to an enormous power, burning CPU without bound. Chart scripts format values that
    * originate in query results, so the value reaching toFixed is not necessarily trusted.
+   *
+   * The budget is enforced by the JUnit timeout, which runs the body on its own thread and fails
+   * the test even if a call never returns; the per-expression assertion below only reports which
+   * expression was slow when the run finishes inside the budget.
    */
-  @Test
+  @Test( timeout = FORMAT_BUDGET_MILLIS )
   public void formattingAdversarialFloatsCompletesInBoundedTime() {
     final String[] adversarialValues = {
       "Number.MIN_VALUE",
@@ -174,17 +186,25 @@ public class RhinoNumberFormattingTest {
       "1.7976931348623157e+308"
     };
 
-    for ( final String value : adversarialValues ) {
-      for ( final int precision : new int[] { 0, 1, 20, 100 } ) {
-        final String source = "(" + value + ").toFixed(" + precision + ")";
-        final long startedAt = System.nanoTime();
-        eval( source );
-        final long elapsedMillis = ( System.nanoTime() - startedAt ) / 1000000L;
-        assertTrue(
-          "Formatting '" + source + "' took " + elapsedMillis + "ms, over the "
-            + FORMAT_BUDGET_MILLIS + "ms budget",
-          elapsedMillis < FORMAT_BUDGET_MILLIS );
+    // The JUnit timeout runs this body on its own thread, which has no Context associated with it,
+    // so enter one configured exactly like the shared one from setUp().
+    final Context timedContext = enterProductionContext();
+    try {
+      final Scriptable timedScope = timedContext.initStandardObjects();
+      for ( final String value : adversarialValues ) {
+        for ( final int precision : new int[] { 0, 1, 20, 100 } ) {
+          final String source = "(" + value + ").toFixed(" + precision + ")";
+          final long startedAt = System.nanoTime();
+          timedContext.evaluateString( timedScope, source, "test", 1, null );
+          final long elapsedMillis = ( System.nanoTime() - startedAt ) / 1000000L;
+          assertTrue(
+            "Formatting '" + source + "' took " + elapsedMillis + "ms, over the "
+              + FORMAT_BUDGET_MILLIS + "ms budget",
+            elapsedMillis < FORMAT_BUDGET_MILLIS );
+        }
       }
+    } finally {
+      Context.exit();
     }
   }
 }
