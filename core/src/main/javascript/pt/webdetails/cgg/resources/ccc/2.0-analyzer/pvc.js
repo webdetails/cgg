@@ -12632,7 +12632,7 @@ def.type('pvc.visual.Sign')
 
     defaultColorSceneScale: function(){
         return this._defaultColorSceneScale ||
-               (defaultColorSceneScale = this._initDefaultColorSceneScale());
+               (this._defaultColorSceneScale = this._initDefaultColorSceneScale());
     },
 
     defaultColor: function(type){
@@ -14065,7 +14065,7 @@ var cartAxis_optionsDef = def.create(axis_optionsDef, {
     DomainRoundMode: {
         resolve: resolveNormal,
         cast:    String,
-        value:   'none'
+        value:   'tick'
     },
     TickExponentMin: {
         resolve: resolveNormal,
@@ -21336,7 +21336,7 @@ pvc.AxisPanel = pvc.BasePanel.extend({
     font: '9px sans-serif', // label font
     labelSpacingMin: 1,
     // To be used in linear scales
-    domainRoundMode: 'none',
+    domainRoundMode: 'tick',
     desiredTickCount: null,
     tickExponentMin:  null,
     tickExponentMax:  null,

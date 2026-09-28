@@ -16,12 +16,8 @@ define([
     './protovis',
     './pvc'
 ], function(cgg, pv, pvc) {
-    // Let cgg init, as well.
-    cgg.debug = 4;
     cgg.init();
 
-    // Needed otherwise debugging mode throws...
-    cgg.debug = 0;
     JSON.stringify = String;
 
     return {
