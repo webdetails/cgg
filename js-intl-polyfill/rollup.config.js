@@ -2,6 +2,7 @@
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
+import { babel } from "@rollup/plugin-babel";
 import terser from "@rollup/plugin-terser";
 import copy from "rollup-plugin-copy";
 import license from "rollup-plugin-license";
@@ -29,6 +30,13 @@ export default {
     nodeResolve(),
     commonjs(),
     json(),
+    // The formatjs packages are published as ES2015+, which Rhino cannot parse (e.g. classes, optional catch binding).
+    babel({
+      babelHelpers: "bundled",
+      babelrc: false,
+      configFile: false,
+      presets: [["@babel/preset-env", { targets: { ie: "11" } }]]
+    }),
     terser(),
     license({
       thirdParty: {
