@@ -18,6 +18,7 @@
  */
 
 define(function() {
+    /* globals _runTimeouts */
 
     var SVG_IMPL = 'batik';
     var A_slice = Array.prototype.slice;
@@ -69,8 +70,6 @@ define(function() {
             globalThis.navigator = {userAgent: ""};
             globalThis.Element   = Element;
             globalThis.CSSStyleDeclaration = CSSStyleDeclaration;
-            globalThis.clearTimeout = win.clearTimeout;
-            globalThis.setTimeout   = win.setTimeout;
         }
 
         return win;
@@ -431,6 +430,11 @@ define(function() {
         return ret;
     }
 
+    // Runs pending Promise reactions (micro-tasks) and setTimeout callbacks to completion.
+    function run() {
+        _runTimeouts();
+    }
+
     return {
         document: createDocument,
         element:  createElement,
@@ -438,6 +442,6 @@ define(function() {
         window:   createWindow,
         console:  createConsole,
         loadSvg:  loadSvg,
-        run:      globalThis.__timer__run__
+        run:      run
     };
 });

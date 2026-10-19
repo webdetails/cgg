@@ -15,9 +15,7 @@
 
     "use strict";
 
-    /* globals lib, load, require */
-
-    lib("timer.js");
+    /* globals lib, load, require, _runTimeouts */
 
     lib("require.js");
 
@@ -33,38 +31,46 @@
         context.completeLoad(moduleName);
     };
 
-    var requireFake = globalThis.requirejs = globalThis.require = function(id) {
-
+    // Called by RequireJS for the synchronous syntax, `require(id)`, instead of failing when the module is not yet
+    // loaded. Loads the module, and its dependencies, using the asynchronous syntax, before returning.
+    // Modules are loaded synchronously by `requireReal.load`. Making RequireJS's deferral, `nextTick`, synchronous as
+    // well, the asynchronous syntax completes before returning, without running the event loop, which would
+    // otherwise also run unrelated pending timeouts and micro-tasks.
+    requireReal.get = function(context, id, relMap, localRequire) {
         var result;
         var error;
+        var isDone = false;
 
-        if(typeof id === "string") {
-            // Synchronous syntax.
-            requireReal.call(this, [id], function(_result) {
+        var nextTickPrev = context.nextTick;
+        context.nextTick = syncTick;
+        try {
+            localRequire([id], function(_result) {
+                isDone = true;
                 result = _result;
             }, function(_error) {
+                isDone = true;
                 error = _error;
             });
+        } finally {
+            context.nextTick = nextTickPrev;
+        }
 
-            globalThis.__timer__run__();
+        if(!isDone) {
+            // Some loader plugin defers completion, e.g. via setTimeout or a promise.
+            // Run the event loop, only until done.
+            _runTimeouts(function() { return isDone; });
+        }
 
-            if(error) { // only in sync case...
-                throw error;
-            }
-        } else {
-            // Asynchronous syntax.
-            result = requireReal.apply(this, arguments);
-            if(result === requireReal) {
-                result = requireFake;
-            }
+        if(error) {
+            throw error;
         }
 
         return result;
     };
 
-    Object.keys(requireReal).forEach(function(p) {
-        requireFake[p] = requireReal[p];
-    });
+    function syncTick(fn) {
+        fn();
+    }
 
     // Synchronous load function for cgg.
     // ./      -> load

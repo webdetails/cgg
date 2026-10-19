@@ -117,13 +117,14 @@ public abstract class BaseScript implements Script {
     if ( params == null ) {
       throw new NullPointerException();
     }
-    if ( Context.getCurrentContext() == null ) {
+
+    final Context cx = Context.getCurrentContext();
+    if ( cx == null ) {
       throw new ScriptExecuteException();
     }
 
-    final Context cx = Context.getCurrentContext();
-    // env.js has methods that pass the 64k Java limit, so we can't compile
-    // to bytecode. Interpreter mode to the rescue!
+    // Interpreter mode. Compiling to bytecode was originally ruled out because env.js (since removed) had methods
+    // exceeding the JVM's 64K method size limit. The bundled libraries do not currently work in compiled mode.
     cx.setOptimizationLevel( -1 );
 
     final Object wrappedParams = Context.javaToJS( params, scope );
@@ -132,9 +133,16 @@ public abstract class BaseScript implements Script {
 
     try {
       scope.loadScript( cx, source );
+
+      // Run to completion.
+      scope.run( cx );
+
     } catch ( ScriptResourceNotFoundException | IOException e ) {
       logger.error( "Failed to read " + source + ": " + e.toString(), e );
       throw new ScriptExecuteException( e );
+    } finally {
+      // The scope is reused across executions. Discard timeouts left pending by an aborted execution.
+      scope.clearTimeouts();
     }
   }
 }
