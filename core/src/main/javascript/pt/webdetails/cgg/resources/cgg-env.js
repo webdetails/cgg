@@ -14,12 +14,9 @@
 
 /* globals lib */
 
-// Intl polyfill requires this.
-var globalThis = this;
-
-// Rhino binds "global" to some apparently unnecessary native function.
-// This messes up scripts that expect the global "global" property to
-// be, actually, the JS global object.
+// Rhino's ImporterTopLevel exposes the JavaImporter constructor also as the global "global" property.
+// Make "global" be the JS global object instead, as scripts written for Node.js expect.
+// (On Rhino < 1.7.14, which lacked globalThis, the Intl polyfill fell back to "global" to find the global object.)
 globalThis.global = this;
 
 // Global stuff - JS language shims

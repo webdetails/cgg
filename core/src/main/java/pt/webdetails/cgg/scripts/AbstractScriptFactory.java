@@ -82,11 +82,17 @@ public abstract class AbstractScriptFactory implements ScriptFactory {
   }
 
   public void enterContext() {
+    enterContextCore();
+  }
+
+  protected Context enterContextCore() {
     Context cx = contextFactory.enterContext();
 
     cx.setGeneratingDebug( false );
     cx.setOptimizationLevel( -1 );
     cx.setLanguageVersion( Context.VERSION_ES6 );
+
+    return cx;
   }
 
   public void exitContext() {
@@ -107,24 +113,24 @@ public abstract class AbstractScriptFactory implements ScriptFactory {
   protected BaseScope createScope( final ScriptType type ) throws ScriptExecuteException {
     final String[] dependencies = computeDependencies( type );
 
-    final Context cx = contextFactory.enterContext();
-    cx.setGeneratingDebug( false );
-    cx.setOptimizationLevel( -1 );
-
-    final BaseScope scope = new BaseScope();
-    scope.setScriptFactory( this );
-    scope.init( cx );
-    for ( final String file : dependencies ) {
-      try {
-        scope.loadSystemScript( cx, file );
-      } catch ( ScriptResourceNotFoundException ex ) {
-        logger.error( "Failed to read " + file + ": " + ex.toString() );
-      } catch ( IOException e ) {
-        throw new ScriptExecuteException( e );
+    final Context cx = enterContextCore();
+    try {
+      final BaseScope scope = new BaseScope();
+      scope.setScriptFactory( this );
+      scope.init( cx );
+      for ( final String file : dependencies ) {
+        try {
+          scope.loadSystemScript( cx, file );
+        } catch ( ScriptResourceNotFoundException ex ) {
+          logger.error( "Failed to read " + file + ": " + ex.toString() );
+        } catch ( IOException e ) {
+          throw new ScriptExecuteException( e );
+        }
       }
+      return scope;
+    } finally {
+      Context.exit();
     }
-    Context.exit();
-    return scope;
   }
 
   protected String[] computeDependencies( final ScriptType type ) {
