@@ -13,16 +13,30 @@
 
 package pt.webdetails.cgg.scripts;
 
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Toolkit;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.HashMap;
+import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
+import org.apache.batik.anim.dom.SVGDOMImplementation;
+import org.apache.batik.anim.dom.SVGOMDocument;
+import org.apache.batik.bridge.BridgeContext;
+import org.apache.batik.bridge.DefaultFontFamilyResolver;
+import org.apache.batik.bridge.DocumentLoader;
+import org.apache.batik.bridge.GVTBuilder;
+import org.apache.batik.bridge.UserAgent;
+import org.apache.batik.bridge.UserAgentAdapter;
+import org.apache.batik.css.engine.CSSEngine;
+import org.apache.batik.gvt.font.GVTFontFamily;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.mozilla.javascript.Callable;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.ImporterTopLevel;
+import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.ScriptRuntime;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Undefined;
+import org.w3c.dom.Node;
+
 import javax.swing.JLabel;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
@@ -33,27 +47,17 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import org.apache.batik.bridge.DocumentLoader;
-import org.apache.batik.bridge.GVTBuilder;
-import org.apache.batik.bridge.UserAgent;
-import org.apache.batik.bridge.UserAgentAdapter;
-import org.apache.batik.bridge.BridgeContext;
-import org.apache.batik.bridge.DefaultFontFamilyResolver;
-import org.apache.batik.css.engine.CSSEngine;
-import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
-import org.apache.batik.anim.dom.SVGDOMImplementation;
-import org.apache.batik.anim.dom.SVGOMDocument;
-import org.apache.batik.gvt.font.GVTFontFamily;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Function;
-import org.mozilla.javascript.ImporterTopLevel;
-import org.mozilla.javascript.NativeJavaObject;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
-import org.w3c.dom.Node;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Toolkit;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.function.BooleanSupplier;
 
 /**
  * @author pdpi
@@ -68,11 +72,14 @@ public class BaseScope extends ImporterTopLevel {
   private ScriptFactory scriptFactory;
   private HashMap<String, org.mozilla.javascript.Script> userScripts;
   private HashMap<String, org.mozilla.javascript.Script> processed;
+  // Pending timeouts are transient, execution-time state.
+  private final transient TimeoutController timeoutController;
 
   public BaseScope() {
     userScripts = new HashMap<String, org.mozilla.javascript.Script>();
     processed = new HashMap<String, org.mozilla.javascript.Script>();
     sealedStdLib = false;
+    timeoutController = new TimeoutController( this );
   }
 
   public void init( final Context cx ) {
@@ -80,10 +87,13 @@ public class BaseScope extends ImporterTopLevel {
       // Define some global functions particular to the shell. Note
       // that these functions are not part of ECMA.
       initStandardObjects( cx, sealedStdLib );
+
       final String[] names = {
-        "print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG", "res", "readResource"
+        "print", "load", "lib", "_loadSvg", "_xmlToString", "getTextLenCGG", "getTextHeightCGG", "res", "readResource",
+        "setTimeout", "clearTimeout", "queueMicrotask", "_runTimeouts"
       };
       defineFunctionProperties( names, BaseScope.class, ScriptableObject.DONTENUM );
+
       initialized = true;
     }
   }
@@ -116,6 +126,23 @@ public class BaseScope extends ImporterTopLevel {
     }
   }
 
+  /**
+   * Executes a script in this scope, without running pending micro-tasks afterwards.
+   * <p>
+   * Rhino's {@code Script.exec} is equivalent to {@code call(cx, scope, scope, args)} followed by
+   * {@code cx.processMicrotasks()}, in both interpreted and compiled modes, even when called from within
+   * another script. Scripts loaded via {@code lib}, {@code load} or a synchronous {@code require} would then run
+   * unrelated pending micro-tasks in the middle of the calling script. Pending micro-tasks are instead run by
+   * {@link #run(Context)}.
+   */
+  private void execScript( final Context cx, final org.mozilla.javascript.Script s ) {
+    if ( s instanceof Callable ) {
+      ( (Callable) s ).call( cx, this, this, ScriptRuntime.emptyArgs );
+    } else {
+      s.exec( cx, this );
+    }
+  }
+
   public boolean loadScript( Context cx, String file ) throws IOException, ScriptResourceNotFoundException {
     if ( file == null ) {
       return false;
@@ -134,7 +161,7 @@ public class BaseScope extends ImporterTopLevel {
       }
     }
     if ( s != null ) {
-      s.exec( cx, this );
+      execScript( cx, s );
     }
     return true;
   }
@@ -222,7 +249,7 @@ public class BaseScope extends ImporterTopLevel {
       }
     }
     if ( s != null ) {
-      s.exec( cx, this );
+      execScript( cx, s );
     }
     return true;
   }
@@ -300,6 +327,7 @@ public class BaseScope extends ImporterTopLevel {
     this.scriptFactory = scriptFactory;
   }
 
+  // region font and text
   public static Object getTextLenCGG( Context cx, Scriptable thisObj,
                                       Object[] args, Function funObj ) {
 
@@ -473,4 +501,77 @@ public class BaseScope extends ImporterTopLevel {
 
     return ffont;
   }
+  // endregion
+
+  // region setTimeout, clearTimeout, queueMicrotask, run
+  // Signatures of the following JS global functions are imposed by ScriptableObject#defineFunctionProperties.
+
+  @SuppressWarnings( "java:S1172" )
+  public static Object setTimeout( final Context cx,
+                                   final Scriptable thisObj,
+                                   final Object[] args,
+                                   final Function funObj ) {
+    BaseScope scope = (BaseScope) getTopLevelScope( funObj );
+    return scope.doSetTimeout( args );
+  }
+
+  @SuppressWarnings( "java:S1172" )
+  public static void clearTimeout( final Context cx,
+                                   final Scriptable thisObj,
+                                   final Object[] args,
+                                   final Function funObj ) {
+    BaseScope scope = (BaseScope) getTopLevelScope( funObj );
+    scope.doClearTimeout( args );
+  }
+
+  @SuppressWarnings( "java:S1172" )
+  public static void queueMicrotask( final Context cx,
+                                     final Scriptable thisObj,
+                                     final Object[] args,
+                                     final Function funObj ) {
+    BaseScope scope = (BaseScope) getTopLevelScope( funObj );
+    scope.doQueueMicrotask( cx, args );
+  }
+
+  @SuppressWarnings( { "java:S1172", "java:S100" } )
+  public static void _runTimeouts( final Context cx,
+                                   final Scriptable thisObj,
+                                   final Object[] args,
+                                   final Function funObj ) {
+    BaseScope scope = (BaseScope) getTopLevelScope( funObj );
+
+    // Optional `isDone` function argument.
+    final Object isDone = args.length > 0 ? args[ 0 ] : Undefined.instance;
+    if ( isDone instanceof Function ) {
+      final Function isDoneFun = (Function) isDone;
+      scope.run( cx, () -> ScriptRuntime.toBoolean( isDoneFun.call( cx, scope, scope, ScriptRuntime.emptyArgs ) ) );
+    } else {
+      scope.run( cx );
+    }
+  }
+
+  public Object doSetTimeout( final Object[] args ) {
+    return timeoutController.setTimeout( args );
+  }
+
+  public void doClearTimeout( final Object[] args ) {
+    timeoutController.clearTimeout( args );
+  }
+
+  public void doQueueMicrotask( final Context cx, final Object[] args ) {
+    timeoutController.queueMicrotask( cx, args );
+  }
+
+  public void run( final Context cx ) {
+    timeoutController.run( cx );
+  }
+
+  public void run( final Context cx, final BooleanSupplier isDone ) {
+    timeoutController.run( cx, isDone );
+  }
+
+  public void clearTimeouts() {
+    timeoutController.clear();
+  }
+  // endregion
 }

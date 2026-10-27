@@ -12,6 +12,7 @@
 
 package pt.webdetails.cgg;
 
+import org.mozilla.javascript.Context;
 import pt.webdetails.cgg.datasources.DataSourceFactory;
 import pt.webdetails.cgg.datasources.DefaultDataSourceFactory;
 import pt.webdetails.cgg.output.DefaultOutputFactory;
@@ -62,9 +63,17 @@ public abstract class AbstractCgg {
 
     Objects.requireNonNull( parameters );
 
+    // An already entered context would be reused, sharing its global state and pending micro-tasks with the
+    // caller, and would not be discarded on exit.
+    if ( Context.getCurrentContext() != null ) {
+      throw new IllegalStateException(
+        "A Rhino Context is already entered on the current thread. Drawing within an existing context is not "
+          + "supported." );
+    }
+
+    final ScriptFactory factory = getScriptFactory();
+    factory.enterContext();
     try {
-      final ScriptFactory factory = getScriptFactory();
-      factory.enterContext();
       final Script script =
         factory.createScript( parameters.getScriptFile(), parameters.getScriptType(), parameters.isMultiPage() );
 
@@ -73,7 +82,6 @@ public abstract class AbstractCgg {
 
       final Chart chart = script.execute( parameters.getGenericParameters() );
       produceOutput( chart, parameters.getOutputType() );
-      factory.exitContext();
     } catch ( ScriptCreationException e ) {
       throw e;
     } catch ( FileNotFoundException se ) {
@@ -82,6 +90,9 @@ public abstract class AbstractCgg {
       throw se;
     } catch ( Exception e ) {
       throw new ScriptExecuteException( e );
+    } finally {
+      // Also discards any micro-tasks left pending by an aborted execution.
+      factory.exitContext();
     }
   }
 
