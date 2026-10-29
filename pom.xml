@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.pentaho</groupId>
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
-    <version>10.2.0.0-SNAPSHOT</version>
+    <version>10.2.0.11-448</version>
   </parent>
 
   <groupId>org.pentaho.ctools</groupId>
   <artifactId>cgg-parent</artifactId>
-  <version>10.2.0.0-SNAPSHOT</version>
+  <version>10.2.0.11-448</version>
   <packaging>pom</packaging>
   <licenses>
     <license>
@@ -36,11 +36,11 @@
     <maven.build.timestamp.format>yyyy/MM/dd hh\:mm</maven.build.timestamp.format>
     <project.stage>master</project.stage>
 
-    <pentaho-cpf-plugin.version>10.2.0.0-SNAPSHOT</pentaho-cpf-plugin.version>
-    <platform.version>10.2.0.0-SNAPSHOT</platform.version>
+    <pentaho-cpf-plugin.version>10.2.0.11-448</pentaho-cpf-plugin.version>
+    <platform.version>10.2.0.11-448</platform.version>
     <commons-lang.version>2.6</commons-lang.version>
     <xalan.version>2.7.1</xalan.version>
-    <pentaho-cgg-plugin.version>10.2.0.0-SNAPSHOT</pentaho-cgg-plugin.version>
+    <pentaho-cgg-plugin.version>10.2.0.11-448</pentaho-cgg-plugin.version>
     <mail.version>1.4.1</mail.version>
     <javax.servlet-api>3.0.1</javax.servlet-api>
   </properties>
