@@ -31,7 +31,7 @@ public abstract class AbstractScriptFactory implements ScriptFactory {
   private HashMap<ScriptType, BaseScope> contexts;
 
   protected AbstractScriptFactory() {
-    contextFactory = new ContextFactory();
+    contextFactory = new CggContextFactory();
     contexts = new HashMap<>();
   }
 
